@@ -1,0 +1,799 @@
+{
+  "schema": "endfield.skill-request-refresh-tail-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Conditional selected original-path fragments. Dynamic receiver slot selection and live iFix state remain explicit, no full Tick/expiry/dispatch initialization CFG proof. Generic fallback branch already reached and register/stack carriers coherent are explicit premises; target inequality alone does not establish the branch.",
+  "methods": [
+    {
+      "identity": [
+        59610,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "ClearSkillRequest",
+        98085376
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController.ClearSkillRequest"
+    },
+    {
+      "identity": [
+        59616,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RefreshNextSkillRequest",
+        89511376
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController.RefreshNextSkillRequest"
+    },
+    {
+      "identity": [
+        59622,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_GetCacheTime",
+        89511104
+      ],
+      "returnType": "float",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        },
+        {
+          "name": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController._GetCacheTime"
+    },
+    {
+      "identity": [
+        58908,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "CopyFrom",
+        89316080
+      ],
+      "returnType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "parameters": [
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": true,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.CopyFrom"
+    },
+    {
+      "identity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 4,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.Dispose"
+    },
+    {
+      "identity": [
+        59358,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "RefreshNextSkillRequest",
+        89511312
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem.RefreshNextSkillRequest"
+    },
+    {
+      "identity": [
+        59364,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearSkillRequest",
+        98085312
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem.ClearSkillRequest"
+    },
+    {
+      "identity": [
+        64630,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "CopyFrom",
+        88292832
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "other",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.TargetHandle.CopyFrom"
+    },
+    {
+      "identity": [
+        64634,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "Dispose",
+        88273072
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 6,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.TargetHandle.Dispose"
+    },
+    {
+      "id": "Beyond.Gameplay.Core.MovementComponent.get_moveMode",
+      "identity": [
+        84040,
+        "Beyond.Gameplay.Core.MovementComponent",
+        "get_moveMode",
+        85185824
+      ],
+      "returnType": "Beyond.Gameplay.Core.MovementComponent+MoveMode",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem.get_inPerfectDodge",
+      "identity": [
+        59153,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_inPerfectDodge",
+        89509008
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "identity": [
+        59599,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "Tick",
+        87417968
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "allScaledTime",
+          "type": "float"
+        },
+        {
+          "name": "timeManagerDeltaTime",
+          "type": "float"
+        },
+        {
+          "name": "unscaledDeltaTime",
+          "type": "float"
+        }
+      ],
+      "slot": 11,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController.Tick"
+    },
+    {
+      "identity": [
+        59614,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_AllowNextSkill",
+        97668480
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController._AllowNextSkill"
+    }
+  ],
+  "fields": [
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_realCommandMapping",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_realCommandMapping",
+      "offset": 48,
+      "valueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType,Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_nextSkillRequest",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_nextSkillRequest",
+      "offset": 56,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_allowedNextSkillPacks",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_allowedNextSkillPacks",
+      "offset": 184,
+      "valueType": "Beyond.ListSet`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillId",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::targetHandle",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "targetHandle",
+      "offset": 24,
+      "valueType": "Beyond.Gameplay.Core.TargetHandle",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillEndCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillEndCallback",
+      "offset": 32,
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::afterCastStartCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "afterCastStartCallback",
+      "offset": 40,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::onExclusiveTimeCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "onExclusiveTimeCallback",
+      "offset": 48,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillCastInfo",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillCastInfo",
+      "offset": 56,
+      "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skipApplyCost",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skipApplyCost",
+      "offset": 80,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::castSkillOptionsOverride",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "castSkillOptionsOverride",
+      "offset": 84,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillId",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::targetHandleView",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "targetHandleView",
+      "offset": 24,
+      "valueType": "Beyond.Gameplay.Core.TargetHandleView",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillEndCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillEndCallback",
+      "offset": 32,
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::afterCastStartCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "afterCastStartCallback",
+      "offset": 40,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::onExclusiveTimeCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "onExclusiveTimeCallback",
+      "offset": 48,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillCastInfo",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillCastInfo",
+      "offset": 56,
+      "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skipApplyCost",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skipApplyCost",
+      "offset": 80,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::castSkillOptionsOverride",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "castSkillOptionsOverride",
+      "offset": 84,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::nextSkillId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "nextSkillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::remainingTime",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "remainingTime",
+      "offset": 24,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::allowToCastNextSkill",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "allowToCastNextSkill",
+      "offset": 28,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::modifierInstId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "modifierInstId",
+      "offset": 32,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::skillCastInputData",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "skillCastInputData",
+      "offset": 40,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.SkillCastInputData>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::s_instId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "s_instId",
+      "offset": 0,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::skillId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::instId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "instId",
+      "offset": 24,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::priority",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "priority",
+      "offset": 32,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+Priority",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::cacheTime",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "cacheTime",
+      "offset": 36,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "System.Nullable`1::hasValue",
+      "type": "System.Nullable`1",
+      "name": "hasValue",
+      "offset": 0,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "System.Nullable`1::value",
+      "type": "System.Nullable`1",
+      "name": "value",
+      "offset": 0,
+      "valueType": "VAR[15684]",
+      "ordinaryKind": 19,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BattleCommandMappingConfig::attackCacheTimeInDash",
+      "type": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "name": "attackCacheTimeInDash",
+      "offset": 44,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BattleCommandMappingConfig::attackCacheTimeInPerfectDodge",
+      "type": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "name": "attackCacheTimeInPerfectDodge",
+      "offset": 56,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curNormalSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curNormalSkill>k__BackingField",
+      "offset": 760,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curComboSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curComboSkill>k__BackingField",
+      "offset": 768,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curUltimateSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curUltimateSkill>k__BackingField",
+      "offset": 792,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curSkill>k__BackingField",
+      "offset": 984,
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Entity::<abilityCom>k__BackingField",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<abilityCom>k__BackingField",
+      "offset": 296,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Entity::<movementComponent>k__BackingField",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<movementComponent>k__BackingField",
+      "offset": 600,
+      "valueType": "Beyond.Gameplay.Core.MovementComponent",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "offset": 80,
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.GameInstance::dataManager",
+      "type": "Beyond.Gameplay.GameInstance",
+      "name": "dataManager",
+      "offset": 160,
+      "valueType": "Beyond.Gameplay.DataManager",
+      "ordinaryKind": 18,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.DataManager::<battleCommandMappingConfig>k__BackingField",
+      "type": "Beyond.Gameplay.DataManager",
+      "name": "<battleCommandMappingConfig>k__BackingField",
+      "offset": 664,
+      "valueType": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::s_instanceUid",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "s_instanceUid",
+      "offset": 0,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::m_owner",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "m_owner",
+      "offset": 16,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::<instanceUid>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "<instanceUid>k__BackingField",
+      "offset": 24,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": false
+    }
+  ],
+  "parents": {
+    "Beyond.Gameplay.Core.AbilitySystem+ComboController": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+    "Beyond.Gameplay.Core.AbilitySystem+SubFeature": "object"
+  },
+  "layout": {
+    "selectedNativeAbiOnly": true,
+    "allNullableInstantiationsProved": false,
+    "objectHeaderBytes": 16,
+    "closedValueAlignment": 8,
+    "inputDataBytes": 88,
+    "inputNullableBytes": 96,
+    "requestBytes": 120,
+    "requestNullableBytes": 128,
+    "outerHasValueOffset": 0,
+    "outerValueOffset": 8,
+    "inputHasValueOffset": 0,
+    "inputValueOffset": 8
+  },
+  "typeSizes": [
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "hex": "68000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "hex": "68000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "hex": "88000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "refreshTail",
+      "startRva": 89513467,
+      "endRva": 89513498,
+      "sha256": "69B1F6BB52061CEDEB5E48A45AD2668234AA8D818F44F36CF557F764AB2B6634",
+      "boundary": "Reviewed conditional bounded instruction fragment; external calls and dynamic selection are explicit premises."
+    },
+    {
+      "role": "dispatch",
+      "startRva": 338656,
+      "endRva": 338863,
+      "sha256": "81C30AA18126A77ACB2D3ED7FFAD6B0318795A6C7483F0A9BBBBCE8B649BBB0C",
+      "boundary": "Reviewed conditional bounded instruction fragment; external calls and dynamic selection are explicit premises."
+    },
+    {
+      "role": "tickTransfer",
+      "startRva": 87418251,
+      "endRva": 87418922,
+      "sha256": "2FD536CBFF70378E2D5F1C385E7400E28F719455B66C02DC939A2D358CBA09C7",
+      "boundary": "Reviewed conditional bounded instruction fragment; external calls and dynamic selection are explicit premises."
+    }
+  ],
+  "anchors": {
+    "tailArguments": {
+      "rva": 89513467,
+      "hex": "0f57d2b90b0000000f57dbf30f11542420488bd3e8cc4caffa"
+    },
+    "tailReturn": {
+      "rva": 89513492,
+      "hex": "b001eb0232c0"
+    },
+    "dispatchSlot": {
+      "rva": 338696,
+      "hex": "488b07488d4b144803c9488b14c84c8b44c808"
+    },
+    "dispatchForward": {
+      "rva": 338794,
+      "hex": "f30f109c24800000000f28d60f28cf4c89442420488bcfffd2ebb8"
+    },
+    "tickSetup": {
+      "rva": 87418260,
+      "hex": "0f1047404533c0488bcf0f104f500f11442440488b5c24400f104760488bd3"
+    },
+    "tickCall": {
+      "rva": 87418356,
+      "hex": "e887679c00833d30fe3b0c000f57c00f1145c8"
+    },
+    "tickAL": {
+      "rva": 87418375,
+      "hex": "440fb6c8"
+    },
+    "tickAllowLocal": {
+      "rva": 87418498,
+      "hex": "f3410f5cc044884dcc"
+    },
+    "tickCopyIn": {
+      "rva": 87418529,
+      "hex": "0f114d08"
+    },
+    "tickOuterLoad": {
+      "rva": 87418818,
+      "hex": "0f288d20010000c68510010000010f2885100100000f1147380f2885300100000f114f48"
+    },
+    "special0": {
+      "rva": 338715,
+      "hex": "488d05aec12007"
+    },
+    "special1": {
+      "rva": 338770,
+      "hex": "488d05c7a61e07"
+    },
+    "special2": {
+      "rva": 338782,
+      "hex": "488d059ba61e07"
+    }
+  },
+  "links": {
+    "dispatcherRva": 338656,
+    "tickAllowCallRva": 87418356,
+    "tickAllowReturnRva": 87418361,
+    "specialTargets": [
+      119925968,
+      119788064,
+      119788032
+    ]
+  },
+  "rules": {
+    "scope": "successful-postconstruction-only",
+    "virtualSlot": 11,
+    "deltaArgumentsFloat32Hex": [
+      "00000000",
+      "00000000",
+      "00000000"
+    ],
+    "dynamicTargetMustEqualNamedTick": true,
+    "tickOriginalPathRequired": true,
+    "normalReturnsRequired": true,
+    "refreshReturnsTrueAfterDispatch": true,
+    "allowResultSource": "_AllowNextSkill.AL",
+    "allowStoreMechanism": "AL to R9B to replacement local to whole request copyback",
+    "fullTickExpiryReproved": false,
+    "liveIFixSelectionProved": false,
+    "fullReceiverContinuityProved": false,
+    "genericBranchReachedRequired": true,
+    "carrierContinuityRequired": true,
+    "dispatcherComparisonCfgProved": false
+  },
+  "operandDeclarations": {
+    "outgoingThirdStack": 32,
+    "incomingThirdStack": 128,
+    "vtableBaseUnits": 20,
+    "methodInfoByteOffset": 8,
+    "genericReturnJump": -72,
+    "tailSuccessJump": 2,
+    "requestBuffer": 64,
+    "requestBuffer16": 80,
+    "requestPayload16": 80,
+    "requestPayload32": 96,
+    "replacementLocal": -64,
+    "allowLocal": -52,
+    "copyInOffset": 8,
+    "outerValueLocal": 288,
+    "outerNullableLocal": 272,
+    "outerLocal32": 304,
+    "zeroVectorLocal": -56
+  }
+}

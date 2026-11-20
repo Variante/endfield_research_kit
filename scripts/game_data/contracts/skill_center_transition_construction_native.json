@@ -1,0 +1,122 @@
+{
+  "schema": "endfield.skill-center-transition-construction-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "owner": [
+    49678,
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+    ".ctor",
+    111243584
+  ],
+  "predicate": [
+    49685,
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+    "_ToSkill",
+    89282864
+  ],
+  "delegateInitializerRva": 105726992,
+  "transitionAdderRva": 102928544,
+  "requests": [
+    {
+      "id": "toSkill0",
+      "startRva": 111244716,
+      "hex": "4c8b05cd4ec3094533c9488bd3488bc8e84fceabff488b0dd04ec30941b90200000048894c242833d2488bcb48897c2420458bc1e8bb1a81ff",
+      "arguments": {
+        "fromState": 0,
+        "toState": 2,
+        "priority": 2
+      }
+    },
+    {
+      "id": "toSkill1",
+      "startRva": 111245211,
+      "hex": "4c8b05de4cc3094533c9488bd3488bc8e860ccabff488b0de14cc30941b90200000048894c2428ba01000000488bcb48897c2420458bc1e8c91881ff",
+      "arguments": {
+        "fromState": 1,
+        "toState": 2,
+        "priority": 2
+      }
+    },
+    {
+      "id": "toSkill2",
+      "startRva": 111245721,
+      "hex": "4c8b05e04ac3094533c9488bd3488bc8e862caabff488b0de34ac309ba0200000048894c2428448bca488bcb48897c2420448bc2e8ce1681ff",
+      "arguments": {
+        "fromState": 2,
+        "toState": 2,
+        "priority": 2
+      }
+    },
+    {
+      "id": "toSkill3",
+      "startRva": 111246228,
+      "hex": "4c8b05e548c3094533c9488bd3488bc8e867c8abff488b0de848c30941b90200000048894c2428ba03000000488bcb48897c2420458bc1e8d01481ff",
+      "arguments": {
+        "fromState": 3,
+        "toState": 2,
+        "priority": 2
+      }
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "request0",
+      "startRva": 111244716,
+      "endRva": 111244773,
+      "sha256": "C604952C959424D2ACB9B7E0C09B87477A56F78699A41D5BFEAA47FDD4D8BF99",
+      "boundary": "selected constructor request slice"
+    },
+    {
+      "owner": "request1",
+      "startRva": 111245211,
+      "endRva": 111245271,
+      "sha256": "B595E258F0C798140C48F1EE37A0916FF53923C2A57000B766ED7DAEED3D038F",
+      "boundary": "selected constructor request slice"
+    },
+    {
+      "owner": "request2",
+      "startRva": 111245721,
+      "endRva": 111245778,
+      "sha256": "588454C1045CCD59474DC85419AD52790E7810EB873F1D20599A8C42C3A2418B",
+      "boundary": "selected constructor request slice"
+    },
+    {
+      "owner": "request3",
+      "startRva": 111246228,
+      "endRva": 111246288,
+      "sha256": "FB86DE19C82C07A27969585655EAB9BEAA969FDD910EC449743113BF5B052259",
+      "boundary": "selected constructor request slice"
+    }
+  ],
+  "rules": {
+    "originalPathOnly": true,
+    "normalWin64ReturnsRequired": true,
+    "entryRaxEqualsSavedRdiDelegateTokenRequired": true,
+    "entryRbxMachineRequired": true,
+    "methodDefUsageRequestProved": true,
+    "sameMachineDelegateTargetRequestProved": true,
+    "sameDelegateTokenPassedAsConditionProved": true,
+    "typedTransitionRequestArgumentsProved": true,
+    "argumentsReportedAsUnsignedBits32": true,
+    "compiledDelegateInitializerIdentityProved": false,
+    "compiledTransitionAdderIdentityProved": false,
+    "initializedMethodInfoIdentityProved": false,
+    "delegateStoredDispatchTargetProved": false,
+    "transitionCollectionEffectsProved": false,
+    "liveSelectedTransitionProved": false
+  },
+  "evidenceBoundary": {
+    "exact": [
+      "Selected on-disk tag-3 MethodDef usage names CenterStateMachine._ToSkill. Selected physical call targets and supplied closed AddTransition MethodInfo request are authenticated against the selected native pair."
+    ],
+    "conditional": [
+      "On entry RAX equals the saved RDI delegate token and RBX is the original machine. Selected physical initializer call has opaque effects and returns normally under Win64. RDI/RBX then retain those tokens; suffix passes the same delegate token and requested machine with from/to/priority register bits. All integer arguments are reported as unsigned 32-bit bits."
+    ],
+    "unresolved": [
+      "Neither physical call target is promoted to compiled closed generic identity from its supplied nominal context. Initialized runtime MethodInfo, delegate flags, actual stored dispatch target, upstream allocation, collection effects, live transition selection and scheduling remain unproved."
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.damage-runtime-branch-abi-native-contract.v1",
+  "schema": "endfield.damage-runtime-branch-abi-native-contract.v3",
   "status": "reviewed",
   "nativeInputs": {
     "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
@@ -18,9 +18,44 @@
       "rva": "0x1a0a60",
       "byteCount": 78,
       "sha256": "24ba2f8e6f97e3f8dec9771f775f11294b7da43ba09efabbb1bd3c079ac25b6e"
+    },
+    {
+      "name": "transferredSourceLockAndClassSelection",
+      "rva": "0x55f69d0",
+      "byteCount": 116,
+      "sha256": "f649ef7c990a25378d56377c9d4442e37e6043fa772f80f8f25a301623c11fea"
+    },
+    {
+      "name": "sharedObjectPtrLock",
+      "rva": "0x50023a0",
+      "byteCount": 54,
+      "sha256": "2edc87806e2bf6b5178a360ba43d4f4e3c666ef77f020470b6adde276daf1139"
+    },
+    {
+      "name": "defenderPoiseFactorInlineSelector",
+      "rva": "0x55f6610",
+      "byteCount": 80,
+      "sha256": "7be72a3a629440028ee8fcfcef44720974e130ee48bee0095ceec4c1cdf07317"
+    },
+    {
+      "name": "defenderPoiseFactorCandidate8835",
+      "rva": "0x3eb3c80",
+      "byteCount": 64,
+      "sha256": "83ee1dd25fa0b7bb3b32f269d1e9d37ca927118d3fbf8f512ccac7734fca3594"
+    },
+    {
+      "name": "defenderPoiseFactorCandidate8837",
+      "rva": "0x3eb58a0",
+      "byteCount": 64,
+      "sha256": "a3df2475aeb4a072c81739fd1cd2a71a871710f3002d56115c57427b8e0a5608"
     }
   ],
-  "literals": [],
+  "literals": [
+    {
+      "rva": "0x10653048",
+      "bits": "93de022000000000"
+    }
+  ],
   "captureAbi": {
     "parameter": "transferredSource",
     "entryRva": "0x55f4f70",
@@ -35,5 +70,86 @@
     ],
     "condition": "Normal completion of the reviewed stack probe preserves RAX and restores RSP; selected sequential reference/UInt32 carrier and current entry program.",
     "interpretation": "The reviewed probe reserves16 bytes, saves/restores R10/R11, computes and probes stack pages through R10/R11 and GS stack limit, never writes RAX, restores its16-byte reserve and RETs. The Process prefix saves seven registers and subtracts allocation0x16a0; slot5 at entryRSP+48 therefore resides at bodyRSP+0x1708. The reviewed instruction boundary loads that pointer and copies16 bytes from it. No live callback execution or patch selection is established."
-  }
+  },
+  "returnedPart": {
+    "hook": "damage.Source.Lock",
+    "type": "Beyond.ObjectPtr`1",
+    "method": "Lock",
+    "returnType": "VAR[14976]",
+    "closedReturnType": "object",
+    "classArguments": [
+      "object"
+    ],
+    "methodArguments": [],
+    "entryRva": "0x50023a0",
+    "callerReturnRvas": [
+      "0x55f69f9"
+    ],
+    "classInfoRva": "0x10653048",
+    "classType": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart",
+    "uidField": "Beyond.Gameplay.Core.BaseComponent::<instanceUid>k__BackingField",
+    "uidOffset": 72,
+    "ratioField": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart::<damageRatio>k__BackingField",
+    "ratioOffset": 1524,
+    "requiredWindows": [
+      "transferredSourceLockAndClassSelection",
+      "sharedObjectPtrLock"
+    ],
+    "boundary": "Original Lock normal return only. Shared reference ABI does not identify a closed runtime receiver. Exact runtime class equality with the selected initialized EnemyPart ClassInfo cell gates UID/ratio reads; derived classes, null and unresolved cells are not admitted. This is a snapshot, not the later MOVSS operand continuity proof."
+  },
+  "moduleSelector": {
+    "hook": "damage.Action.ProcessDamage",
+    "logicalGetter": "Beyond.Gameplay.Core.DamagePackData.get_defenderPoiseFactor",
+    "rootRva": "0x1171f250",
+    "tableOffset": 80,
+    "functionOffset": 5600,
+    "receiverOffset": 5608,
+    "requiredWindows": [
+      "defenderPoiseFactorInlineSelector"
+    ],
+    "boundary": "Two physical reads at Process entry and normal return only. Equal sampled tuples do not prove intermediate state or lack of ABA/update. Null table/function at these boundaries does not establish the arithmetic branch or factor1. Function/receiver remain anonymous physical carriers; no callback is invoked.",
+    "callRva": "0x55f663e",
+    "returnRva": "0x55f6640",
+    "callBytes": "ffd0"
+  },
+  "callbackCandidates": [
+    {
+      "hook": "damage.CallbackCandidate.8835",
+      "type": "IFix.ILFixDynamicMethodWrapper",
+      "method": "__Gen_Wrap_8835",
+      "declaringImage": "Gameplay.Beyond.dll",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "P0",
+          "type": "Beyond.Gameplay.Core.DamagePackData"
+        }
+      ],
+      "entryRva": "0x3eb3c80",
+      "requiredWindows": [
+        "defenderPoiseFactorCandidate8835"
+      ],
+      "boundary": "Same physical ABI candidate only. Not proved selected by this slot; observed original calls with the exact Process inline indirect return address identify actual physical execution. Zero hits remain unknown."
+    },
+    {
+      "hook": "damage.CallbackCandidate.8837",
+      "type": "IFix.ILFixDynamicMethodWrapper",
+      "method": "__Gen_Wrap_8837",
+      "declaringImage": "Gameplay.Beyond.dll",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "P0",
+          "type": "Beyond.Gameplay.Core.DamagePackData"
+        }
+      ],
+      "entryRva": "0x3eb58a0",
+      "requiredWindows": [
+        "defenderPoiseFactorCandidate8837"
+      ],
+      "boundary": "Same physical ABI candidate only. Not proved selected by this slot; observed original calls with the exact Process inline indirect return address identify actual physical execution. Zero hits remain unknown."
+    }
+  ]
 }

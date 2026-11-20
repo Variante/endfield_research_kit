@@ -1,0 +1,482 @@
+{
+  "schema": "endfield.skill-center-fsm-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "fields": [
+    {
+      "id": "bb",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_blackboard",
+      "valueType": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "ordinaryKind": 18,
+      "offset": 56
+    },
+    {
+      "id": "ai",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_aiCom",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "ordinaryKind": 18,
+      "offset": 64
+    },
+    {
+      "id": "entity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 72
+    },
+    {
+      "id": "aiEntity",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 80
+    }
+  ],
+  "methods": [
+    {
+      "id": "base",
+      "identity": [
+        49616,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+        ".ctor",
+        111247536
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "stateId",
+          "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState"
+        },
+        {
+          "name": "blackboard",
+          "type": "Beyond.Gameplay.BlackboardBase"
+        },
+        {
+          "name": "aiCom",
+          "type": "Beyond.Gameplay.AI.CharacterAIComponent"
+        }
+      ],
+      "slot": 65535
+    },
+    {
+      "id": "machine",
+      "identity": [
+        49678,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+        ".ctor",
+        111243584
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "blackboard",
+          "type": "Beyond.Gameplay.BlackboardBase"
+        },
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ],
+      "slot": 65535
+    },
+    {
+      "id": "enter",
+      "identity": [
+        49642,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+        "OnEnter",
+        89312128
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "fromStateId",
+          "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState"
+        }
+      ],
+      "slot": 4
+    },
+    {
+      "id": "fixed",
+      "identity": [
+        49590,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem",
+        "OnFixedTick",
+        89519376
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "deltaTime",
+          "type": "float"
+        }
+      ],
+      "slot": 65535
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "base",
+      "startRva": 111247536,
+      "endRva": 111247702,
+      "sha256": "0e0206d40f218a3f753e0d3977228c5175285e4ad5199038f8d8fb57e9e77bba",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "base",
+      "startRva": 121492704,
+      "endRva": 121492740,
+      "sha256": "911892f287ee363b3b16f620e70863e700bd35e630716039d6bf95ea2b157a13",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "machine",
+      "startRva": 111243584,
+      "endRva": 111244031,
+      "sha256": "8d093584cb111ef17213b11875b8463419a0e341f084521fe7e894e6cfba994a",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "machine",
+      "startRva": 111244031,
+      "endRva": 111247177,
+      "sha256": "fcf8a1f470643ce94b78b6b6ce2e0ce9138a7d4c4a7f460723e132b7b8914ae0",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "machine",
+      "startRva": 125144556,
+      "endRva": 125144595,
+      "sha256": "f405f104d2ddfcaa0b4abf9b93f6162c1e194e8ec0a14648108c4034491347c6",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "enter",
+      "startRva": 89312128,
+      "endRva": 89312349,
+      "sha256": "bd4a3537206ac46f7dbf51fe4727130cd885802fdec080ebaa87ff5d5caa1d1a",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "enter",
+      "startRva": 122624762,
+      "endRva": 122624811,
+      "sha256": "5ce6372777cae290d9c31d6a08cac90031862482ce9d67cb0271faadea69af0b",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 89519376,
+      "endRva": 89519413,
+      "sha256": "c71ed350f52fcb8dc83a42a9f435b7c10a66d3e868967fc6fbfb57e1ae69e3b6",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 89519413,
+      "endRva": 89519787,
+      "sha256": "1d38886de5be919d74c3b0abc4d77d42a5df5d298a0ce0ab1d9b8c7a2c92e8ee",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 89519787,
+      "endRva": 89519798,
+      "sha256": "787ec20972479f367786061f623e34a66686c9faab8b01215ed63fe8baef4395",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 89519798,
+      "endRva": 89519817,
+      "sha256": "f768d621640119f07f3ab64092cf6b2af40d6211719f850877f86e106d42ab09",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 122670960,
+      "endRva": 122671001,
+      "sha256": "0012a6264a30c6a413c455e960d9df4bb806656a51cc6ba4e83e84167f7e20b3",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "fixed",
+      "startRva": 122671001,
+      "endRva": 122671219,
+      "sha256": "5fd3119c8327707776a40cb96c6729d8e996803777d7136d741460a6ab5bbf5a",
+      "boundary": "complete selected family interval"
+    },
+    {
+      "owner": "castHelper",
+      "startRva": 18832,
+      "endRva": 18879,
+      "sha256": "b72d3a94376a8d6f5185d3febb84a9d292415c20ded784de4fe8f417c4b7e855",
+      "boundary": "complete selected physical source/null cast helper"
+    }
+  ],
+  "spans": [
+    {
+      "id": "baseCapture",
+      "owner": "base",
+      "rva": 111247536,
+      "hex": "48895c240848896c24104889742418574883ec20803d330ad10a00498bf1498bf88bea488bd9745d"
+    },
+    {
+      "id": "baseInvoke",
+      "owner": "base",
+      "rva": 111247576,
+      "hex": "4c8b0d7144c3094c8bc78bd5488bcbe8b412b2ff"
+    },
+    {
+      "id": "baseStore",
+      "owner": "base",
+      "rva": 111247596,
+      "hex": "488b157d44c309488bcfe895c85ef948894338488bcf488b156744c309e882c85ef9488d4b38e849c26ef9"
+    },
+    {
+      "id": "baseAiGuard",
+      "owner": "base",
+      "rva": 111247639,
+      "hex": "4885f60f85c0539c00"
+    },
+    {
+      "id": "baseAiWrite",
+      "owner": "base",
+      "rva": 121492704,
+      "hex": "488d4b4048897340e8736ed2f84c8b4e50488d4b484c894b48e8626ed2f890e91cac63ff"
+    },
+    {
+      "id": "baseReturn",
+      "owner": "base",
+      "rva": 111247648,
+      "hex": "488b5c2430488b6c2438488b7424404883c4205fc3"
+    },
+    {
+      "id": "castHelper",
+      "owner": "castHelper",
+      "rva": 18832,
+      "hex": "40534883ec20488bd94885c97419488b09e81a00000033c984c0480f44d9488bc34883c4205bc333c04883c4205bc3"
+    },
+    {
+      "id": "machineCapture",
+      "owner": "machine",
+      "rva": 111243584,
+      "hex": "48895c241048896c24184889742420574883ec30803db419d10a00498bf8488bf2488bd90f856f010000"
+    },
+    {
+      "id": "machineBaseInvoke",
+      "owner": "machine",
+      "rva": 111243993,
+      "hex": "4c8b05c051c309488bd6488bcbe8951ed6ff"
+    },
+    {
+      "id": "skillRegister",
+      "owner": "machine",
+      "rva": 111244177,
+      "hex": "488b0d8051c309488b6b58e86fea5ff9488bf84885c00f8464ffffff4c8bcd4c897424204c8bc6ba02000000488bc8e8eb0c00004c8b05c450c309488bd7488bcbe8a91caaff"
+    },
+    {
+      "id": "fixedVirtualTick",
+      "owner": "fixed",
+      "rva": 89519604,
+      "hex": "b9070000000f28d6488bd0e83c03aefa"
+    }
+  ],
+  "typedContexts": {
+    "cast1": {
+      "instructionRva": 111247596,
+      "instructionHex": "488B157D44C309",
+      "usageCellRva": 275039600,
+      "usageRawHex": "8FA1052000000000",
+      "tag": 1,
+      "typeIndex": 184519,
+      "typeName": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "typeRawHex": "BD200000000000000000120000000000"
+    },
+    "cast2": {
+      "instructionRva": 111247618,
+      "instructionHex": "488B156744C309",
+      "usageCellRva": 275039600,
+      "usageRawHex": "8FA1052000000000",
+      "tag": 1,
+      "typeIndex": 184519,
+      "typeName": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "typeRawHex": "BD200000000000000000120000000000"
+    },
+    "base": {
+      "instructionRva": 111247576,
+      "instructionHex": "4C8B0D7144C309",
+      "usageCellRva": 275039568,
+      "usageRawHex": "C5DE11C000000000",
+      "tag": 6,
+      "methodSpecIndex": 585570,
+      "methodSpec": [
+        6920,
+        5998,
+        -1
+      ],
+      "typeName": "Beyond.Gameplay.FSMState`1",
+      "methodName": ".ctor",
+      "classArguments": [
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState"
+      ],
+      "methodArguments": []
+    },
+    "machine": {
+      "instructionRva": 111243993,
+      "instructionHex": "4C8B05C051C309",
+      "usageCellRva": 275039392,
+      "usageRawHex": "DDC912C000000000",
+      "tag": 6,
+      "methodSpecIndex": 615662,
+      "methodSpec": [
+        6905,
+        28791,
+        -1
+      ],
+      "typeName": "Beyond.Gameplay.StateMachine`2",
+      "methodName": ".ctor",
+      "classArguments": [
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard"
+      ],
+      "methodArguments": []
+    },
+    "allocation": {
+      "instructionRva": 111244177,
+      "instructionHex": "488B0D8051C309",
+      "usageCellRva": 275039512,
+      "usageRawHex": "9DA1052000000000",
+      "tag": 1,
+      "typeIndex": 184526,
+      "typeName": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+      "typeRawHex": "C2200000000000000000120000000000"
+    },
+    "add": {
+      "instructionRva": 111244229,
+      "instructionHex": "4C8B05C450C309",
+      "usageCellRva": 275039376,
+      "usageRawHex": "DFC912C000000000",
+      "tag": 6,
+      "methodSpecIndex": 615663,
+      "methodSpec": [
+        6913,
+        28791,
+        -1
+      ],
+      "typeName": "Beyond.Gameplay.StateMachine`2",
+      "methodName": "AddState",
+      "classArguments": [
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard"
+      ],
+      "methodArguments": []
+    }
+  },
+  "operands": {
+    "saveRbx": 8,
+    "saveRbp": 16,
+    "saveRsi": 24,
+    "restoreRbx": 48,
+    "restoreRbp": 56,
+    "restoreRsi": 64,
+    "baseFrame": 32,
+    "baseInitFlagDisp": 181471795,
+    "baseMetadataInitRva": 111247669,
+    "stateBaseCtorContextCell": 275039568,
+    "physicalStateBaseCtorRva": 106140576,
+    "castTypeCell": 275039600,
+    "castHelperRva": 18832,
+    "barrierRva": 1065824,
+    "baseReturnRva": 111247648,
+    "castFrame": 32,
+    "castNullReturnRva": 18871,
+    "classifierRva": 18880,
+    "machineSaveRbx": 16,
+    "machineSaveRbp": 24,
+    "machineSaveRsi": 32,
+    "machineFrame": 48,
+    "machineInitFlagDisp": 181475764,
+    "machineBaseCtorContextCell": 275039392,
+    "physicalMachineBaseCtorRva": 108499328,
+    "skillAllocationTypeCell": 275039512,
+    "machineAiPhysicalOffset": 88,
+    "allocatorRva": 89616,
+    "machineNullRva": 111244049,
+    "machineMethodInfoStack": 32,
+    "skillStateId": 2,
+    "addStateContextCell": 275039376,
+    "physicalAddStateRva": 105615488,
+    "tickSlot": 7,
+    "virtualTickHelperRva": 260416
+  },
+  "physicalCast": {
+    "entryRva": 18832
+  },
+  "skillStateId": 2,
+  "onEnterSlot": 4,
+  "rules": {
+    "originalPathOnly": true,
+    "normalWin64CallsRequired": true,
+    "constructorSavedCarrierContinuityRequired": true,
+    "castResultIsOriginalSourceOrNull": true,
+    "castNullSourceReturnsNull": true,
+    "classifierSemanticsProved": false,
+    "firstCastResultStoredBeforeSecondCast": true,
+    "secondCastResultUnused": true,
+    "nullableFirstCastStored": true,
+    "nullAiComPreservesOldFields": true,
+    "nonNullAiComStorePrecedesEntityRead": true,
+    "entityNullValueStored": true,
+    "providedCastType": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+    "sourceArgumentSharedWithSkillStateConstruction": true,
+    "skillStateAllocationTypeRequestProved": true,
+    "allocatorReturnedTypeProved": false,
+    "addStateRequestUsesSameConstructedToken": true,
+    "collectionRegistrationEffectsProved": false,
+    "skillStateOnEnterNominalVtableSlotProved": true,
+    "compiledGenericHelperIdentityProved": false,
+    "fullFSMDispatchProved": false,
+    "sameLiveWriterConsumerBlackboardProved": false,
+    "completeFieldWriterCensusProved": false,
+    "lifetimeProved": false,
+    "currentSessionFSMConstructionProved": false
+  },
+  "registration": {
+    "allocatedTypeRequest": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+    "stateId": 2,
+    "blackboardArgument": "same saved RSI original constructor BlackboardBase",
+    "aiComArgument": "saved machine physical +88 carrier, not re-derived closed generic prefix",
+    "addState": "request using same RDI constructed object, provided closed AddState MethodInfo",
+    "collectionEffectsProved": false
+  },
+  "unresolvedDispatch": [
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterMainCtrlSystem.OnFixedTick",
+      "siteRva": 89519615,
+      "physicalTargetRva": 260416,
+      "requestedSlot": 7,
+      "receiver": "current RAX carrier; upstream dynamic object and selected Tick target unproved",
+      "providedMethodInfo": "runtime virtual slot; no closed method identity proved"
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+      "issue": "generic Tick/SwitchState transition evaluation and selected-state OnEnter dispatch remain unproved; nominal Skill OnEnter vtable slot alone is not live selection"
+    }
+  ],
+  "boundaries": [
+    "Normal Win64 saved-register and coherent object/local-memory premises apply across external helpers. constructorSavedCarrierContinuityRequired explicitly includes RSI original BB and RBX original machine retained and normal path reaches skillRegister across unverified intermediate constructor operations; endpoint checks do not prove that entire interval.",
+    "Physical cast helper proves source/null identity only; its classifier semantics remain opaque.",
+    "Constructor passes the same original blackboard argument into base initialization and the Skill state construction request. First accepted cast output equals that original token; actual object lifetime and later field writes remain unresolved.",
+    "Provided closed generic MethodInfo requests are nominally authenticated; compiled closed generic identity and full scheduling are not promoted.",
+    "Skill allocation request type and AddState request identity are proved; allocator/class setup, collection effects and runtime state selection remain separate.",
+    "Readonly/initonly metadata and absence of a named setter do not establish a complete write census or runtime stability."
+  ]
+}

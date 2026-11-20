@@ -1,0 +1,229 @@
+{
+  "schema": "endfield.skill-center-method-info-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "predicate": [
+    49685,
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+    "_ToSkill",
+    89282864
+  ],
+  "usageInstructionRva": 111244716,
+  "functions": {
+    "materializer": 43088,
+    "definition": 302752,
+    "encoded": 6738640,
+    "setupWrapper": 252672
+  },
+  "codeWindows": [
+    {
+      "owner": "materializer",
+      "startRva": 43088,
+      "endRva": 44746,
+      "sha256": "04267326A5693909B422CCF045113E536771F07CDEE79D83B0836E66AF385D13",
+      "boundary": "complete selected owned family range; selected source semantics only"
+    },
+    {
+      "owner": "materializer",
+      "startRva": 7123222,
+      "endRva": 7123433,
+      "sha256": "2F060D8202D103206D9E6ACFD10A4B16BEDC0D5C19DBD9243738116177E31CDF",
+      "boundary": "complete selected owned family range; selected source semantics only"
+    },
+    {
+      "owner": "definition",
+      "startRva": 302752,
+      "endRva": 302895,
+      "sha256": "15D393B24DB0C73C6100CB10E8D489F1FEE64B31506E4EA265EADAC3CABA8D83",
+      "boundary": "complete selected owned family range; selected source semantics only"
+    },
+    {
+      "owner": "encoded",
+      "startRva": 6738640,
+      "endRva": 6738730,
+      "sha256": "76B3C080CBCA14171CF0E539BA1C42385A41B66642C0A7593B607DE982FD6F77",
+      "boundary": "complete selected owned family range; selected source semantics only"
+    },
+    {
+      "owner": "setupWrapper",
+      "startRva": 252672,
+      "endRva": 252873,
+      "sha256": "07AAB0F272A6FB9B12A5B22A00B78127D10ED889362735E5CE481B9E7265EF92",
+      "boundary": "complete selected owned family range; selected source semantics only"
+    },
+    {
+      "owner": "genericLeaf",
+      "startRva": 6738304,
+      "endRva": 6738341,
+      "sha256": "32077F738940443B5296DA4D3A69FD3587C20FB95B317FAA8B35F75E9BB9D169",
+      "boundary": "complete selected closed read-only leaf"
+    }
+  ],
+  "spans": [
+    {
+      "id": "pointerFallback",
+      "owner": "materializer",
+      "rva": 43597,
+      "hex": "48837be8007508488b43e0488943e8"
+    },
+    {
+      "id": "recordFields",
+      "owner": "materializer",
+      "rva": 43506,
+      "hex": "0fb7451866898424b00000000fb7451a66898424c00000000fb7451c66898424c8000000440fb77d1e"
+    },
+    {
+      "id": "parameterCount",
+      "owner": "materializer",
+      "rva": 43619,
+      "hex": "44887b33"
+    },
+    {
+      "id": "flagsCopies",
+      "owner": "materializer",
+      "rva": 43845,
+      "hex": "0fb78424b00000006689432c0fb78424c00000006689432e0fb78424c800000066894330"
+    },
+    {
+      "id": "clearInflated",
+      "owner": "materializer",
+      "rva": 43881,
+      "hex": "440fb643344180e0fd44884334"
+    },
+    {
+      "id": "genericFlags",
+      "owner": "materializer",
+      "rva": 43894,
+      "hex": "44896b2848896b188b4d10e8fa256600488943204885c00f853a010000806334f7"
+    },
+    {
+      "id": "genericPresent",
+      "owner": "materializer",
+      "rva": 44237,
+      "hex": "4180c80144884334e9b9feffff"
+    },
+    {
+      "id": "genericLeaf",
+      "owner": "genericLeaf",
+      "rva": 6738304,
+      "hex": "83f9ff750333c0c3488b05691e0b1148635078480315561e0b114863c148c1e0044803c2c3"
+    },
+    {
+      "id": "setupCall",
+      "owner": "setupWrapper",
+      "rva": 252812,
+      "hex": "488d542430488bcbe8b7ccfcff"
+    },
+    {
+      "id": "primaryCode",
+      "owner": "materializer",
+      "rva": 43551,
+      "hex": "418bc525ffffff000f846e076c008d50ff488b06488b4838488b4110488b04d0488943e0"
+    }
+  ],
+  "operands": {
+    "materializerRva": 43088,
+    "selfCallRva": 44129,
+    "recordSelectorRva": 43410,
+    "publicationRva": 44000,
+    "tokenStoreRva": 43894,
+    "descriptorBias": 32,
+    "pointerFallbackEnd": 43612,
+    "recordFlagsOffset": 24,
+    "recordIflagsOffset": 26,
+    "recordSlotOffset": 28,
+    "recordCountOffset": 30,
+    "recordGenericOffset": 16,
+    "flagsLocal": 176,
+    "iflagsLocal": 192,
+    "slotLocal": 200,
+    "clear2Mask": 253,
+    "clear8Mask": 247,
+    "set1Mask": 1,
+    "genericLeafRva": 6738304,
+    "genericLeafNonNullRva": 6738312,
+    "genericPresentRva": 44237,
+    "clear8Rva": 43923,
+    "metadataHeaderCell": 292679672,
+    "metadataBaseCell": 292679664,
+    "genericSectionHeaderOffset": 120,
+    "genericRecordShift": 4,
+    "wrapperLocal": 48,
+    "primaryNullRva": 7123355,
+    "imageCodeModuleOffset": 56,
+    "moduleCodeArrayOffset": 16
+  },
+  "descriptorSlots": {
+    "baseCode": 0,
+    "primaryCode": 8,
+    "flags": 76,
+    "iflags": 78,
+    "slot": 80,
+    "parameterCount": 83,
+    "flags54": 84,
+    "token": 72,
+    "record": 56,
+    "genericContainer": 64
+  },
+  "descriptorStride": 88,
+  "alternateCodeOffset": 88,
+  "rules": {
+    "originalPathOnly": true,
+    "secondaryPointerFallbackCfgProved": true,
+    "plainDescriptorFieldCopiesProved": true,
+    "flags54UpdateCfgProved": true,
+    "genericContainerLeafPreservesR8": true,
+    "tag3UsageDefinitionRequestProved": true,
+    "completeMaterializerCfgAndNormalFramesProved": true,
+    "independentHeapReadsRequired": true,
+    "unmodifiedSavedMetadataStackLocalsRequired": true,
+    "runtimeMethodInfoIdentityProved": false,
+    "actualToSkillMethodInfoContentsProved": false,
+    "wholeMethodPopulationProved": false,
+    "descriptorLifetimeProved": false,
+    "usageInitializationToDefinitionCacheProved": false
+  },
+  "rows": [
+    {
+      "id": "pointerFallback",
+      "evidence": "conditional"
+    },
+    {
+      "id": "metadataFieldCopies",
+      "evidence": "conditional"
+    },
+    {
+      "id": "flags54Update",
+      "evidence": "conditional"
+    },
+    {
+      "id": "usageTag3DefinitionRequest",
+      "evidence": "conditional"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Complete selected plain materializer byte partition, CFG and conditional normal frames. Selected pointer fallback and flags54 update local branches, generic-container leaf register preservation, metadata record field load/store instructions and canonical descriptor ordinal publication. Selected tag3 usage record and encoded definition-cache request programs are authenticated separately."
+    ],
+    "conditional": [
+      "RBX is current descriptor plus bias, RBP is the current selected metadata record; independently readable/writable valid nonoverlapping source, descriptor, stack locals and global tables. Normal opaque helper returns and unchanged saved metadata stack locals are required across parameter-array work. Every heap read, including final flags54 memory AND input and primary pointer fallback read, is independent. Materializer recursive call termination and all helper memory effects remain premises."
+    ],
+    "unresolved": [
+      "Actual runtime MethodInfo pointer identity/contents, usage initializer switch-to-cache publication linkage, live class/metadata/cache coherence, native override selection, initialized descriptor lifetime, whole method population and live Center transition selection remain unproved. Static _ToSkill flags and count are not the contents of an observed pointer."
+    ]
+  },
+  "selectedMetadataRecord": {
+    "methodIndex": 49685,
+    "declaringTypeDefinition": 8392,
+    "classMethodStart": 49675,
+    "ordinal": 10,
+    "flags": 129,
+    "parameterCount": 0,
+    "genericContainerIndex": -1,
+    "token": 100712982,
+    "rawRecordHex": "c97f1100c8200000b7900100ffffffffffffffff16c2000681000000ffff0000"
+  }
+}

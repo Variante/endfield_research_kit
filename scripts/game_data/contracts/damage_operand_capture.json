@@ -1,0 +1,21 @@
+{
+  "schema": "endfield.damage-operand-capture-recipe.v1",
+  "status": "reviewed",
+  "baseRecipe": "damage_runtime_branch_capture.json",
+  "nativeContract": "damage_operand_capture_native.json",
+  "processHook": "damage.Action.ProcessDamage",
+  "packHook": "damage.Pack.GetFinalAttackValue",
+  "observerProviders": ["mission-trace"],
+  "coverageGaps": [
+    "An entry observation exists only when the original execution reaches its call; skipped calls never supply default operands.",
+    "Health data and stored HealthType are predicate-entry snapshots. The predicate return observes the actual bypass decision, not the getter's internal dispatch or its exact enum operand.",
+    "Only the first of the authenticated post-factor calls in a complete normal Process invocation preserves the factor carrier. Later entries are not independent factor witnesses; exceptional and nonlocal-resume paths are excluded.",
+    "A successful preparation or binary build is not a live capture. The first retained session must pass transport, context, invocation and exact Pack association checks.",
+    "Skill ownership, RNG, animation recovery and final server authority remain separate from these local damage operands."
+  ],
+  "evidenceBoundary": {
+    "direct": "Live defender/data binding at the original health predicate entry, actual normal health/UsesRaw predicate returns and the preserved original factor carrier at the first authenticated post-arithmetic call entry.",
+    "conditional": "Validated selected native build and observation backend; complete same-thread Process enclosure, exact local Pack address and observed stage associations.",
+    "unresolved": "No historical values are reconstructed by preparation; missing sites, lost rows, conflicting contexts and unbound calls remain unknown."
+  }
+}

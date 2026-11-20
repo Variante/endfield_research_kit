@@ -1,0 +1,1383 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v17",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "name": "input.RealTriggerCallback",
+      "type": "Beyond.Input.InputBindingInfo",
+      "method": "_RealTriggerCallback",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "isRepeat",
+          "type": "bool"
+        },
+        {
+          "name": "allowFailureDelay",
+          "type": "bool"
+        }
+      ],
+      "fields": [
+        {
+          "label": "bindingId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Input.InputBindingInfo::<id>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "playerActionId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Input.InputBindingInfo::playerActionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "isRepeat",
+          "argument": "isRepeat",
+          "type": "bool"
+        },
+        {
+          "label": "allowFailureDelay",
+          "argument": "allowFailureDelay",
+          "type": "bool"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "input",
+      "semanticRole": "Actual input action callback entry and Boolean result; not physical held state",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.PlayerController+PlayerCommandController",
+      "method": "Execute",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "name": "battle.Command.Execute",
+      "fields": [
+        {
+          "label": "cmdType",
+          "argument": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+          "role": "argument-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "command",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem",
+      "method": "OnExecutePlayerCommand",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "name": "battle.Command.OnExecute",
+      "fields": [
+        {
+          "label": "cmdType",
+          "argument": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+          "role": "argument-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "command",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "method": "RefreshNextSkillRequest",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "name": "battle.Combo.Refresh",
+      "fields": [
+        {
+          "label": "requestSnapshot",
+          "argument": "this",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+          "readMode": "rawBytes",
+          "byteCount": 128,
+          "sourceWitness": "battle-input",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_nextSkillRequest",
+              "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>"
+            }
+          ]
+        },
+        {
+          "label": "cmdType",
+          "argument": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+          "role": "argument-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "cache-refresh",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "method": "ClearSkillRequest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Combo.Clear",
+      "fields": [
+        {
+          "label": "requestSnapshot",
+          "argument": "this",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+          "readMode": "rawBytes",
+          "byteCount": 128,
+          "sourceWitness": "battle-input",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_nextSkillRequest",
+              "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "cache-clear",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "method": "get_hasNextSkillRequest",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Combo.HasRequest",
+      "fields": [],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "method": "get_nextSkillId",
+      "returnType": "string",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Combo.NextSkillId",
+      "fields": [],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "method": "_AllowNextSkill",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        }
+      ],
+      "name": "battle.Combo.AllowNext",
+      "fields": [
+        {
+          "label": "requestSnapshot",
+          "argument": "this",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+          "readMode": "rawBytes",
+          "byteCount": 128,
+          "sourceWitness": "battle-input",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_nextSkillRequest",
+              "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "skillId",
+          "type": "string",
+          "role": "argument-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "CanCastSkill",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipInterruptCheck",
+          "type": "bool"
+        }
+      ],
+      "name": "battle.AbilitySystem.CanCastById",
+      "fields": [
+        {
+          "label": "skillId",
+          "argument": "skillId",
+          "type": "string",
+          "role": "argument-observation"
+        },
+        {
+          "label": "skipAngle",
+          "argument": "skipAngle",
+          "type": "bool",
+          "role": "argument-observation"
+        },
+        {
+          "label": "skipDistance",
+          "argument": "skipDistance",
+          "type": "bool",
+          "role": "argument-observation"
+        },
+        {
+          "label": "skipInterruptCheck",
+          "argument": "skipInterruptCheck",
+          "type": "bool",
+          "role": "argument-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "CheckCost",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Skill.CheckCost",
+      "fields": [
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "skillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "CheckTag",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Skill.CheckTag",
+      "fields": [
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "skillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "CheckState",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Skill.CheckState",
+      "fields": [
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "skillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "predicate",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "Init",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Skill.Init",
+      "fields": [
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "skillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "skill-init",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "Release",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Skill.Release",
+      "fields": [
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "skillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "skillId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "skill-release",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Ability",
+      "method": "Init",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        },
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.ActionGroupData"
+        },
+        {
+          "name": "input",
+          "type": "Beyond.ActionBlackboard"
+        }
+      ],
+      "name": "battle.Ability.Init",
+      "fields": [
+        {
+          "label": "abilityIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Ability",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "abilityInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillCastId",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::skillCastId",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<sourceSkill>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        },
+        {
+          "label": "castOriginSkillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::castOriginSkill",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        },
+        {
+          "label": "skillIdentityFromArgument",
+          "argument": "skill",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "ability-init",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Ability",
+      "method": "BeforeCast",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "name": "battle.Ability.BeforeCast",
+      "fields": [
+        {
+          "label": "abilityIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Ability",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "abilityInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillCastId",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::skillCastId",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<sourceSkill>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        },
+        {
+          "label": "castOriginSkillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::castOriginSkill",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "ability-beforecast",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Ability",
+      "method": "Release",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "battle.Ability.Release",
+      "fields": [
+        {
+          "label": "abilityIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Ability",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "abilityInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillCastId",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::skillCastId",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "skillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::<sourceSkill>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        },
+        {
+          "label": "castOriginSkillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Ability::castOriginSkill",
+              "type": "Beyond.Gameplay.Core.Skill"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "ability-release",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "AssignData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData"
+        },
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "name": "battle.Action.AssignData",
+      "fields": [
+        {
+          "label": "actionIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "environmentIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment"
+            }
+          ]
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "action-bind",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "ReAssign",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "name": "battle.Action.ReAssign",
+      "fields": [
+        {
+          "label": "actionIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "environmentIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment"
+            }
+          ]
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "action-rebind",
+      "semanticRole": "Input, request-cache, predicate and skill-instance observations",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "name": "damage.Action.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "actionIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.DamageAction",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "environmentIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      },
+      "projectionRole": "damage-action"
+    },
+    {
+      "name": "damage.Action.ProcessDamage",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "effectSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "targetWrapper",
+          "type": "Beyond.Gameplay.Core.BattleTargetWrapper"
+        },
+        {
+          "name": "isExtraTarget",
+          "type": "bool"
+        },
+        {
+          "name": "transferredSource",
+          "type": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>"
+        },
+        {
+          "name": "hitEnvCalcResult",
+          "type": "Beyond.Gameplay.Core.CalcResult"
+        }
+      ],
+      "fields": [
+        {
+          "label": "effectSourceServerId",
+          "argument": "effectSource",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceEntityName",
+          "argument": "effectSource",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceAttributesIdentity",
+          "argument": "effectSource",
+          "type": "Beyond.Gameplay.Core.Attributes",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceAttributesInstanceUid",
+          "argument": "effectSource",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "isExtraTarget",
+          "argument": "isExtraTarget",
+          "type": "bool",
+          "role": "branch-selection"
+        },
+        {
+          "label": "targetWrapperType",
+          "argument": "targetWrapper",
+          "type": "Beyond.Gameplay.Core.BattleTargetType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 224
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BattleTargetWrapper::type",
+              "type": "Beyond.Gameplay.Core.BattleTargetType"
+            }
+          ],
+          "role": "branch-selection"
+        },
+        {
+          "label": "actionIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.DamageAction",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "environmentIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Damage root extra-target selection and effect-source identity",
+      "evidenceBoundary": {
+        "direct": "Actual incoming isExtraTarget and stored target-wrapper type; paired root nests existing pack/modifier observations.",
+        "conditional": "Selected physical ABI and complete synchronous pairs; no callback invocation or object getter.",
+        "unresolved": "Boundary selector samples do not establish the arithmetic selection or factor. EnemyPart ratio continuity and individual pack/callback joins remain separate."
+      },
+      "projectionRole": "damage-process"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "CanCastSkill",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        }
+      ],
+      "name": "battle.AbilitySystem.CanCastByView",
+      "projectionRole": "predicate",
+      "observationMode": "paired",
+      "semanticRole": "Input-view admission result",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      },
+      "fields": [
+        {
+          "label": "inputViewSnapshot",
+          "argument": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView",
+          "readMode": "rawBytes",
+          "byteCount": 88,
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 88
+          }
+        },
+        {
+          "label": "skipAngle",
+          "argument": "skipAngle",
+          "type": "bool",
+          "role": "argument-observation"
+        },
+        {
+          "label": "skipDistance",
+          "argument": "skipDistance",
+          "type": "bool",
+          "role": "argument-observation"
+        }
+      ]
+    },
+    {
+      "name": "battle.Pending.TryCast",
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "method": "_TryCastSkill",
+      "returnType": "void",
+      "parameters": [],
+      "static": false,
+      "fields": [
+        {
+          "label": "pendingIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            }
+          ]
+        },
+        {
+          "label": "successCast",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "pendingCasting",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData::casting",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "pendingInputSnapshot",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.SkillCastInputData",
+          "readMode": "rawBytes",
+          "byteCount": 88,
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData::inputData",
+              "type": "Beyond.Gameplay.Core.SkillCastInputData",
+              "mode": "inline"
+            }
+          ]
+        }
+      ],
+      "projectionRole": "pending-dispatch",
+      "observationMode": "paired",
+      "semanticRole": "Pending record before and after ordinary behavior dispatch; void is not acceptance",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "name": "battle.Pending.OnEnter",
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "method": "OnEnter",
+      "returnType": "void",
+      "parameters": [],
+      "static": false,
+      "fields": [
+        {
+          "label": "pendingIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            }
+          ]
+        },
+        {
+          "label": "successCast",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "pendingCasting",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData::casting",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "pendingInputSnapshot",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.SkillCastInputData",
+          "readMode": "rawBytes",
+          "byteCount": 88,
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData::inputData",
+              "type": "Beyond.Gameplay.Core.SkillCastInputData",
+              "mode": "inline"
+            }
+          ]
+        }
+      ],
+      "projectionRole": "pending-enter",
+      "observationMode": "paired",
+      "semanticRole": "Pending record before and after ordinary behavior dispatch; void is not acceptance",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "name": "input.StartCastNormalAttack",
+      "type": "Beyond.Gameplay.Core.PlayerController",
+      "method": "StartCastNormalAttack",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "castingNormalAttack",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "attack-hold-start",
+      "semanticRole": "Game-local normal-attack held flag before/after original input method; not physical keyboard state",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    },
+    {
+      "name": "input.EndCastNormalAttack",
+      "type": "Beyond.Gameplay.Core.PlayerController",
+      "method": "EndCastNormalAttack",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "castingNormalAttack",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "projectionRole": "attack-hold-end",
+      "semanticRole": "Game-local normal-attack held flag before/after original input method; not physical keyboard state",
+      "evidenceBoundary": {
+        "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+        "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "TryCastSkill exceeds eight physical GP slots and is not hooked. No entry-context/XMM observation or getter callback is used.",
+    "Raw instance pointers and per-instance IDs are conditional same-lifetime observations, not globally unique cast identifiers. Init is not a cast.",
+    "Input callback observation does not prove OS key-held state. Scoped predicates are visible only under an admitted paired ancestor.",
+    "No server acknowledgement, exhaustive reject taxonomy, asynchronous causal join or numerical damage operand admission.",
+    "Nullable request snapshots require selected fresh cache-layout proof; Refresh return is not cast acceptance.",
+    "Skill.DoCast is not hooked: its Nullable options need an indirect ABI witness and the selected TryCastSkill path initializes casting inline rather than directly calling DoCast. Ability.BeforeCast and pending-dispatch are narrower observed boundaries."
+  ],
+  "evidenceBoundary": {
+    "conditional": "Ordinary paired selected native call observations and bounded stored fields only; coherent live objects, ordinary original ABI and complete healthy scoped pairs are required.",
+    "unresolved": "Runtime live selection, cache payload, actual cast dispatch and end-to-end causal identity require recorded observations and separate analysis."
+  }
+}

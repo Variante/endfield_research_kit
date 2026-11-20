@@ -1,0 +1,322 @@
+{
+  "schema": "endfield.ifix-runtime-publication-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "evidenceBoundary": {
+    "exact": "Authenticated bounded bytes, physical RIP/relative operands, static publication instruction order and stored metadata row/slot arithmetic.",
+    "conditional": "Normal completion, compatible valid storage and ordinary callee/nonvolatile preservation; limited-writer monotonic page inference only under every listed premise.",
+    "unresolved": "Live selector/factor, runtime root/page identity and lifetime, runtime metadata map selection, complete writer inventory and continuous state."
+  },
+  "rootCells": {
+    "writer": "0x1171f230",
+    "reader": "0x1171f250"
+  },
+  "layout": {
+    "pointerBytes": 8,
+    "pageBits": 12,
+    "entryBytes": 16,
+    "receiverDelta": 8
+  },
+  "windows": [
+    {
+      "name": "registration",
+      "rva": "0xdc18f",
+      "byteCount": 57,
+      "sha256": "ccc0a3135e4cdccae3b743db3cb728d9ec7e1345a45ec15de6c0377458db69bb"
+    },
+    {
+      "name": "initializer",
+      "rva": "0xdc1f8",
+      "byteCount": 35,
+      "sha256": "ecc9d107c54fe2fb77942c3d83fa92aea675ac3cd58af18123f0ab8ab0db8c60"
+    },
+    {
+      "name": "wrappers",
+      "rva": "0x67f810",
+      "byteCount": 62,
+      "sha256": "57e85bb26d81cae04e0942d60e0db79cbd93b2bb5462d5648ca1ff61ef226af3"
+    },
+    {
+      "name": "set",
+      "rva": "0x11b23b4",
+      "byteCount": 204,
+      "sha256": "e317835828363890e19e7d3f0d885add41123d6f6a6868013ec80fed9b857d61"
+    },
+    {
+      "name": "clear",
+      "rva": "0x11b21ac",
+      "byteCount": 108,
+      "sha256": "ab98b56456dcdfaf1387e2de4cd23d527c456a9894055b94ce36903b34716685"
+    },
+    {
+      "name": "clearAll",
+      "rva": "0x11b210c",
+      "byteCount": 160,
+      "sha256": "4c368a63044714abc343cec1653c5eeafa33f644975575c9996626c1609b3e88"
+    },
+    {
+      "name": "factorGetter",
+      "rva": "0x5354e50",
+      "byteCount": 40,
+      "sha256": "419070094d396faf27dd79db5e63cf0917ea14dc0cf5646cd5965711b44baaa8"
+    },
+    {
+      "name": "factorCold",
+      "rva": "0x74a9182",
+      "byteCount": 37,
+      "sha256": "65c27321972394f5566dd9e9965f7ae24b3602510793f093f9a1495c4871a39d"
+    },
+    {
+      "name": "healthGetter",
+      "rva": "0x53556f0",
+      "byteCount": 47,
+      "sha256": "14f06974deb23546d797abae515b0695beadcaaf6211e865a7f808dfbb5aa704"
+    },
+    {
+      "name": "healthCold",
+      "rva": "0x74a93f4",
+      "byteCount": 37,
+      "sha256": "59345a92d8794e892b4739d77acda0b7c2b7aa8cd3f3e4e635e6727a657e773e"
+    },
+    {
+      "name": "usesRawGetter",
+      "rva": "0x295d380",
+      "byteCount": 58,
+      "sha256": "b791df462be32f2ee8af78adb57352f4088e306a9ce3425ece6d0c247322b944"
+    },
+    {
+      "name": "resetReader",
+      "rva": "0x11b24a4",
+      "byteCount": 11,
+      "sha256": "96193f248f8ed76e96586c231e313847388cf32375f4d06321fe3663ba2d4a52"
+    },
+    {
+      "name": "resetWriter",
+      "rva": "0x11b24f4",
+      "byteCount": 11,
+      "sha256": "07a9b7a9407fa83c8923fc921caa01177f7bbb8e856a942dce4ec5f96a8a142b"
+    }
+  ],
+  "functions": [
+    {
+      "name": "ClearAll",
+      "rva": "0x11b210c",
+      "endRva": "0x11b21ac",
+      "unwindRva": "0xfed8988"
+    },
+    {
+      "name": "Clear",
+      "rva": "0x11b21ac",
+      "endRva": "0x11b2218",
+      "unwindRva": "0xfed8798"
+    },
+    {
+      "name": "Set",
+      "rva": "0x11b23b4",
+      "endRva": "0x11b2480",
+      "unwindRva": "0x105b3c54"
+    }
+  ],
+  "registration": {
+    "callTargetRva": "0x32150",
+    "candidates": [
+      {
+        "name": "Unity.IL2CPP.Runtime.HotPatch::SetPatch",
+        "rva": "0xdc18f",
+        "handlerRva": "0x67f830",
+        "nameRva": "0xda91300",
+        "jumpRva": "0x67f846",
+        "writerRva": "0x11b23b4"
+      },
+      {
+        "name": "Unity.IL2CPP.Runtime.HotPatch::ClearPatch",
+        "rva": "0xdc1a2",
+        "handlerRva": "0x67f820",
+        "nameRva": "0xda912d0",
+        "jumpRva": "0x67f829",
+        "writerRva": "0x11b21ac"
+      },
+      {
+        "name": "Unity.IL2CPP.Runtime.HotPatch::ClearAllPatches",
+        "rva": "0xdc1b5",
+        "handlerRva": "0x67f810",
+        "nameRva": "0xda912a0",
+        "jumpRva": "0x67f810",
+        "writerRva": "0x11b210c"
+      }
+    ]
+  },
+  "initialization": {
+    "allocatorLoadRva": "0xdc1f8",
+    "allocatorCellRva": "0x1137e7f0",
+    "argumentRva": "0xdc1ff",
+    "callRva": "0xdc204",
+    "writerStoreRva": "0xdc206",
+    "readerStoreRva": "0xdc20d"
+  },
+  "writerRootLoads": [
+    {
+      "rva": "0x11b2411",
+      "prefix": "488b05",
+      "root": "writer"
+    },
+    {
+      "rva": "0x11b2439",
+      "prefix": "488b05",
+      "root": "writer"
+    },
+    {
+      "rva": "0x11b21db",
+      "prefix": "488b0d",
+      "root": "writer"
+    },
+    {
+      "rva": "0x11b2134",
+      "prefix": "488b0d",
+      "root": "writer"
+    },
+    {
+      "rva": "0x11b216e",
+      "prefix": "488b0d",
+      "root": "writer"
+    }
+  ],
+  "resetStores": [
+    {
+      "rva": "0x11b24a4",
+      "root": "reader"
+    },
+    {
+      "rva": "0x11b24f4",
+      "root": "writer"
+    }
+  ],
+  "publication": {
+    "set": {
+      "inputCopiesRva": "0x11b23c6",
+      "zeroRva": "0x11b23cf",
+      "pageIndexRva": "0x11b240c",
+      "slotIndexRva": "0x11b2444",
+      "allocateArgumentsRva": "0x11b2428",
+      "allocateCallRva": "0x11b2430",
+      "allocateResultRva": "0x11b2432",
+      "pageFenceRva": "0x11b2435",
+      "pageStoreRva": "0x11b2440",
+      "pairStoresRva": "0x11b244e"
+    },
+    "clear": {
+      "zeroRva": "0x11b21ec",
+      "pageIndexRva": "0x11b21e2",
+      "slotIndexRva": "0x11b21f3",
+      "pairStoresRva": "0x11b21fb"
+    },
+    "clearAll": {
+      "zeroRva": "0x11b2127",
+      "countRva": "0x11b212a",
+      "firstLoopRva": "0x11b2145",
+      "fenceRva": "0x11b215f",
+      "countReloadRva": "0x11b2164",
+      "secondLoopRva": "0x11b217f",
+      "pageCountCellRva": "0x1171f240"
+    }
+  },
+  "methods": [
+    {
+      "key": "factor",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "get_defenderPoiseFactor",
+      "rva": "0x5354e50",
+      "return": "double",
+      "static": false,
+      "parameters": [],
+      "rootLoadRva": "0x5354e54",
+      "tableLoadRva": "0x5354e5e",
+      "tablePrefix": "488b48",
+      "tableOffset": 80,
+      "functionLoadRva": "0x74a9182",
+      "functionPrefix": "488b81",
+      "functionOffset": 5600,
+      "receiverLoadRva": "0x74a9192",
+      "receiverPrefix": "488b89",
+      "receiverOffset": 5608
+    },
+    {
+      "key": "health",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_healthType",
+      "rva": "0x53556f0",
+      "return": "Beyond.Gameplay.Core.HealthType",
+      "static": false,
+      "parameters": [],
+      "rootLoadRva": "0x53556f4",
+      "tableLoadRva": "0x53556fb",
+      "tablePrefix": "4c8b48",
+      "tableOffset": 72,
+      "functionLoadRva": "0x74a93f4",
+      "functionPrefix": "498b81",
+      "functionOffset": 20656,
+      "receiverLoadRva": "0x74a940a",
+      "receiverPrefix": "498b89",
+      "receiverOffset": 20664
+    },
+    {
+      "key": "usesRaw",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "UsesRawDamageValue",
+      "rva": "0x295d380",
+      "return": "bool",
+      "static": true,
+      "parameters": [
+        "Beyond.GEnums.DamageType"
+      ],
+      "rootLoadRva": "0x295d380",
+      "tableLoadRva": "0x295d387",
+      "tablePrefix": "4c8b48",
+      "tableOffset": 80,
+      "functionLoadRva": "0x295d390",
+      "functionPrefix": "498b81",
+      "functionOffset": 2032,
+      "receiverLoadRva": "0x295d3a1",
+      "receiverPrefix": "498b89",
+      "receiverOffset": 2040
+    }
+  ],
+  "storedMap": {
+    "headerPairOffset": 264,
+    "expectedHeaderPair": [
+      73796140,
+      628424
+    ],
+    "rowBytes": 8,
+    "maxRows": 1000000,
+    "runtimeHeaderBaseBindingProved": false
+  },
+  "facts": {
+    "registrationTier": "registration candidates: exact LEA(name)/LEA(handler)/shared-call pattern, not a recovered registration-map semantic proof",
+    "sharedInitialization": "One normal indirect allocation-call candidate result RAX is stored consecutively into distinct writer/reader root cells without an intervening RAX definition. This is static initialization, not perpetual aliasing.",
+    "set": "Raw incoming R8(saved R14) is written to pair+8; LOCK OR DWORD[RSP],EBX(0); raw incoming RDX(saved RSI) to pair+0. Null-page path publishes allocator result after a prior fence; no allocator result NULL check is present.",
+    "clear": "Zero pair+0, LOCK OR DWORD[RSP],ECX(0), then zero pair+8.",
+    "clearAll": "First pass clears pair+0 for 4096 entries per nonnull page, then one LOCK OR DWORD[RSP],R9D(0). Reload page count/root; second pass clears pair+8. No second trailing fence is claimed.",
+    "reset": "Separate bounded zero stores exist for reader root and writer root. Their execution, lifetime meaning and complete reset inventory are not established.",
+    "slotMap": "Unique stored <methodDefinitionIndex,patchIndex> rows match named getter declarations and the getter table/slot arithmetic. Runtime header/base identity and map selection remain unresolved.",
+    "atomicity": "No pair-atomic publication, mutex identity, no-concurrency theorem or writer completeness follows from LOCK OR barriers."
+  },
+  "conditionalNullPageInference": {
+    "premises": [
+      "Only the authenticated raw Set/Clear/ClearAll publication sequences mutate the relevant page-array cell in the interval; no reset or other writer executes.",
+      "Writer and reader roots still denote the same live stable page-array storage, with no destroy/recreate ABA or pointer lifetime change.",
+      "All opaque callees preserve the relevant root/page-array identity except the reviewed Set page publication; no hidden helper mutation occurs.",
+      "Set allocation completes normally and produces nonnull valid page storage; inputs, counters, frame and ordinary nonvolatile registers remain valid.",
+      "Both boundary observations refer to the same root and same page-array cell, with that page cell null at both endpoints."
+    ],
+    "conclusion": "Under all premises, no successful nonnull Set page publication to that cell can occur between endpoints: Set only changes null to nonnull, while the authenticated Clear/ClearAll raw stores zero entries without clearing page pointers.",
+    "runtimeContinuityProved": false
+  },
+  "runtimeSelector": null,
+  "runtimeFactor": null,
+  "runtimeContinuityProved": false,
+  "allWritersEnumerated": false
+}

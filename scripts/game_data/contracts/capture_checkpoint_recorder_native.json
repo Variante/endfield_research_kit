@@ -1,0 +1,1069 @@
+{
+  "schema": "endfield.capture-checkpoint-recorder-native-contract.v1",
+  "status": "reviewed",
+  "inputs": {
+    "objectSha256": "99ca70624c7e4cdeeb5b785cadf24b82def2924ef7cc094cb290c9c66357bf50",
+    "producerDllSha256": "666c5d5443ffe4356dc589d2595e0ec77d59f81d0803f3bce85773840eaa478b",
+    "crtArchiveSha256": "e4f8daf356d63592ff6d6f7ad90c8c9da4c1230273ad113a9a2b56afd6bfcb04"
+  },
+  "functions": {
+    "ctor": {
+      "symbol": "??0Recorder@mission_trace@endfield_capture@@QEAA@XZ",
+      "rva": 626032,
+      "bytes": 309,
+      "program": [
+        {
+          "rva": 626032,
+          "hex": "48895c2408",
+          "review": "mov qword ptr [rsp + 8], rbx"
+        },
+        {
+          "rva": 626037,
+          "hex": "48896c2410",
+          "review": "mov qword ptr [rsp + 0x10], rbp"
+        },
+        {
+          "rva": 626042,
+          "hex": "4889742418",
+          "review": "mov qword ptr [rsp + 0x18], rsi"
+        },
+        {
+          "rva": 626047,
+          "hex": "48897c2420",
+          "review": "mov qword ptr [rsp + 0x20], rdi"
+        },
+        {
+          "rva": 626052,
+          "hex": "4156",
+          "review": "push r14"
+        },
+        {
+          "rva": 626054,
+          "hex": "4883ec20",
+          "review": "sub rsp, 0x20"
+        },
+        {
+          "rva": 626058,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 626060,
+          "hex": "4c8bf1",
+          "review": "mov r14, rcx"
+        },
+        {
+          "rva": 626063,
+          "hex": "488901",
+          "review": "mov qword ptr [rcx], rax"
+        },
+        {
+          "rva": 626066,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 626068,
+          "hex": "48894108",
+          "review": "mov qword ptr [rcx + 8], rax"
+        },
+        {
+          "rva": 626072,
+          "hex": "41b800030000",
+          "review": "mov r8d, 0x300"
+        },
+        {
+          "rva": 626078,
+          "hex": "48894110",
+          "review": "mov qword ptr [rcx + 0x10], rax"
+        },
+        {
+          "rva": 626082,
+          "hex": "48894118",
+          "review": "mov qword ptr [rcx + 0x18], rax"
+        },
+        {
+          "rva": 626086,
+          "hex": "48894120",
+          "review": "mov qword ptr [rcx + 0x20], rax"
+        },
+        {
+          "rva": 626090,
+          "hex": "48894128",
+          "review": "mov qword ptr [rcx + 0x28], rax"
+        },
+        {
+          "rva": 626094,
+          "hex": "48894130",
+          "review": "mov qword ptr [rcx + 0x30], rax"
+        },
+        {
+          "rva": 626098,
+          "hex": "48894138",
+          "review": "mov qword ptr [rcx + 0x38], rax"
+        },
+        {
+          "rva": 626102,
+          "hex": "48894140",
+          "review": "mov qword ptr [rcx + 0x40], rax"
+        },
+        {
+          "rva": 626106,
+          "hex": "4883c148",
+          "review": "add rcx, 0x48"
+        },
+        {
+          "rva": 626110,
+          "hex": "e8edf84900",
+          "review": "call 0x5386b0"
+        },
+        {
+          "rva": 626115,
+          "hex": "498db648030000",
+          "review": "lea rsi, [r14 + 0x348]"
+        },
+        {
+          "rva": 626122,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 626124,
+          "hex": "488bce",
+          "review": "mov rcx, rsi"
+        },
+        {
+          "rva": 626127,
+          "hex": "41b800000608",
+          "review": "mov r8d, 0x8060000"
+        },
+        {
+          "rva": 626133,
+          "hex": "e8d6f84900",
+          "review": "call 0x5386b0"
+        },
+        {
+          "rva": 626138,
+          "hex": "33ff",
+          "review": "xor edi, edi"
+        },
+        {
+          "rva": 626140,
+          "hex": "488d9ea2000000",
+          "review": "lea rbx, [rsi + 0xa2]"
+        },
+        {
+          "rva": 626147,
+          "hex": "bd00400000",
+          "review": "mov ebp, 0x4000"
+        },
+        {
+          "rva": 626152,
+          "hex": "0f1f840000000000",
+          "review": "nop dword ptr [rax + rax]"
+        },
+        {
+          "rva": 626160,
+          "hex": "0f57c0",
+          "review": "xorps xmm0, xmm0"
+        },
+        {
+          "rva": 626163,
+          "hex": "488d4bf6",
+          "review": "lea rcx, [rbx - 0xa]"
+        },
+        {
+          "rva": 626167,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 626169,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 626171,
+          "hex": "4889835effffff",
+          "review": "mov qword ptr [rbx - 0xa2], rax"
+        },
+        {
+          "rva": 626178,
+          "hex": "41b8801f0000",
+          "review": "mov r8d, 0x1f80"
+        },
+        {
+          "rva": 626184,
+          "hex": "4889bb66ffffff",
+          "review": "mov qword ptr [rbx - 0x9a], rdi"
+        },
+        {
+          "rva": 626191,
+          "hex": "4889bb6effffff",
+          "review": "mov qword ptr [rbx - 0x92], rdi"
+        },
+        {
+          "rva": 626198,
+          "hex": "4889bb76ffffff",
+          "review": "mov qword ptr [rbx - 0x8a], rdi"
+        },
+        {
+          "rva": 626205,
+          "hex": "4889bb7effffff",
+          "review": "mov qword ptr [rbx - 0x82], rdi"
+        },
+        {
+          "rva": 626212,
+          "hex": "48897b86",
+          "review": "mov qword ptr [rbx - 0x7a], rdi"
+        },
+        {
+          "rva": 626216,
+          "hex": "48897b8e",
+          "review": "mov qword ptr [rbx - 0x72], rdi"
+        },
+        {
+          "rva": 626220,
+          "hex": "48897b96",
+          "review": "mov qword ptr [rbx - 0x6a], rdi"
+        },
+        {
+          "rva": 626224,
+          "hex": "48897b9e",
+          "review": "mov qword ptr [rbx - 0x62], rdi"
+        },
+        {
+          "rva": 626228,
+          "hex": "0f1143a6",
+          "review": "movups xmmword ptr [rbx - 0x5a], xmm0"
+        },
+        {
+          "rva": 626232,
+          "hex": "0f1143b6",
+          "review": "movups xmmword ptr [rbx - 0x4a], xmm0"
+        },
+        {
+          "rva": 626236,
+          "hex": "0f1143c6",
+          "review": "movups xmmword ptr [rbx - 0x3a], xmm0"
+        },
+        {
+          "rva": 626240,
+          "hex": "0f1143d6",
+          "review": "movups xmmword ptr [rbx - 0x2a], xmm0"
+        },
+        {
+          "rva": 626244,
+          "hex": "48897be6",
+          "review": "mov qword ptr [rbx - 0x1a], rdi"
+        },
+        {
+          "rva": 626248,
+          "hex": "c743eeff000000",
+          "review": "mov dword ptr [rbx - 0x12], 0xff"
+        },
+        {
+          "rva": 626255,
+          "hex": "e85cf84900",
+          "review": "call 0x5386b0"
+        },
+        {
+          "rva": 626260,
+          "hex": "488d9b18200000",
+          "review": "lea rbx, [rbx + 0x2018]"
+        },
+        {
+          "rva": 626267,
+          "hex": "4883ed01",
+          "review": "sub rbp, 1"
+        },
+        {
+          "rva": 626271,
+          "hex": "758f",
+          "review": "jne 0x98df0"
+        },
+        {
+          "rva": 626273,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 626275,
+          "hex": "49898680030608",
+          "review": "mov qword ptr [r14 + 0x8060380], rax"
+        },
+        {
+          "rva": 626282,
+          "hex": "4989bec0030608",
+          "review": "mov qword ptr [r14 + 0x80603c0], rdi"
+        },
+        {
+          "rva": 626289,
+          "hex": "48893e",
+          "review": "mov qword ptr [rsi], rdi"
+        },
+        {
+          "rva": 626292,
+          "hex": "488db618200000",
+          "review": "lea rsi, [rsi + 0x2018]"
+        },
+        {
+          "rva": 626299,
+          "hex": "48ffc7",
+          "review": "inc rdi"
+        },
+        {
+          "rva": 626302,
+          "hex": "4881ff00400000",
+          "review": "cmp rdi, 0x4000"
+        },
+        {
+          "rva": 626309,
+          "hex": "72ea",
+          "review": "jb 0x98e71"
+        },
+        {
+          "rva": 626311,
+          "hex": "488b5c2430",
+          "review": "mov rbx, qword ptr [rsp + 0x30]"
+        },
+        {
+          "rva": 626316,
+          "hex": "498bc6",
+          "review": "mov rax, r14"
+        },
+        {
+          "rva": 626319,
+          "hex": "488b6c2438",
+          "review": "mov rbp, qword ptr [rsp + 0x38]"
+        },
+        {
+          "rva": 626324,
+          "hex": "488b742440",
+          "review": "mov rsi, qword ptr [rsp + 0x40]"
+        },
+        {
+          "rva": 626329,
+          "hex": "488b7c2448",
+          "review": "mov rdi, qword ptr [rsp + 0x48]"
+        },
+        {
+          "rva": 626334,
+          "hex": "4883c420",
+          "review": "add rsp, 0x20"
+        },
+        {
+          "rva": 626338,
+          "hex": "415e",
+          "review": "pop r14"
+        },
+        {
+          "rva": 626340,
+          "hex": "c3",
+          "review": "ret "
+        }
+      ]
+    },
+    "push": {
+      "symbol": "?push@Recorder@mission_trace@endfield_capture@@QEAA_NAEBURecord@23@@Z",
+      "rva": 634640,
+      "bytes": 296,
+      "program": [
+        {
+          "rva": 634640,
+          "hex": "48895c2408",
+          "review": "mov qword ptr [rsp + 8], rbx"
+        },
+        {
+          "rva": 634645,
+          "hex": "4889742410",
+          "review": "mov qword ptr [rsp + 0x10], rsi"
+        },
+        {
+          "rva": 634650,
+          "hex": "57",
+          "review": "push rdi"
+        },
+        {
+          "rva": 634651,
+          "hex": "4883ec20",
+          "review": "sub rsp, 0x20"
+        },
+        {
+          "rva": 634655,
+          "hex": "4c8bca",
+          "review": "mov r9, rdx"
+        },
+        {
+          "rva": 634658,
+          "hex": "488bd9",
+          "review": "mov rbx, rcx"
+        },
+        {
+          "rva": 634661,
+          "hex": "f048ff01",
+          "review": "lock inc qword ptr [rcx]"
+        },
+        {
+          "rva": 634665,
+          "hex": "8b8280000000",
+          "review": "mov eax, dword ptr [rdx + 0x80]"
+        },
+        {
+          "rva": 634671,
+          "hex": "83f860",
+          "review": "cmp eax, 0x60"
+        },
+        {
+          "rva": 634674,
+          "hex": "7306",
+          "review": "jae 0x9af3a"
+        },
+        {
+          "rva": 634676,
+          "hex": "f048ff44c148",
+          "review": "lock inc qword ptr [rcx + rax*8 + 0x48]"
+        },
+        {
+          "rva": 634682,
+          "hex": "488d8a90000000",
+          "review": "lea rcx, [rdx + 0x90]"
+        },
+        {
+          "rva": 634689,
+          "hex": "488d91801f0000",
+          "review": "lea rdx, [rcx + 0x1f80]"
+        },
+        {
+          "rva": 634696,
+          "hex": "483bca",
+          "review": "cmp rcx, rdx"
+        },
+        {
+          "rva": 634699,
+          "hex": "7432",
+          "review": "je 0x9af7f"
+        },
+        {
+          "rva": 634701,
+          "hex": "4883c108",
+          "review": "add rcx, 8"
+        },
+        {
+          "rva": 634705,
+          "hex": "803902",
+          "review": "cmp byte ptr [rcx], 2"
+        },
+        {
+          "rva": 634708,
+          "hex": "7505",
+          "review": "jne 0x9af5b"
+        },
+        {
+          "rva": 634710,
+          "hex": "f048ff4318",
+          "review": "lock inc qword ptr [rbx + 0x18]"
+        },
+        {
+          "rva": 634715,
+          "hex": "803903",
+          "review": "cmp byte ptr [rcx], 3"
+        },
+        {
+          "rva": 634718,
+          "hex": "7505",
+          "review": "jne 0x9af65"
+        },
+        {
+          "rva": 634720,
+          "hex": "f048ff4320",
+          "review": "lock inc qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 634725,
+          "hex": "803904",
+          "review": "cmp byte ptr [rcx], 4"
+        },
+        {
+          "rva": 634728,
+          "hex": "7505",
+          "review": "jne 0x9af6f"
+        },
+        {
+          "rva": 634730,
+          "hex": "f048ff4328",
+          "review": "lock inc qword ptr [rbx + 0x28]"
+        },
+        {
+          "rva": 634735,
+          "hex": "4881c150010000",
+          "review": "add rcx, 0x150"
+        },
+        {
+          "rva": 634742,
+          "hex": "488d41f8",
+          "review": "lea rax, [rcx - 8]"
+        },
+        {
+          "rva": 634746,
+          "hex": "483bc2",
+          "review": "cmp rax, rdx"
+        },
+        {
+          "rva": 634749,
+          "hex": "75d2",
+          "review": "jne 0x9af51"
+        },
+        {
+          "rva": 634751,
+          "hex": "488bbb80030608",
+          "review": "mov rdi, qword ptr [rbx + 0x8060380]"
+        },
+        {
+          "rva": 634758,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 634760,
+          "hex": "0f1f840000000000",
+          "review": "nop dword ptr [rax + rax]"
+        },
+        {
+          "rva": 634768,
+          "hex": "488bc7",
+          "review": "mov rax, rdi"
+        },
+        {
+          "rva": 634771,
+          "hex": "25ff3f0000",
+          "review": "and eax, 0x3fff"
+        },
+        {
+          "rva": 634776,
+          "hex": "4869f018200000",
+          "review": "imul rsi, rax, 0x2018"
+        },
+        {
+          "rva": 634783,
+          "hex": "488b841e48030000",
+          "review": "mov rax, qword ptr [rsi + rbx + 0x348]"
+        },
+        {
+          "rva": 634791,
+          "hex": "90",
+          "review": "nop "
+        },
+        {
+          "rva": 634792,
+          "hex": "482bc7",
+          "review": "sub rax, rdi"
+        },
+        {
+          "rva": 634795,
+          "hex": "7517",
+          "review": "jne 0x9afc4"
+        },
+        {
+          "rva": 634797,
+          "hex": "488d4f01",
+          "review": "lea rcx, [rdi + 1]"
+        },
+        {
+          "rva": 634801,
+          "hex": "488bc7",
+          "review": "mov rax, rdi"
+        },
+        {
+          "rva": 634804,
+          "hex": "f0480fb18b80030608",
+          "review": "lock cmpxchg qword ptr [rbx + 0x8060380], rcx"
+        },
+        {
+          "rva": 634813,
+          "hex": "7421",
+          "review": "je 0x9afe0"
+        },
+        {
+          "rva": 634815,
+          "hex": "488bf8",
+          "review": "mov rdi, rax"
+        },
+        {
+          "rva": 634818,
+          "hex": "eb0c",
+          "review": "jmp 0x9afd0"
+        },
+        {
+          "rva": 634820,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 634823,
+          "hex": "7853",
+          "review": "js 0x9b01c"
+        },
+        {
+          "rva": 634825,
+          "hex": "488bbb80030608",
+          "review": "mov rdi, qword ptr [rbx + 0x8060380]"
+        },
+        {
+          "rva": 634832,
+          "hex": "48ffc2",
+          "review": "inc rdx"
+        },
+        {
+          "rva": 634835,
+          "hex": "4883fa10",
+          "review": "cmp rdx, 0x10"
+        },
+        {
+          "rva": 634839,
+          "hex": "72b7",
+          "review": "jb 0x9af90"
+        },
+        {
+          "rva": 634841,
+          "hex": "f048ff4338",
+          "review": "lock inc qword ptr [rbx + 0x38]"
+        },
+        {
+          "rva": 634846,
+          "hex": "eb41",
+          "review": "jmp 0x9b021"
+        },
+        {
+          "rva": 634848,
+          "hex": "488d8b50030000",
+          "review": "lea rcx, [rbx + 0x350]"
+        },
+        {
+          "rva": 634855,
+          "hex": "41b810200000",
+          "review": "mov r8d, 0x2010"
+        },
+        {
+          "rva": 634861,
+          "hex": "4803ce",
+          "review": "add rcx, rsi"
+        },
+        {
+          "rva": 634864,
+          "hex": "498bd1",
+          "review": "mov rdx, r9"
+        },
+        {
+          "rva": 634867,
+          "hex": "e818d04900",
+          "review": "call 0x538010"
+        },
+        {
+          "rva": 634872,
+          "hex": "f048ff4308",
+          "review": "lock inc qword ptr [rbx + 8]"
+        },
+        {
+          "rva": 634877,
+          "hex": "488d4701",
+          "review": "lea rax, [rdi + 1]"
+        },
+        {
+          "rva": 634881,
+          "hex": "90",
+          "review": "nop "
+        },
+        {
+          "rva": 634882,
+          "hex": "4889841e48030000",
+          "review": "mov qword ptr [rsi + rbx + 0x348], rax"
+        },
+        {
+          "rva": 634890,
+          "hex": "b001",
+          "review": "mov al, 1"
+        },
+        {
+          "rva": 634892,
+          "hex": "488b5c2430",
+          "review": "mov rbx, qword ptr [rsp + 0x30]"
+        },
+        {
+          "rva": 634897,
+          "hex": "488b742438",
+          "review": "mov rsi, qword ptr [rsp + 0x38]"
+        },
+        {
+          "rva": 634902,
+          "hex": "4883c420",
+          "review": "add rsp, 0x20"
+        },
+        {
+          "rva": 634906,
+          "hex": "5f",
+          "review": "pop rdi"
+        },
+        {
+          "rva": 634907,
+          "hex": "c3",
+          "review": "ret "
+        },
+        {
+          "rva": 634908,
+          "hex": "f048ff4330",
+          "review": "lock inc qword ptr [rbx + 0x30]"
+        },
+        {
+          "rva": 634913,
+          "hex": "f048ff4310",
+          "review": "lock inc qword ptr [rbx + 0x10]"
+        },
+        {
+          "rva": 634918,
+          "hex": "488b5c2430",
+          "review": "mov rbx, qword ptr [rsp + 0x30]"
+        },
+        {
+          "rva": 634923,
+          "hex": "32c0",
+          "review": "xor al, al"
+        },
+        {
+          "rva": 634925,
+          "hex": "488b742438",
+          "review": "mov rsi, qword ptr [rsp + 0x38]"
+        },
+        {
+          "rva": 634930,
+          "hex": "4883c420",
+          "review": "add rsp, 0x20"
+        },
+        {
+          "rva": 634934,
+          "hex": "5f",
+          "review": "pop rdi"
+        },
+        {
+          "rva": 634935,
+          "hex": "c3",
+          "review": "ret "
+        }
+      ]
+    },
+    "pop": {
+      "symbol": "?pop@Recorder@mission_trace@endfield_capture@@QEAA_NAEAURecord@23@@Z",
+      "rva": 634496,
+      "bytes": 137,
+      "program": [
+        {
+          "rva": 634496,
+          "hex": "48895c2408",
+          "review": "mov qword ptr [rsp + 8], rbx"
+        },
+        {
+          "rva": 634501,
+          "hex": "57",
+          "review": "push rdi"
+        },
+        {
+          "rva": 634502,
+          "hex": "4883ec20",
+          "review": "sub rsp, 0x20"
+        },
+        {
+          "rva": 634506,
+          "hex": "8b81c0030608",
+          "review": "mov eax, dword ptr [rcx + 0x80603c0]"
+        },
+        {
+          "rva": 634512,
+          "hex": "4c8bca",
+          "review": "mov r9, rdx"
+        },
+        {
+          "rva": 634515,
+          "hex": "25ff3f0000",
+          "review": "and eax, 0x3fff"
+        },
+        {
+          "rva": 634520,
+          "hex": "488bd9",
+          "review": "mov rbx, rcx"
+        },
+        {
+          "rva": 634523,
+          "hex": "4869f818200000",
+          "review": "imul rdi, rax, 0x2018"
+        },
+        {
+          "rva": 634530,
+          "hex": "4c8b840f48030000",
+          "review": "mov r8, qword ptr [rdi + rcx + 0x348]"
+        },
+        {
+          "rva": 634538,
+          "hex": "90",
+          "review": "nop "
+        },
+        {
+          "rva": 634539,
+          "hex": "488b81c0030608",
+          "review": "mov rax, qword ptr [rcx + 0x80603c0]"
+        },
+        {
+          "rva": 634546,
+          "hex": "48ffc0",
+          "review": "inc rax"
+        },
+        {
+          "rva": 634549,
+          "hex": "4c3bc0",
+          "review": "cmp r8, rax"
+        },
+        {
+          "rva": 634552,
+          "hex": "740d",
+          "review": "je 0x9aec7"
+        },
+        {
+          "rva": 634554,
+          "hex": "32c0",
+          "review": "xor al, al"
+        },
+        {
+          "rva": 634556,
+          "hex": "488b5c2430",
+          "review": "mov rbx, qword ptr [rsp + 0x30]"
+        },
+        {
+          "rva": 634561,
+          "hex": "4883c420",
+          "review": "add rsp, 0x20"
+        },
+        {
+          "rva": 634565,
+          "hex": "5f",
+          "review": "pop rdi"
+        },
+        {
+          "rva": 634566,
+          "hex": "c3",
+          "review": "ret "
+        },
+        {
+          "rva": 634567,
+          "hex": "488d9150030000",
+          "review": "lea rdx, [rcx + 0x350]"
+        },
+        {
+          "rva": 634574,
+          "hex": "41b810200000",
+          "review": "mov r8d, 0x2010"
+        },
+        {
+          "rva": 634580,
+          "hex": "4803d7",
+          "review": "add rdx, rdi"
+        },
+        {
+          "rva": 634583,
+          "hex": "498bc9",
+          "review": "mov rcx, r9"
+        },
+        {
+          "rva": 634586,
+          "hex": "e831d14900",
+          "review": "call 0x538010"
+        },
+        {
+          "rva": 634591,
+          "hex": "488b83c0030608",
+          "review": "mov rax, qword ptr [rbx + 0x80603c0]"
+        },
+        {
+          "rva": 634598,
+          "hex": "90",
+          "review": "nop "
+        },
+        {
+          "rva": 634599,
+          "hex": "480500400000",
+          "review": "add rax, 0x4000"
+        },
+        {
+          "rva": 634605,
+          "hex": "4889841f48030000",
+          "review": "mov qword ptr [rdi + rbx + 0x348], rax"
+        },
+        {
+          "rva": 634613,
+          "hex": "b001",
+          "review": "mov al, 1"
+        },
+        {
+          "rva": 634615,
+          "hex": "48ff83c0030608",
+          "review": "inc qword ptr [rbx + 0x80603c0]"
+        },
+        {
+          "rva": 634622,
+          "hex": "488b5c2430",
+          "review": "mov rbx, qword ptr [rsp + 0x30]"
+        },
+        {
+          "rva": 634627,
+          "hex": "4883c420",
+          "review": "add rsp, 0x20"
+        },
+        {
+          "rva": 634631,
+          "hex": "5f",
+          "review": "pop rdi"
+        },
+        {
+          "rva": 634632,
+          "hex": "c3",
+          "review": "ret "
+        }
+      ]
+    }
+  },
+  "crt": {
+    "memset": {
+      "memberName": "D:\\a\\_work\\1\\s\\Intermediate\\crt\\vcruntime\\build\\base\\mt\\libvcruntime_mt_kernel32.vcxproj\\objr\\amd64\\memset.obj",
+      "memberOffset": 92584,
+      "memberSha256": "315246606c03de3e4817f2766d5eb82bfb694f7d9759243f45e27082b600dcbe",
+      "symbol": "memset",
+      "rva": 5473968,
+      "bytes": 904
+    },
+    "memcpy": {
+      "memberName": "D:\\a\\_work\\1\\s\\Intermediate\\crt\\vcruntime\\build\\base\\mt\\libvcruntime_mt_kernel32.vcxproj\\objr\\amd64\\memcpy.obj",
+      "memberOffset": 150270,
+      "memberSha256": "a1ca69fa1e094af3910673f4a95dfeb755acee7740069c699caa20cd4ac59f84",
+      "symbol": "memcpy",
+      "rva": 5472272,
+      "bytes": 1645
+    }
+  },
+  "roles": {
+    "push": {
+      "receiver": 634658,
+      "attempted": 634661,
+      "state2Cmp": 634705,
+      "state2Branch": 634708,
+      "state2Inc": 634710,
+      "state3Cmp": 634715,
+      "state3Branch": 634718,
+      "state3Inc": 634720,
+      "enqueueLoad": 634751,
+      "mask": 634771,
+      "stride": 634776,
+      "sequenceLoad": 634783,
+      "reserve": 634804,
+      "reserveBranch": 634813,
+      "fullTest": 634820,
+      "fullBranch": 634823,
+      "retryCmp": 634835,
+      "retryBranch": 634839,
+      "contentionInc": 634841,
+      "contentionJump": 634846,
+      "copyStart": 634848,
+      "copyCall": 634867,
+      "admitted": 634872,
+      "publish": 634882,
+      "trueValue": 634890,
+      "trueReturn": 634907,
+      "fullInc": 634908,
+      "dropped": 634913,
+      "falseValue": 634923,
+      "falseReturn": 634935,
+      "kindCounterInc": 634676,
+      "nullFieldsInc": 634730
+    },
+    "pop": {
+      "receiver": 634520,
+      "mask": 634515,
+      "stride": 634523,
+      "sequenceLoad": 634530,
+      "dequeueLoad": 634539,
+      "nextValue": 634546,
+      "sequenceCompare": 634549,
+      "readyBranch": 634552,
+      "emptyValue": 634554,
+      "emptyReturn": 634566,
+      "copyStart": 634567,
+      "copyCall": 634586,
+      "freeAdd": 634599,
+      "freeStore": 634605,
+      "dequeueInc": 634615,
+      "trueValue": 634613,
+      "trueReturn": 634632
+    },
+    "ctor": {
+      "zero": 626058,
+      "receiver": 626060,
+      "zeroStores": [
+        626063,
+        626068,
+        626078,
+        626082,
+        626086,
+        626090,
+        626094,
+        626098,
+        626102
+      ],
+      "calls": [
+        626110,
+        626133,
+        626255
+      ],
+      "queueBase": 626115,
+      "zeroIndex": 626138,
+      "zeroPosition": 626273,
+      "enqueueReset": 626275,
+      "dequeueReset": 626282,
+      "seqStore": 626289,
+      "seqStride": 626292,
+      "seqInc": 626299,
+      "seqCmp": 626302,
+      "seqBranch": 626309
+    }
+  },
+  "layout": {
+    "attempted": 0,
+    "admitted": 8,
+    "dropped": 16,
+    "unreadable": 24,
+    "truncated": 32,
+    "nullFields": 40,
+    "queueFullDrops": 48,
+    "contentionDrops": 56,
+    "pairingFailures": 64,
+    "sequenceOffset": 840,
+    "recordOffset": 848,
+    "recordBytes": 8208,
+    "cellStride": 8216,
+    "capacity": 16384,
+    "enqueueOffset": 134611840,
+    "dequeueOffset": 134611904,
+    "retryLimit": 16
+  },
+  "rules": {
+    "compiledLocalRecorderEffects": true,
+    "allExternalRelocationsClosed": false,
+    "crtOrdinaryCopyAndFillPremise": true,
+    "platformX64MemoryOrderingPremise": true,
+    "noResetWithinPushPop": true,
+    "wholeProducerEpochProved": false,
+    "localDeliveryAdmitted": false,
+    "runtimeAdmission": false
+  },
+  "evidenceBoundary": {
+    "exact": "selected COFF complete function candidate bytes, resolved physical relocation targets, reviewed critical CFG/opcode/field relations and matched 14.44 CRT member cohorts",
+    "conditional": "function identity is a bounded relocation-aware cohort, with remaining CRT globals/tables unresolved; ordinary ABI-preserving complete memcpy/memset and x64 publication/ordering are explicit premises; noResetWithinPushPop additionally requires compatible live objects and a pop output Record disjoint from the complete Recorder storage (metadata and queue); the standalone function evidence does not prove that caller-side non-aliasing premise",
+    "unresolved": "same Recorder lifetime/no replacement, hook epoch, writer checkpoint, runtime local delivery, all CRT dispatch semantics and session completeness"
+  }
+}

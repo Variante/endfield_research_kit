@@ -1,0 +1,253 @@
+{
+  "schema": "endfield.skill-center-lifecycle-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "dependencies": {
+    "fsm": "skill_center_fsm_native.json",
+    "getter": "skill_blackboard_getter_native.json",
+    "consumer": "skill_blackboard_consumer_native.json"
+  },
+  "method": {
+    "identity": [
+      49617,
+      "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "RefreshData",
+      98087216
+    ],
+    "returnType": "void",
+    "parameters": [
+      {
+        "name": "aiCom",
+        "type": "Beyond.Gameplay.AI.CharacterAIComponent"
+      }
+    ]
+  },
+  "fields": [
+    {
+      "id": "bb",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_blackboard",
+      "valueType": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "ordinaryKind": 18,
+      "offset": 56
+    },
+    {
+      "id": "ai",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_aiCom",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "ordinaryKind": 18,
+      "offset": 64
+    },
+    {
+      "id": "entity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 72
+    },
+    {
+      "id": "aiEntity",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 80
+    }
+  ],
+  "fieldProperties": {
+    "bb": {
+      "attributes": 4,
+      "initOnly": false,
+      "static": false
+    },
+    "ai": {
+      "attributes": 4,
+      "initOnly": false,
+      "static": false
+    },
+    "entity": {
+      "attributes": 4,
+      "initOnly": false,
+      "static": false
+    },
+    "aiEntity": {
+      "attributes": 1,
+      "initOnly": false,
+      "static": false
+    }
+  },
+  "codeWindows": [
+    {
+      "owner": "refresh",
+      "startRva": 98087216,
+      "endRva": 98087296,
+      "sha256": "3E4204046419DF6F74BC322A9ED7BB30E638F99CA0111298F11539F2DD1DCE03",
+      "boundary": "complete selected unwind-family interval; conditional original local effects only"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 123838854,
+      "endRva": 123838894,
+      "sha256": "5EECC0CDEB74B539C00E20E072CE57433C828E08B57A2A3B1D1659F8F7F75913",
+      "boundary": "complete selected unwind-family interval; conditional original local effects only"
+    },
+    {
+      "owner": "machine",
+      "startRva": 108499328,
+      "endRva": 108499598,
+      "sha256": "BACA749F68135775A0B1470E44C795726C84B5F59A5BA476609EBFB5FF228E7A",
+      "boundary": "complete selected unwind-family interval; conditional original local effects only"
+    },
+    {
+      "owner": "machine",
+      "startRva": 121415938,
+      "endRva": 121415969,
+      "sha256": "E6C68E31241638142B7E3D1EC1137EACA66985C16BBF17CCA35AA82659182FBE",
+      "boundary": "complete selected unwind-family interval; conditional original local effects only"
+    },
+    {
+      "owner": "barrier",
+      "startRva": 1065824,
+      "endRva": 1065890,
+      "sha256": "232E54365CD35E2E0D781C1472F6A506511875EAA5425F3A5687A54FCA6EC5F8",
+      "boundary": "complete finite leaf CFG: two internal branches and terminal RET; no transitive GC semantics claim"
+    }
+  ],
+  "spans": [
+    {
+      "id": "refreshPrefix",
+      "owner": "refresh",
+      "rva": 98087216,
+      "hex": "4883ec28488b051541990b4c8bd14c8bda488b48384885c90f8538f08801"
+    },
+    {
+      "id": "refreshBody",
+      "owner": "refresh",
+      "rva": 98087246,
+      "hex": "498d4a404d895a40e8059237fa4d85db741a498b4350498d4a48498942484883c428e9eb9137fa4883c428c3e8c13735facc"
+    },
+    {
+      "id": "refreshReplacement",
+      "owner": "refresh",
+      "rva": 123838854,
+      "hex": "488b8130c100004885c00f84b80f77fe488b8938c100004d8bc84d8bc3498bd2ffd090e9c70f77fe"
+    },
+    {
+      "id": "barrier",
+      "owner": "barrier",
+      "rva": 1065824,
+      "hex": "833dc9a06111004c8bc1743549c1e80c488d0da1d63b114181e0ffff1f00418bc048c1e8064183e03f488d14c10f0d0a488b02488bc84c0fabc1f0480fb10a75efc3"
+    },
+    {
+      "id": "machinePrefix",
+      "owner": "machine",
+      "rva": 108499328,
+      "hex": "48895c240848896c24104889742418574883ec20488bf9488bea498b4820ba01000000498bd8488b89c0000000e81eb198f9488bc8e856cc89f9488bf04885c00f84c2000000"
+    },
+    {
+      "id": "machineFirstMap",
+      "owner": "machine",
+      "rva": 108499398,
+      "hex": "4c8b4320498b90c0000000488b4a1048837920000f842217c500488b4320488bce488b90c0000000488b5210e8796de4fe488d4f2848897728e85cb198f9"
+    },
+    {
+      "id": "machineSecondMap",
+      "owner": "machine",
+      "rva": 108499460,
+      "hex": "488b4b20ba03000000488b89c0000000e8b7b098f9488bc8e8efcb89f9488bf04885c0745f488b4b20488b91c0000000488b4a2048837920000f84c716c500488b4320488bce488b90c0000000488b5220e8166de4fe488d4f3048897730e8f9b098f9"
+    },
+    {
+      "id": "machineSourceTail",
+      "owner": "machine",
+      "rva": 108499559,
+      "hex": "488d4f3848896f38488b5c2430488b6c2438488b7424404883c4205fe9d8b098f9e8b35696f9cc"
+    },
+    {
+      "id": "machineCold1",
+      "owner": "machine",
+      "rva": 121415938,
+      "hex": "ff1190e9d6e83aff"
+    },
+    {
+      "id": "machineCold2",
+      "owner": "machine",
+      "rva": 121415946,
+      "hex": "488b4b20488b91c0000000488b4a20ff1190e922e93aff"
+    }
+  ],
+  "operands": {
+    "refreshFrame": 40,
+    "refreshDispatchOffset": 56,
+    "refreshTypeInfoCell": 292680272,
+    "refreshReplacementRva": 123838854,
+    "refreshOrdinaryRva": 98087246,
+    "refreshNullRva": 98087290,
+    "refreshReturnRva": 98087285,
+    "replacementFunctionOffset": 49456,
+    "replacementContextOffset": 49464,
+    "nullHelperRva": 911680,
+    "barrierRva": 1065824,
+    "barrierRetRva": 1065889,
+    "barrierLoopRva": 1065872,
+    "barrierEnabledCell": 292676656,
+    "barrierBitmapBase": 290200088,
+    "barrierAddressShift": 12,
+    "barrierIndexMask": 2097151,
+    "barrierWordShift": 6,
+    "barrierBitMask": 63,
+    "machineEntryRva": 108499328,
+    "machineSaveRbx": 8,
+    "machineSaveRbp": 16,
+    "machineSaveRsi": 24,
+    "machineFrame": 32,
+    "methodInfoClassOffset": 32,
+    "classContextOffset": 192,
+    "firstResolverSlot": 1,
+    "secondResolverSlot": 3,
+    "firstCtorContextOffset": 16,
+    "secondCtorContextOffset": 32,
+    "classInitFlagOffset": 32,
+    "physicalResolverRva": 1065680,
+    "physicalAllocatorRva": 89616,
+    "physicalMapCtorRva": 89915248,
+    "machineNullRva": 108499592,
+    "machineCold1Rva": 121415938,
+    "machineCold2Rva": 121415946,
+    "machineMap1ResumeRva": 108499424,
+    "machineMap2ResumeRva": 108499523,
+    "machineMapField1": 40,
+    "machineMapField2": 48,
+    "machineSourceOffset": 56
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "normalWin64CallsRequired": true,
+    "barrierPreservesR10R11": true,
+    "refreshWritesAiBeforeNullTest": true,
+    "refreshNullAiRequestsOpaqueFailure": true,
+    "refreshNullAiLeavesEntityUnwritten": true,
+    "refreshNonNullAiEntityReadAfterAiWriteBarrier": true,
+    "refreshStoresNullEntityValue": true,
+    "refreshEndsWithEntityBarrierTail": true,
+    "refreshHasNoDirectBlackboardFieldStore": true,
+    "machineSlotInitializedFromOriginalArgument": true,
+    "machineSlotEqualsGetterPhysicalSlot": true,
+    "machineSlotClosedNominalFieldProved": false,
+    "stopAndClearDisposeBeforeZero88": true,
+    "blackboardClearAllOriginalNoOp": true,
+    "completeFieldWriterCensusProved": false,
+    "crossCallBlackboardStabilityProved": false,
+    "lifetimeProved": false,
+    "runtimeBlackboardIdentityProved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Complete selected RefreshData, physical machine-constructor and barrier-helper byte intervals; finite local register, typed field, branch and helper-target relations.",
+    "conditional": "Original inactive replacement route, valid coherent live objects, normal returning allocator/constructor/class-initialization requests and ordinary Win64 nonvolatile register preservation. Barrier R10/R11 preservation is separately proved by its complete finite leaf grammar. Source-slot equality is physical storage geometry only.",
+    "unresolved": "All writers outside selected methods, transitive opaque callees, closed nominal machine-source ownership, object pooling/replacement history, runtime state/BB selection and lifetime. A bounded decoded inventory is not a complete field-writer census."
+  }
+}

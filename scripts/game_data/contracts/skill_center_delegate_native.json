@@ -1,0 +1,230 @@
+{
+  "schema": "endfield.skill-center-delegate-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "fields": [
+    {
+      "id": "pointer",
+      "type": "System.Delegate",
+      "name": "method_ptr",
+      "valueType": "nint",
+      "offset": 16,
+      "ordinaryKind": 24
+    },
+    {
+      "id": "invoke",
+      "type": "System.Delegate",
+      "name": "invoke_impl",
+      "valueType": "nint",
+      "offset": 24,
+      "ordinaryKind": 24
+    },
+    {
+      "id": "target",
+      "type": "System.Delegate",
+      "name": "m_target",
+      "valueType": "object",
+      "offset": 32,
+      "ordinaryKind": 28
+    },
+    {
+      "id": "method",
+      "type": "System.Delegate",
+      "name": "method",
+      "valueType": "nint",
+      "offset": 40,
+      "ordinaryKind": 24
+    },
+    {
+      "id": "extra",
+      "type": "System.Delegate",
+      "name": "extra_arg",
+      "valueType": "nint",
+      "offset": 56,
+      "ordinaryKind": 24
+    },
+    {
+      "id": "dispatchTarget",
+      "type": "System.Delegate",
+      "name": "method_code",
+      "valueType": "nint",
+      "offset": 64,
+      "ordinaryKind": 24
+    }
+  ],
+  "spans": [
+    {
+      "id": "entry",
+      "rva": 105726992,
+      "hex": "4883ec284c8bc94d8bd8498bc84c8bd2e8bbb7b8f9498d4920498941104d89412849895120e826ffc2f9"
+    },
+    {
+      "id": "branch",
+      "rva": 105727034,
+      "hex": "410fb643534d89494041f6434c100f85e620ee004d85d20f841121ee00"
+    },
+    {
+      "id": "reload",
+      "rva": 105727063,
+      "hex": "498b4120498b491049894140"
+    },
+    {
+      "id": "join",
+      "rva": 105727075,
+      "hex": "b818000000498bd148890c02488d056e2323fa498941384883c428c3"
+    },
+    {
+      "id": "static",
+      "rva": 121333044,
+      "hex": "41f6435410741984c0488d0df00235f9488d15890235f9480f45cae90fdf11ff"
+    },
+    {
+      "id": "staticOther",
+      "rva": 121333076,
+      "hex": "84c00f85fbde11ff488d0d1d95e2f8e9fbde11ff"
+    },
+    {
+      "id": "null",
+      "rva": 121333096,
+      "hex": "488d15517e6a0633c9e8fae92df933d2488bc8e82049caf8cc"
+    },
+    {
+      "id": "resolver",
+      "rva": 392160,
+      "hex": "f64154027505488b4108c348833d7deb6b110074f1488b4158c3"
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "initializer",
+      "startRva": 105726992,
+      "endRva": 105727103,
+      "sha256": "EE4632163ECB7FD2EC9B060BB36C5020732F8161A4476596A4065ED5B5567EB5",
+      "boundary": "complete selected canonical initializer family range"
+    },
+    {
+      "owner": "initializer",
+      "startRva": 121333044,
+      "endRva": 121333121,
+      "sha256": "51C064408B8D8976C83F39E466E3CC6102E00111F548E1FCBE5CE6653860C7CD",
+      "boundary": "complete selected canonical initializer family range"
+    },
+    {
+      "owner": "resolver",
+      "startRva": 392160,
+      "endRva": 392186,
+      "sha256": "93C9DE2F72ED2460E59422BEF723410AE5EE7287783A8420420487A3A27C8117",
+      "boundary": "complete selected physical leaf including both RETs"
+    }
+  ],
+  "operands": {
+    "entryRva": 105726992,
+    "resolverRva": 392160,
+    "barrierRva": 1065824,
+    "reloadRva": 105727063,
+    "joinRva": 105727075,
+    "staticRva": 121333044,
+    "staticOtherRva": 121333076,
+    "nullRva": 121333096,
+    "frame": 40,
+    "byte53Offset": 83,
+    "flag4cOffset": 76,
+    "flag54Offset": 84,
+    "flag10Mask": 16,
+    "resolverFlagMask": 2,
+    "invokeOffset": 24,
+    "primaryCodeOffset": 8,
+    "alternateCodeOffset": 88,
+    "resolverPrimaryRva": 392166,
+    "resolverAlternateTestRva": 392171,
+    "resolverGlobalCell": 292677488,
+    "specialZeroThunkRva": 7366708,
+    "specialNonzeroThunkRva": 7366612,
+    "selfThunkRva": 1964672,
+    "trampolineRva": 7366628,
+    "nullMessageCell": 228975552,
+    "nullCreateRva": 6901616,
+    "nullRaiseRva": 372384
+  },
+  "registration": {
+    "tableIndex": 42443,
+    "methodSpecIndex": 46909,
+    "pointerIndex": 42391,
+    "methodIndex": 6935,
+    "classArguments": [
+      "System.Int32Enum"
+    ],
+    "entryRva": 105726992
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "normalReturnOnly": true,
+    "independentHeapReadsRequired": true,
+    "selectedNormalInitializerCfgProved": true,
+    "resolverPreservesArgumentCarriers": true,
+    "barrierPreservesArgumentCarriers": true,
+    "dispatchSlotsMatchConditionConsumer": true,
+    "canonicalEnumInitializerRegistrationProved": true,
+    "systemDelegateFieldOffsetsProved": true,
+    "runtimeMethodInfoIdentityProved": false,
+    "actualToSkillDelegateBindingProved": false,
+    "liveReceiverTypeIdentityProved": false,
+    "liveTransitionSelectionProved": false
+  },
+  "rows": [
+    {
+      "id": "instanceTarget",
+      "condition": "(flag4c & 0x10) == 0 and supplied target nonnull",
+      "dispatchTargetSource": "reread.targetSlot",
+      "dispatchFunctionSource": "reread.methodPointerSlot",
+      "requiresTargetNonNull": true,
+      "evidence": "conditional"
+    },
+    {
+      "id": "staticSharedTarget",
+      "condition": "(flag4c & 0x10) != 0 and (flag54 & 0x10) == 0 and byte53 nonzero",
+      "dispatchTargetSource": "reread.targetSlot",
+      "dispatchFunctionSource": "reread.methodPointerSlot",
+      "requiresTargetNonNull": false,
+      "evidence": "conditional"
+    },
+    {
+      "id": "staticSelfThunk",
+      "condition": "(flag4c & 0x10) != 0 and (flag54 & 0x10) == 0 and byte53 zero",
+      "dispatchTargetSource": "receiver",
+      "dispatchFunctionSource": "selfThunk",
+      "requiresTargetNonNull": false,
+      "evidence": "conditional"
+    },
+    {
+      "id": "staticSpecialZero",
+      "condition": "(flag4c & 0x10) != 0 and (flag54 & 0x10) != 0 and byte53 zero",
+      "dispatchTargetSource": "receiver",
+      "dispatchFunctionSource": "specialZeroThunk",
+      "requiresTargetNonNull": false,
+      "evidence": "conditional"
+    },
+    {
+      "id": "staticSpecialNonzero",
+      "condition": "(flag4c & 0x10) != 0 and (flag54 & 0x10) != 0 and byte53 nonzero",
+      "dispatchTargetSource": "receiver",
+      "dispatchFunctionSource": "specialNonzeroThunk",
+      "requiresTargetNonNull": false,
+      "evidence": "conditional"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Selected canonical enum ConditionChecker constructor registration and complete selected physical initializer main/cold byte grammar; closed leaf resolver and maintained barrier byte grammar; named System.Delegate field metadata and selected ConditionChecker consumer reads."
+    ],
+    "conditional": [
+      "Original code, nonnull readable delegate receiver and MethodInfo carrier, caller-supplied target token, coherent local stack and normal return from reached resolver/barrier. Every MethodInfo flag and delegate field reload is an independent read; prior stores do not guarantee the same later heap value. Barrier CAS can retry; only normally returning executions are modeled. Physical flag offsets and masks carry no inferred CLR meaning."
+    ],
+    "unresolved": [
+      "Closed runtime generic specialization, actual receiver type and initialized MethodInfo identity, actual _ToSkill delegate binding, live selected transition and scheduling remain unproved. Function tokens and trampoline semantics beyond the observed pointer selection are opaque. The target-null exceptional branch has no local normal return; external failure-helper semantics are not inferred."
+    ]
+  }
+}

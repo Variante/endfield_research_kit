@@ -1,0 +1,76 @@
+{
+  "schema": "endfield.damage-runtime-source-roles-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected named declarations, bounded code bytes and concrete normal Double getter call identity.",
+    "conditional": "Named attacker/defender destination-array role of a retained getter return on the reviewed ordinary two-loop path.",
+    "unresolved": "Typed generic Lock return, actual actor ownership, coherent snapshot and producer array to later formula frame continuity."
+  },
+  "method": {
+    "type": "Beyond.Gameplay.Core.DamagePackData",
+    "method": "_DumpAttributes",
+    "rva": "0x5855e60",
+    "bytes": 392,
+    "sha256": "3d90fb97881d37c708dce8ef33cf3f6f40fcd241f5889eaad3baef982531d8c0"
+  },
+  "getter": {
+    "type": "Beyond.Gameplay.Core.Attributes",
+    "method": "GetValue",
+    "parameter": "Beyond.GEnums.AttributeType",
+    "returnType": "double"
+  },
+  "valueHeaderBytes": 16,
+  "actorAttributesField": {
+    "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+    "type": "Beyond.Gameplay.Core.Attributes",
+    "metadataOffset": 328
+  },
+  "roles": [
+    {
+      "role": "attacker",
+      "destinationArrayField": "Beyond.Gameplay.Core.DamagePackData::attackerAttributes",
+      "metadataOffset": 136,
+      "lockStorageField": "Beyond.Gameplay.Core.DamagePackData::attacker",
+      "lockMetadataOffset": 24,
+      "lockStorageType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "getterCallOffset": 151,
+      "transferWindow": {
+        "offset": 126,
+        "bytes": 62,
+        "sha256": "44b33a2f9a368ec98174979e7d44894a6763f5c54019260556ca110cfdc49a2d"
+      }
+    },
+    {
+      "role": "defender",
+      "destinationArrayField": "Beyond.Gameplay.Core.DamagePackData::defenderAttributes",
+      "metadataOffset": 152,
+      "lockStorageField": "Beyond.Gameplay.Core.DamagePackData::defender",
+      "lockMetadataOffset": 40,
+      "lockStorageType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "getterCallOffset": 275,
+      "transferWindow": {
+        "offset": 251,
+        "bytes": 52,
+        "sha256": "baef7689a501d9ecc5eef83f612f9bebffcda62b1edb013a28cbd8b1141b4c9a"
+      }
+    }
+  ],
+  "conditions": [
+    "The retained return has this exact immediate native getter caller and an explicit same-thread dump enclosure.",
+    "The reviewed ordinary anonymous patch guard and ready-static branches execute normally; runtime replacement selection is not observed.",
+    "The raw value receiver uses the metadata layout minus the declared boxed header and the arrays are compatible valid Double[] storage with count at +24 and payload at +32.",
+    "The selected generic ObjectPtr Lock raw return must be compatible AbilitySystem storage; its typed generic return ABI is not proved.",
+    "The named GetValue returns ordinary Double bits and nonvolatile registers/frame/counters remain preserved; no opaque callee or external writer changes array identity, payload or source before the store.",
+    "Array-role assignment does not prove actor skill ownership, uninterrupted object lifetime or same later formula A/D carrier. A later formula join remains conditional."
+  ],
+  "reviewedProgram": {
+    "entry": "PUSH R15; allocate 48; R15=incoming raw Pack receiver; nonnull anonymous runtime replacement branch excluded.",
+    "attackerLoop": "Lock(&Pack.attacker)->R13; EBX=0; EBP=32; EDI=EBX; R14D=EBP. Each ordinary iteration compares EDI with reread anonymous bound; current actor Attributes and Pack.attackerAttributes -> RCX and RSI; EDX=EDI; GetValue; unsigned array bound; INC EDI; MOVSD [RSI+R14],XMM0; R14+=8; backedge.",
+    "defenderLoop": "Lock(&Pack.defender)->RSI. EBX remains zero; EBP remains32. Each ordinary iteration compares EBX with reread anonymous bound; current actor Attributes and Pack.defenderAttributes -> RCX and RDI; EDX=EBX; GetValue; unsigned array bound; INC EBX; MOVSD [RDI+RBP],XMM0; RBP+=8; backedge.",
+    "boundary": "Conditional reviewed raw-window dataflow; no independent complete-CFG or typed Lock proof. Initializer, null/bounds helper and runtime-replacement paths are excluded."
+  }
+}

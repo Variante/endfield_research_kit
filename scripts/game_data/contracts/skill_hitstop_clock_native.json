@@ -1,0 +1,1131 @@
+{
+  "schema": "endfield.skill-hitstop-clock-native-contract.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": [
+    {
+      "id": "Beyond.Gameplay.PeriodicTimer.Update",
+      "identity": [
+        6975,
+        "Beyond.Gameplay.PeriodicTimer",
+        "Update",
+        102609680
+      ],
+      "slot": 5,
+      "isStatic": false,
+      "returnType": "bool",
+      "parameterTypes": [
+        "float"
+      ],
+      "parameterNames": [
+        "deltaTime"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst.get_isValid",
+      "identity": [
+        88512,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "get_isValid",
+        109834240
+      ],
+      "slot": 8,
+      "isStatic": false,
+      "returnType": "bool",
+      "parameterTypes": [],
+      "parameterNames": []
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst.get_owner",
+      "identity": [
+        88515,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "get_owner",
+        95494480
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "Beyond.Gameplay.Core.Entity",
+      "parameterTypes": [],
+      "parameterNames": []
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst.Reset",
+      "identity": [
+        88516,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "Reset",
+        95500688
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Entity",
+        "float",
+        "Beyond.Gameplay.Core.GameplayTag",
+        "Beyond.Gameplay.Core.GameplayTag",
+        "UnityEngine.AnimationCurve",
+        "System.Collections.Generic.List`1<System.Type>"
+      ],
+      "parameterNames": [
+        "entity",
+        "duration",
+        "slotTag",
+        "priorityTag",
+        "scaleCurve",
+        "componentFilter"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst._ClearTimeScaleHandle",
+      "identity": [
+        88517,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "_ClearTimeScaleHandle",
+        95493184
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [],
+      "parameterNames": []
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst.OnTick",
+      "identity": [
+        88519,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "OnTick",
+        95493296
+      ],
+      "slot": 9,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "float"
+      ],
+      "parameterNames": [
+        "delaTime"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst.Stop",
+      "identity": [
+        88520,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "Stop",
+        95491888
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [],
+      "parameterNames": []
+    },
+    {
+      "id": "Beyond.Gameplay.Core.TimeDilationManager.Tick",
+      "identity": [
+        88537,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "Tick",
+        95491984
+      ],
+      "slot": 32,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "float"
+      ],
+      "parameterNames": [
+        "deltaTime"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.TimeDilationManager.StartEntityTimeDilation",
+      "identity": [
+        88543,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "StartEntityTimeDilation",
+        95500448
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "Beyond.Gameplay.Core.TimeDilationHandle",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Entity",
+        "Beyond.Gameplay.Core.GameplayTag",
+        "float",
+        "Beyond.Gameplay.Core.GameplayTag",
+        "UnityEngine.AnimationCurve",
+        "System.Collections.Generic.List`1<System.Type>",
+        "bool"
+      ],
+      "parameterNames": [
+        "target",
+        "priority",
+        "duration",
+        "slot",
+        "scaleCurve",
+        "componentFilter",
+        "ignoreSlotCheck"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.TimeDilationManager._AddNewEntityTimeDilationInst",
+      "identity": [
+        88548,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "_AddNewEntityTimeDilationInst",
+        95493952
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "bool"
+      ],
+      "parameterNames": [
+        "newInst",
+        "ignoreSlotCheck"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Skill.OnTick",
+      "identity": [
+        58710,
+        "Beyond.Gameplay.Core.Skill",
+        "OnTick",
+        86222464
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "float",
+        "float"
+      ],
+      "parameterNames": [
+        "deltaTime",
+        "unscaledDeltaTime"
+      ]
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick",
+      "identity": [
+        59172,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "PreLateTick",
+        86224432
+      ],
+      "slot": 66,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [
+        "float"
+      ],
+      "parameterNames": [
+        "deltaTime"
+      ]
+    },
+    {
+      "id": "UnityEngine.AnimationCurve.Evaluate",
+      "identity": [
+        473464,
+        "UnityEngine.AnimationCurve",
+        "Evaluate",
+        86196608
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "float",
+      "parameterTypes": [
+        "float"
+      ],
+      "parameterNames": [
+        "time"
+      ]
+    },
+    {
+      "id": "Beyond.TickOwnerInfoGroup._CalculateSelfTimeScale",
+      "identity": [
+        355844,
+        "Beyond.TickOwnerInfoGroup",
+        "_CalculateSelfTimeScale",
+        146190168
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "returnType": "void",
+      "parameterTypes": [],
+      "parameterNames": []
+    }
+  ],
+  "fields": [
+    {
+      "id": "Beyond.Gameplay.PeriodicTimer::m_periodTime",
+      "type": "Beyond.Gameplay.PeriodicTimer",
+      "name": "m_periodTime",
+      "offset": 16,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.Gameplay.PeriodicTimer::m_remainingTime",
+      "type": "Beyond.Gameplay.PeriodicTimer",
+      "name": "m_remainingTime",
+      "offset": 20,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.Gameplay.PeriodicTimer::m_passedTime",
+      "type": "Beyond.Gameplay.PeriodicTimer",
+      "name": "m_passedTime",
+      "offset": 24,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_duration",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_duration",
+      "offset": 60,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_scaleCurve",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_scaleCurve",
+      "offset": 64,
+      "valueType": "UnityEngine.AnimationCurve",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_elapsedTime",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_elapsedTime",
+      "offset": 80,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_influencedTimeScaleByGlobal",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_influencedTimeScaleByGlobal",
+      "offset": 84,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_timeScaleHandle",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_timeScaleHandle",
+      "offset": 56,
+      "valueType": "uint",
+      "ordinaryKind": 9
+    },
+    {
+      "id": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_owner",
+      "type": "Beyond.Gameplay.Core.EntityTimeDilationInst",
+      "name": "m_owner",
+      "offset": 32,
+      "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.Entity>",
+      "ordinaryKind": 21
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Entity::<tickOwnerInfoGroup>k__BackingField",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<tickOwnerInfoGroup>k__BackingField",
+      "offset": 232,
+      "valueType": "Beyond.TickOwnerInfoGroup",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "offset": 80,
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::m_timeManager",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_timeManager",
+      "offset": 544,
+      "valueType": "Beyond.TimeManager",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Beyond.TimeManager::m_timeScale",
+      "type": "Beyond.TimeManager",
+      "name": "m_timeScale",
+      "offset": 80,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.TickOwnerInfoGroup::m_ignoreGlobalTimeScale",
+      "type": "Beyond.TickOwnerInfoGroup",
+      "name": "m_ignoreGlobalTimeScale",
+      "offset": 24,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "Beyond.TickOwnerInfoGroup::m_selfTimeScaleCache",
+      "type": "Beyond.TickOwnerInfoGroup",
+      "name": "m_selfTimeScaleCache",
+      "offset": 64,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "Beyond.TickOwnerInfoGroup::m_selfTimeScaleModifier",
+      "type": "Beyond.TickOwnerInfoGroup",
+      "name": "m_selfTimeScaleModifier",
+      "offset": 56,
+      "valueType": "System.Collections.Generic.List`1<System.ValueTuple`2<uint,float>>",
+      "ordinaryKind": 21
+    },
+    {
+      "id": "Beyond.TickOwnerInfoGroup::m_isRegistered",
+      "type": "Beyond.TickOwnerInfoGroup",
+      "name": "m_isRegistered",
+      "offset": 48,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Skill::m_durationTimer",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_durationTimer",
+      "offset": 80,
+      "valueType": "Beyond.Gameplay.PeriodicTimer",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Skill::m_castStartTime",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_castStartTime",
+      "offset": 168,
+      "valueType": "int",
+      "ordinaryKind": 8
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "periodicUpdate",
+      "method": "Beyond.Gameplay.PeriodicTimer.Update",
+      "startRva": 102609680,
+      "endRva": 102609731,
+      "sha256": "FCA7C44343714281AA3267ABB270AF2F7E8296ECD2A646CC7DB23BEC448A8E0B"
+    },
+    {
+      "role": "entityValidity",
+      "method": "Beyond.Gameplay.Core.EntityTimeDilationInst.get_isValid",
+      "startRva": 109834240,
+      "endRva": 109834386,
+      "sha256": "01728037BF09682785D2E73116995D3C40694F5618B12779B28AC3CAFC61F144"
+    },
+    {
+      "role": "entityReset",
+      "method": "Beyond.Gameplay.Core.EntityTimeDilationInst.Reset",
+      "startRva": 95500688,
+      "endRva": 95501122,
+      "sha256": "8E7FB8D00416A02BEC85379A8ED2193B07C90D8DAE7A9588138639538CCDD352"
+    },
+    {
+      "role": "entityTick",
+      "method": "Beyond.Gameplay.Core.EntityTimeDilationInst.OnTick",
+      "startRva": 95493296,
+      "endRva": 95493941,
+      "sha256": "58AD3727F1B33B7ACC346096AD6B394B7963F43E25EBCF66926CF050862059B0"
+    },
+    {
+      "role": "clearHandle",
+      "method": "Beyond.Gameplay.Core.EntityTimeDilationInst._ClearTimeScaleHandle",
+      "startRva": 95493184,
+      "endRva": 95493288,
+      "sha256": "E862332E6E23262975FE432BE42CB5E5FEA1BADC624F8C6BF472862B313FC5CA"
+    },
+    {
+      "role": "entityStop",
+      "method": "Beyond.Gameplay.Core.EntityTimeDilationInst.Stop",
+      "startRva": 95491888,
+      "endRva": 95491984,
+      "sha256": "1E33B39555C01AEE35364B0FCB87A7F3BB6ABC12B627D5727FE49AE13314C0BF"
+    },
+    {
+      "role": "managerTick",
+      "method": "Beyond.Gameplay.Core.TimeDilationManager.Tick",
+      "startRva": 95491984,
+      "endRva": 95493184,
+      "sha256": "DA7FE655D567326A8FF601364D72A5990430073F9AEA90133449B99DCD21A27C"
+    },
+    {
+      "role": "startEntity",
+      "method": "Beyond.Gameplay.Core.TimeDilationManager.StartEntityTimeDilation",
+      "startRva": 95500448,
+      "endRva": 95500677,
+      "sha256": "E434E0A3F91BEF41061C2B15960440FBBFE1B63B3FF6B87F8800F9E16DC64D6D"
+    },
+    {
+      "role": "addEntity",
+      "method": "Beyond.Gameplay.Core.TimeDilationManager._AddNewEntityTimeDilationInst",
+      "startRva": 95493952,
+      "endRva": 95494466,
+      "sha256": "8C6625DF424E99D6712AFED071A40EEFA8E86786530A71C178FB02F8076B9AD6"
+    },
+    {
+      "role": "normalizeHelper",
+      "method": null,
+      "startRva": 95494544,
+      "endRva": 95494637,
+      "sha256": "5FFAD9848AD911263CFAB5D200432F2979CC811D298ADE6A232B503BCE8552CD"
+    },
+    {
+      "role": "clampHelper",
+      "method": null,
+      "startRva": 84566176,
+      "endRva": 84566304,
+      "sha256": "1F7688CCE67D4AC370CD2044348F14AE41C3CA46487C570F492261FCC9BFEBFD"
+    },
+    {
+      "role": "curveEvaluate",
+      "method": "UnityEngine.AnimationCurve.Evaluate",
+      "startRva": 86196608,
+      "endRva": 86196686,
+      "sha256": "F48058A2F15D1A47766F61E6F2634776F312721B7319C7D9F64071FFF1D9F0AC"
+    },
+    {
+      "role": "skillTick",
+      "method": "Beyond.Gameplay.Core.Skill.OnTick",
+      "startRva": 86222464,
+      "endRva": 86224432,
+      "sha256": "F6CB78E099F642A6C2E8F2E1A82759A7FAFDE38B31D5F402BDC972EFD4C455AA"
+    },
+    {
+      "role": "abilityEntry",
+      "method": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick",
+      "startRva": 86224432,
+      "endRva": 86224532,
+      "sha256": "91CEB1A8D525B7763ECEA9D8B1892BF4635BBCF01FB7650C3D63E5F4C714B43A"
+    },
+    {
+      "role": "abilityDelta",
+      "method": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick",
+      "startRva": 86224746,
+      "endRva": 86224948,
+      "sha256": "7EDC218D355A950870A94D8A05EBB0979E7CC4BC11437984DBA9A921D5732919"
+    },
+    {
+      "role": "abilitySkillCall",
+      "method": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick",
+      "startRva": 86227136,
+      "endRva": 86227192,
+      "sha256": "90931AFE6BCF826456FB39BF02EE7D10E8229FED2F47F54400F26B0329163070"
+    },
+    {
+      "role": "abilityDeltaReload",
+      "method": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick",
+      "startRva": 86226640,
+      "endRva": 86226679,
+      "sha256": "620E86DE4482BC131A464C3382CE83E36DBBEDE0FC4A57E5D3DC2B8F391554D3"
+    },
+    {
+      "role": "selfScaleAggregate",
+      "method": "Beyond.TickOwnerInfoGroup._CalculateSelfTimeScale",
+      "startRva": 146190168,
+      "endRva": 146190343,
+      "sha256": "87120757051C23A878A9F1D2BE0C04F624B6AD2FC35E45E30F726B584F83A4D0"
+    },
+    {
+      "role": "initialTickDispatch",
+      "method": null,
+      "startRva": 260416,
+      "endRva": 260528,
+      "sha256": "aa73f21866e6b71dd39840e88eceac6cc83bd2d9eca3d6e259c5147b59f1c1a0",
+      "boundary": "owned helper prefix covering only selected default target branch"
+    }
+  ],
+  "operands": [
+    {
+      "role": "periodicBody",
+      "window": "periodicUpdate",
+      "rva": 102609680,
+      "hex": "f30f1051140f57c0f30f5cd1f30f5849180f2fc2f30f114918f30f115114730332c0c38b4110894118b001c7411400000000c3"
+    },
+    {
+      "role": "validityArithmetic",
+      "window": "entityValidity",
+      "rva": 109834307,
+      "hex": "f30f10733c0f297c242083b9e000000000f30f107b507430f30f58357d641d070f2ff70f287c24200f2874243073110f57c00f2f433c770832c04883c4405bc3"
+    },
+    {
+      "role": "handleNonzero",
+      "window": "entityValidity",
+      "rva": 109834289,
+      "hex": "837b38007444",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_timeScaleHandle",
+      "displacementOffset": 2
+    },
+    {
+      "role": "resetDuration",
+      "window": "entityReset",
+      "rva": 95500792,
+      "hex": "f3410f11753c",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_duration",
+      "displacementOffset": 5
+    },
+    {
+      "role": "resetElapsed",
+      "window": "entityReset",
+      "rva": 95500798,
+      "hex": "41897550",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_elapsedTime",
+      "displacementOffset": 3
+    },
+    {
+      "role": "tickElapsedRead",
+      "window": "entityTick",
+      "rva": 95493403,
+      "hex": "f30f107b50",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_elapsedTime",
+      "displacementOffset": 4
+    },
+    {
+      "role": "tickDurationRead",
+      "window": "entityTick",
+      "rva": 95493408,
+      "hex": "f3440f10433c",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_duration",
+      "displacementOffset": 5
+    },
+    {
+      "role": "tickDivide",
+      "window": "entityTick",
+      "rva": 95493428,
+      "hex": "f3410f5ef8"
+    },
+    {
+      "role": "curveSourceRead",
+      "window": "entityTick",
+      "rva": 95493446,
+      "hex": "488b7b40",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_scaleCurve",
+      "displacementOffset": 3
+    },
+    {
+      "role": "maxCurve",
+      "window": "entityTick",
+      "rva": 95493631,
+      "hex": "0f57fff3410f5ff8"
+    },
+    {
+      "role": "incrementElapsed",
+      "window": "entityTick",
+      "rva": 95493870,
+      "hex": "f30f587350f30f117350"
+    },
+    {
+      "role": "globalScaleFlag",
+      "window": "entityTick",
+      "rva": 95493789,
+      "hex": "807b5400744b",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_influencedTimeScaleByGlobal",
+      "displacementOffset": 2
+    },
+    {
+      "role": "clearHandleZero",
+      "window": "clearHandle",
+      "rva": 95493269,
+      "hex": "c7433800000000",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_timeScaleHandle",
+      "displacementOffset": 2
+    },
+    {
+      "role": "skillDurationUpdate",
+      "window": "skillTick",
+      "rva": 86223114,
+      "hex": "f30f104f140f28c7f30f584718f30f5ccff30f114718440f2fd9f30f114f140f8363030000"
+    },
+    {
+      "role": "skillDeltaAliases",
+      "window": "skillTick",
+      "rva": 86222479,
+      "hex": "488bd90f2978c80f28f2488b05b04b4e0c0f28f9"
+    },
+    {
+      "role": "abilityDeltaFormula",
+      "window": "abilityDelta",
+      "rva": 86224827,
+      "hex": "f3440f101d40a585083846187406410f28fbeb04410f28fc4885db0f84fc1d0000f30f59fef30f597b40"
+    },
+    {
+      "role": "abilitySkillArguments",
+      "window": "abilitySkillCall",
+      "rva": 86227177,
+      "hex": "4533c9410f28d20f28cfe888edffff"
+    },
+    {
+      "role": "normalizerZeroAndOne",
+      "window": "normalizeHelper",
+      "rva": 95494581,
+      "hex": "f30f10154733f8070f57c90f28c60f287424204883c438"
+    },
+    {
+      "role": "clampComparisons",
+      "window": "clampHelper",
+      "rva": 84566215,
+      "hex": "440f2fc70f87b1003902440f2fc677430f2ff77718"
+    },
+    {
+      "role": "validityEpsilon",
+      "window": "entityValidity",
+      "rva": 109834331,
+      "hex": "f30f58357d641d07",
+      "literalRva": 229201120,
+      "literalHex": "acc52737",
+      "float32": 9.999999747378752e-06,
+      "operation": "addss"
+    },
+    {
+      "role": "clampOne",
+      "window": "normalizeHelper",
+      "rva": 95494581,
+      "hex": "f30f10154733f807",
+      "literalRva": 229201156,
+      "literalHex": "0000803f",
+      "float32": 1.0,
+      "operation": "movss"
+    },
+    {
+      "role": "validityDurationRead",
+      "window": "entityValidity",
+      "rva": 109834307,
+      "hex": "f30f10733c",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_duration",
+      "displacementOffset": 4
+    },
+    {
+      "role": "validityElapsedRead",
+      "window": "entityValidity",
+      "rva": 109834324,
+      "hex": "f30f107b50",
+      "field": "Beyond.Gameplay.Core.EntityTimeDilationInst::m_elapsedTime",
+      "displacementOffset": 4
+    },
+    {
+      "role": "entityGlobalScaleMul",
+      "window": "entityTick",
+      "rva": 95493865,
+      "hex": "f30f597150",
+      "field": "Beyond.TimeManager::m_timeScale",
+      "displacementOffset": 4
+    },
+    {
+      "role": "entityCurveCache",
+      "window": "entityTick",
+      "rva": 95493462,
+      "hex": "488b05cbe2c10b",
+      "targetRva": 292749352
+    },
+    {
+      "role": "evaluateCurveCache",
+      "window": "curveEvaluate",
+      "rva": 86196614,
+      "hex": "488b059bbe4f0c",
+      "targetRva": 292749352
+    },
+    {
+      "role": "entityCurveIcall",
+      "window": "entityTick",
+      "rva": 95493474,
+      "hex": "488d0d0769f207",
+      "targetRva": 228820592
+    },
+    {
+      "role": "evaluateCurveIcall",
+      "window": "curveEvaluate",
+      "rva": 86196656,
+      "hex": "488d0db9448008",
+      "targetRva": 228820592
+    },
+    {
+      "role": "abilityInputDelta",
+      "window": "abilityEntry",
+      "rva": 86224518,
+      "hex": "0f28f1"
+    },
+    {
+      "role": "abilityIgnoreGlobal",
+      "window": "abilityDelta",
+      "rva": 86224836,
+      "hex": "384618",
+      "field": "Beyond.TickOwnerInfoGroup::m_ignoreGlobalTimeScale",
+      "displacementOffset": 2
+    },
+    {
+      "role": "abilityGlobalScale",
+      "window": "abilityDelta",
+      "rva": 86224782,
+      "hex": "f3440f106650",
+      "field": "Beyond.TimeManager::m_timeScale",
+      "displacementOffset": 5
+    },
+    {
+      "role": "abilitySelfScaleMul",
+      "window": "abilityDelta",
+      "rva": 86224864,
+      "hex": "f30f597b40",
+      "field": "Beyond.TickOwnerInfoGroup::m_selfTimeScaleCache",
+      "displacementOffset": 4
+    },
+    {
+      "role": "startEntryBindings",
+      "window": "startEntity",
+      "rva": 95500470,
+      "hex": "488be90f29742450418bd80f28f3488bf2"
+    },
+    {
+      "role": "startResetBindings",
+      "window": "startEntity",
+      "rva": 95500545,
+      "hex": "488b8424a00000000f28d6448b8c2490000000488bd648c744243800000000488bcf4889442430488b8424980000004889442428895c2420e852000000"
+    },
+    {
+      "role": "startRegisterBindings",
+      "window": "startEntity",
+      "rva": 95500606,
+      "hex": "440fb68424a80000004533c9488bd7488bcde8ebe5ffff"
+    },
+    {
+      "role": "resetEntryBindings",
+      "window": "entityReset",
+      "rva": 95500703,
+      "hex": "4c8be90f29742460418bf90f28f2"
+    },
+    {
+      "role": "resetOwnerBindings",
+      "window": "entityReset",
+      "rva": 95500730,
+      "hex": "4c8b05d7f3c60a488d4c24504889b424a0000000e8ad8a05000f10442450498d4d20410f114520e87a095ffa"
+    },
+    {
+      "role": "resetInitialBindings",
+      "window": "entityReset",
+      "rva": 95500774,
+      "hex": "488b8424b8000000498d4d4033f649894540f3410f11753c41897550e859095ffa"
+    },
+    {
+      "role": "registerEntryBindings",
+      "window": "addEntity",
+      "rva": 95493969,
+      "hex": "4c8bf9450fb6e0488bea"
+    },
+    {
+      "role": "registerInitialTickBindings",
+      "window": "addEntity",
+      "rva": 95494161,
+      "hex": "498b8f880000004885c90f84fd0000004c8b058865b50a488bd5e800c848ff4885ed0f84e5000000b9090000000f57d2488bd5e8f7d852fa"
+    },
+    {
+      "role": "initialTickDispatchProgram",
+      "window": "initialTickDispatch",
+      "rva": 260416,
+      "hex": "48895c2408574883ec300fb7d9488bfa488b0a0f297424200f28f2e89052fcff488b07488d4b144803c94c8b0cc84c8b44c808488d0576b5ca054c3bc87431488d057a9ce2054c3bc8743a488d05beff3d054c3bc874640f28ce488bcf41ffd1488b5c24400f287424204883c4305fc3"
+    },
+    {
+      "role": "startInitializationProlog",
+      "window": "startEntity",
+      "rva": 95500448,
+      "hex": "48895c241048896c2418564883ec60488b059ab9c00b"
+    },
+    {
+      "role": "resetInitializationProlog",
+      "window": "entityReset",
+      "rva": 95500688,
+      "hex": "405741554883ec78488b05b1b8c00b"
+    }
+  ],
+  "calls": [
+    {
+      "role": "startToReset",
+      "window": "startEntity",
+      "rva": 95500601,
+      "hex": "e852000000",
+      "targetMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst.Reset",
+      "targetIdentity": [
+        88516,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "Reset",
+        95500688
+      ]
+    },
+    {
+      "role": "startToAdd",
+      "window": "startEntity",
+      "rva": 95500624,
+      "hex": "e8ebe5ffff",
+      "targetMethod": "Beyond.Gameplay.Core.TimeDilationManager._AddNewEntityTimeDilationInst",
+      "targetIdentity": [
+        88548,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "_AddNewEntityTimeDilationInst",
+        95493952
+      ]
+    },
+    {
+      "role": "tickToClear",
+      "window": "entityTick",
+      "rva": 95493391,
+      "hex": "e82cffffff",
+      "targetMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst._ClearTimeScaleHandle",
+      "targetIdentity": [
+        88517,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "_ClearTimeScaleHandle",
+        95493184
+      ]
+    },
+    {
+      "role": "stopToClear",
+      "window": "entityStop",
+      "rva": 95491957,
+      "hex": "e8c6040000",
+      "targetMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst._ClearTimeScaleHandle",
+      "targetIdentity": [
+        88517,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "_ClearTimeScaleHandle",
+        95493184
+      ]
+    },
+    {
+      "role": "managerToStop",
+      "window": "managerTick",
+      "rva": 95492227,
+      "hex": "e8a8feffff",
+      "targetMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst.Stop",
+      "targetIdentity": [
+        88520,
+        "Beyond.Gameplay.Core.EntityTimeDilationInst",
+        "Stop",
+        95491888
+      ]
+    },
+    {
+      "role": "abilityToSkill",
+      "window": "abilitySkillCall",
+      "rva": 86227187,
+      "hex": "e888edffff",
+      "targetMethod": "Beyond.Gameplay.Core.Skill.OnTick",
+      "targetIdentity": [
+        58710,
+        "Beyond.Gameplay.Core.Skill",
+        "OnTick",
+        86222464
+      ]
+    },
+    {
+      "role": "tickToNormalizer",
+      "window": "entityTick",
+      "rva": 95493441,
+      "hex": "e84a040000",
+      "targetWindow": "normalizeHelper",
+      "targetRva": 95494544
+    },
+    {
+      "role": "normalizerToClamp",
+      "window": "normalizeHelper",
+      "rva": 95494604,
+      "hex": "e9cf3e59ff",
+      "targetWindow": "clampHelper",
+      "targetRva": 84566176
+    },
+    {
+      "role": "addToInitialTickDispatch",
+      "window": "addEntity",
+      "rva": 95494212,
+      "hex": "e8f7d852fa",
+      "targetWindow": "initialTickDispatch",
+      "targetRva": 260416
+    }
+  ],
+  "nativeRules": {
+    "periodicTimerUpdate": {
+      "arithmetic": "Single",
+      "remainingOperation": "remaining - delta",
+      "passedOperation": "passed + delta",
+      "terminalComparison": "remainingAfter <= 0",
+      "terminalRemaining": 0.0,
+      "terminalPassed": "period",
+      "terminalReturn": true
+    },
+    "entityValidity": {
+      "ownerHandleValidRequired": true,
+      "scaleHandleType": "uint32",
+      "scaleHandleNonzeroRequired": true,
+      "epsilonFloat32": 9.999999747378752e-06,
+      "epsilonHex": "acc52737",
+      "comparison": "elapsed <= Single(duration + epsilon) OR duration < 0",
+      "equalityRemainsValid": true
+    },
+    "entityOnTick": {
+      "inputDomain": "explicit finite inputs, positive duration, and finite supported arithmetic intermediates",
+      "normalizedTime": "clamp01(Single(oldElapsed / duration))",
+      "curveResultInput": "separately supplied Unity AnimationCurve Evaluate result",
+      "nonnegativeScaleInstruction": "MAXSS(+0, curveResult)",
+      "updateAfterCurveApply": true,
+      "elapsedOperation": "Single(oldElapsed + effectiveDelta)",
+      "effectiveDelta": "incomingDelta unless influencedByGlobal, then Single(incomingDelta * globalScale)",
+      "precision": "Single per DIVSS/ADDSS/MULSS; MAXSS keeps second operand signed zero",
+      "globalScaleReceiverOwnershipProved": false,
+      "bindingLevel": "conditional-local-arithmetic-fragments",
+      "completeOnTickDataflowProved": false,
+      "requiresValidOwnerForIncrement": true,
+      "requiresSuccessfulScaleRequestPath": true,
+      "actualScaleApplicationProved": false
+    },
+    "skillDurationDelta": {
+      "sourceParameter": "Skill.OnTick.deltaTime",
+      "unscaledParameterUsedByDurationLeaf": false,
+      "abilityCandidateFormula": "Single(Single(inputDelta * (ignoreGlobal ? 1 : globalTimeScale)) * selfTimeScaleCache)",
+      "upstreamRegisterAndStackContinuityProved": false,
+      "requiresDefaultTimerImplementation": true,
+      "requiresNoEarlierDeltaSuppression": true,
+      "startFrameSuppressionProved": false
+    },
+    "lifecycle": {
+      "managerChecksValidityBeforeTick": true,
+      "invalidBranchCallsStop": true,
+      "elapsedThresholdEqualityRemainsValid": true,
+      "runtimeVirtualDispatchObserved": false,
+      "newInstanceInitialZeroDeltaTickProved": true,
+      "curveEvaluateIcallNameBound": true,
+      "concreteRuntimeCurveCallObserved": false
+    },
+    "durationStackContinuity": {
+      "proved": false,
+      "boundary": "StartHitStop incoming stack duration is not yet proved untouched across all intermediate callee paths; reuse the action consumer gate conditional requirement."
+    },
+    "originalPathOnly": true,
+    "actualControlRecoveryProved": false,
+    "runtimeExecutionProved": false,
+    "schedulerOrderBetweenManagerAndSkillsProved": false,
+    "skillDeltaScaleFragment": {
+      "bindingLevel": "conditional-local-arithmetic-fragment",
+      "arithmetic": "Single",
+      "inputParameter": "Beyond.Gameplay.Core.AbilitySystem.PreLateTick.deltaTime",
+      "ignoreGlobalField": "Beyond.TickOwnerInfoGroup::m_ignoreGlobalTimeScale",
+      "globalScaleField": "Beyond.TimeManager::m_timeScale",
+      "selfScaleField": "Beyond.TickOwnerInfoGroup::m_selfTimeScaleCache",
+      "afterGlobal": "Single((ignoreGlobal ? 1 : globalScale) * inputDelta)",
+      "result": "Single(afterGlobal * selfScale)",
+      "methodEntryToFragmentContinuityProved": false,
+      "fragmentToSkillCallContinuityProved": false
+    },
+    "entityInitialization": {
+      "bindingLevel": "conditional-original-initialization-path",
+      "elapsedZeroWriteProved": true,
+      "durationInputStoreProved": true,
+      "curveInputStoreProved": true,
+      "ownerInputToCarrierConstructorProved": true,
+      "sameInstanceResetToZeroDeltaTickProved": true,
+      "initialElapsedRaw32": 0,
+      "initialDeltaRaw32": 0,
+      "requiresOriginalSuccessfulResetAndRegistration": true,
+      "requiresHelperNoninterference": true,
+      "ownerCarrierConstructionConditional": true,
+      "slotPriorityAcceptancePredicted": false,
+      "runtimeInitializationObservedByNativeProof": false
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native pair, declared methods/slots/fields, bounded reviewed code windows and arithmetic operands.",
+    "direct": "Ordinary PeriodicTimer arithmetic, concrete instance elapsed/duration source reads and operations, original typed delta leaf in Skill.",
+    "conditional": "Explicit finite inputs, original implementations with inactive iFix. Entity OnTick is a set of local arithmetic fragments with curve value/owner/scale-request and intermediate register/branch continuity supplied as conditions; it is not a closed method replay. Skill delta scaling is a selected local program only; entry-to-fragment and onward-to-Skill continuity remain open.",
+    "unresolved": "Actual scheduler ordering, final control recovery, concrete live virtual dispatch, complete scale/slot aggregation and incoming duration stack continuity."
+  },
+  "curveIcallName": "UnityEngine.AnimationCurve::Evaluate(System.Single)",
+  "modelBindings": {
+    "periodic_timer_update": {
+      "nativeRule": "periodicTimerUpdate",
+      "scope": "complete-original-leaf"
+    },
+    "time_dilation_instance_valid": {
+      "nativeRule": "entityValidity",
+      "scope": "conditional-original-predicate",
+      "opaqueInputs": [
+        "owner-validity",
+        "live-scale-handle-nonzero"
+      ]
+    },
+    "time_dilation_on_tick": {
+      "nativeRule": "entityOnTick",
+      "scope": "conditional-local-arithmetic-fragments",
+      "opaqueInputs": [
+        "curve-evaluation-result",
+        "valid-owner",
+        "successful-scale-request-path",
+        "global-scale-receiver-and-value"
+      ],
+      "completeMethodDataflowProved": false
+    },
+    "skill_delta_scale_fragment": {
+      "nativeRule": "skillDeltaScaleFragment",
+      "scope": "conditional-local-arithmetic-fragment",
+      "opaqueInputs": [
+        "entry-to-fragment-register-continuity",
+        "live-field-values",
+        "fragment-to-skill-call-continuity"
+      ],
+      "completeMethodDataflowProved": false
+    },
+    "time_dilation_instance_initialization": {
+      "nativeRule": "entityInitialization",
+      "scope": "conditional-original-initialization-path",
+      "opaqueInputs": [
+        "selected target entity",
+        "duration and AnimationCurve input",
+        "ordinary ObjectPtr construction and helper noninterference",
+        "registration slot/priority successful path",
+        "runtime virtual target remains selected EntityTimeDilationInst.OnTick"
+      ]
+    }
+  },
+  "initialization": {
+    "startMethod": "Beyond.Gameplay.Core.TimeDilationManager.StartEntityTimeDilation",
+    "resetMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst.Reset",
+    "registrationMethod": "Beyond.Gameplay.Core.TimeDilationManager._AddNewEntityTimeDilationInst",
+    "tickMethod": "Beyond.Gameplay.Core.EntityTimeDilationInst.OnTick",
+    "dispatchSlot": 9,
+    "dispatchVtableBase": 320,
+    "dispatchVtableStride": 16,
+    "defaultCallOffset": 93,
+    "defaultReturnOffset": 96,
+    "fastTargetLeaOffsets": [
+      51,
+      63,
+      75
+    ],
+    "resetFrameBytes": 136,
+    "startFrameBytes": 104,
+    "ownerCarrierBytes": 16,
+    "zeroElapsedRaw32": 0,
+    "initialDeltaRaw32": 0,
+    "pathSelection": "original successful Reset, ordinary selected registration append/default virtual dispatch",
+    "helperNoninterferenceRequired": true,
+    "ownerObjectPtrConstructionSemanticsConditional": true,
+    "slotAndPriorityAcceptancePredicted": false,
+    "allocationPredicted": false,
+    "allPathsIncludingIFixProved": false
+  }
+}

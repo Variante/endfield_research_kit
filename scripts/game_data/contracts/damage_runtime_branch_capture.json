@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.mission-trace-capture-recipe.v14",
+  "schema": "endfield.mission-trace-capture-recipe.v17",
   "status": "reviewed",
   "inheritsRecipe": "damage_runtime_kernel_capture.json",
   "hooks": [
@@ -122,6 +122,13 @@
             }
           ],
           "role": "branch-selection"
+        },
+        {
+          "label": "defenderPoiseFactorSelector",
+          "argument": "module",
+          "type": "damage.defenderPoiseFactor.moduleSelector",
+          "readMode": "moduleCallbackSelector",
+          "role": "boundary-only-selector-snapshot"
         }
       ],
       "observationMode": "paired",
@@ -129,16 +136,112 @@
       "evidenceBoundary": {
         "direct": "Actual incoming isExtraTarget and stored target-wrapper type; paired root nests existing pack/modifier observations.",
         "conditional": "Selected physical ABI and complete synchronous pairs; no callback invocation or object getter.",
-        "unresolved": "Anonymous IFix callback result/selection and extra-target EnemyPart damageRatio Single scale remain unobserved."
+        "unresolved": "Boundary selector samples do not establish the arithmetic selection or factor. EnemyPart ratio continuity and individual pack/callback joins remain separate."
+      }
+    },
+    {
+      "name": "damage.Source.Lock",
+      "type": "Beyond.ObjectPtr`1",
+      "method": "Lock",
+      "returnType": "VAR[14976]",
+      "static": false,
+      "parameters": [],
+      "genericEntry": {
+        "classArguments": [
+          "object"
+        ],
+        "methodArguments": []
+      },
+      "fields": [
+        {
+          "label": "returnedEnemyPart",
+          "argument": "returnValue",
+          "type": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart",
+          "readMode": "returnedExactClass",
+          "role": "conditional-returned-part-snapshot"
+        }
+      ],
+      "observationMode": "paired",
+      "captureScope": "paired-ancestor",
+      "captureCallerHooks": [
+        "damage.Action.ProcessDamage"
+      ],
+      "semanticRole": "Actual transferred-source Lock return and exact-class EnemyPart ratio snapshot",
+      "evidenceBoundary": {
+        "direct": "Original normal Lock return and actual returned object/class identities. UID/ratio read only after exact runtime EnemyPart class equality.",
+        "conditional": "Selected shared-reference ABI, immediate ProcessDamage caller site and complete paired root; runtime receiver/context identity is separate.",
+        "unresolved": "Snapshot does not prove the later arithmetic MOVSS operand remained unchanged; derived classes and uninitialized ClassInfo are not admitted."
+      }
+    },
+    {
+      "name": "damage.CallbackCandidate.8835",
+      "type": "IFix.ILFixDynamicMethodWrapper",
+      "method": "__Gen_Wrap_8835",
+      "declaringImage": "Gameplay.Beyond.dll",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "P0",
+          "type": "Beyond.Gameplay.Core.DamagePackData"
+        }
+      ],
+      "fields": [],
+      "opaqueByRefArguments": [
+        "P0"
+      ],
+      "observationMode": "paired",
+      "captureScope": "paired-ancestor",
+      "captureCallerHooks": [
+        "damage.Action.ProcessDamage"
+      ],
+      "captureIndirectCaller": "damage.defenderPoiseFactor",
+      "semanticRole": "Candidate original IFix callback return at actual Process inline callsite only",
+      "evidenceBoundary": {
+        "conditional": "Same physical ABI candidate only. Not proved selected by this slot; observed original calls with the exact Process inline indirect return address identify actual physical execution. Zero hits remain unknown.",
+        "direct": "Original normal Double return only if this named physical entry actually executes at the reviewed Process indirect callsite.",
+        "unresolved": "No advance slot-to-wrapper selection claim; no callback is invoked by the observer; zero hits never imply fallback."
+      }
+    },
+    {
+      "name": "damage.CallbackCandidate.8837",
+      "type": "IFix.ILFixDynamicMethodWrapper",
+      "method": "__Gen_Wrap_8837",
+      "declaringImage": "Gameplay.Beyond.dll",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "P0",
+          "type": "Beyond.Gameplay.Core.DamagePackData"
+        }
+      ],
+      "fields": [],
+      "opaqueByRefArguments": [
+        "P0"
+      ],
+      "observationMode": "paired",
+      "captureScope": "paired-ancestor",
+      "captureCallerHooks": [
+        "damage.Action.ProcessDamage"
+      ],
+      "captureIndirectCaller": "damage.defenderPoiseFactor",
+      "semanticRole": "Candidate original IFix callback return at actual Process inline callsite only",
+      "evidenceBoundary": {
+        "conditional": "Same physical ABI candidate only. Not proved selected by this slot; observed original calls with the exact Process inline indirect return address identify actual physical execution. Zero hits remain unknown.",
+        "direct": "Original normal Double return only if this named physical entry actually executes at the reviewed Process indirect callsite.",
+        "unresolved": "No advance slot-to-wrapper selection claim; no callback is invoked by the observer; zero hits never imply fallback."
       }
     }
   ],
   "coverageGaps": [
-    "ProcessDamage observes the incoming extra-target bool; no anonymous callback root observer or EnemyPart damageRatio observer is implemented.",
-    "Critical status may be interpreted conditionally from the existing modifier flag word and selected native contract; this recipe does not observe Dice directly."
+    "Exact-class EnemyPart Lock return UID/ratio snapshots are available; derived classes and continuity to the later MOVSS are not admitted.",
+    "Module selector entry/normal-return snapshots retain double-read boundary state only. Equal or null table/function samples never establish the intervening arithmetic branch or factor1.",
+    "Two ABI-compatible named IFix candidates retain actual original returns only at the reviewed Process indirect callsite. Their prior slot selection is not proved; zero hits remain unknown and individual pack joins remain required.",
+    "Critical status can be interpreted conditionally from the existing modifier flag word and selected native contract; this recipe does not observe Dice directly."
   ],
   "evidenceBoundary": {
-    "conditional": "Named damage branches only; selected native ABI and healthy complete synchronous pairs.",
-    "unresolved": "Anonymous callback selection/result, extra-target EnemyPart damageRatio, runtime patch selection and server authority remain separate."
+    "conditional": "Selected native ABI, complete synchronous pairs, exact caller sites and bounded physical snapshots only. No observer invokes game getters, patches or replacement callbacks.",
+    "unresolved": "Actual boundary-to-arithmetic state continuity, unobserved callback targets, individual pack joins, derived EnemyPart classes, runtime patch selection and server authority remain separate."
   }
 }

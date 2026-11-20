@@ -1,0 +1,204 @@
+{
+  "schema": "endfield.skill-center-usage-publication-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "constructor": [
+    49678,
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+    ".ctor",
+    111243584
+  ],
+  "functions": {
+    "updater": 267424,
+    "constructor": 111243584
+  },
+  "codeWindows": [
+    {
+      "owner": "updater",
+      "startRva": 267424,
+      "endRva": 267465,
+      "sha256": "AE259A3D6D3CF621279ACDF11BFD09B11E2A12D5794576FA99D771163618E244",
+      "boundary": "complete selected original physical family range"
+    },
+    {
+      "owner": "updater",
+      "startRva": 267465,
+      "endRva": 267543,
+      "sha256": "0C091F0441F1E37073D66C890E7C40CACF9A767C81C0E27235DDF865A1C21B6D",
+      "boundary": "complete selected original physical family range"
+    },
+    {
+      "owner": "updater",
+      "startRva": 267543,
+      "endRva": 267744,
+      "sha256": "88D5B22347F6BC816494E386A7441BD70323FDFCB3C90814B44D10232F29F860",
+      "boundary": "complete selected original physical family range"
+    },
+    {
+      "owner": "constructor",
+      "startRva": 111243584,
+      "endRva": 111244031,
+      "sha256": "8D093584CB111EF17213B11875B8463419A0E341F084521FE7E894E6CFBA994A",
+      "boundary": "complete selected original physical family range"
+    },
+    {
+      "owner": "constructor",
+      "startRva": 111244031,
+      "endRva": 111247177,
+      "sha256": "FCF8A1F470643CE94B78B6B6CE2E0CE9138A7D4C4A7F460723E132B7B8914AE0",
+      "boundary": "complete selected original physical family range"
+    },
+    {
+      "owner": "constructor",
+      "startRva": 125144556,
+      "endRva": 125144595,
+      "sha256": "F405F104D2DDFCAA0B4ABF9B93F6162C1E194E8EC0A14648108C4034491347C6",
+      "boundary": "complete selected original physical family range"
+    }
+  ],
+  "spans": [
+    {
+      "id": "updaterEntry",
+      "owner": "updater",
+      "rva": 267424,
+      "hex": "48895c2410574883ec2033db488bf98bcbf0480fc10ff6c101750e488bc1488b5c24384883c4205fc3"
+    },
+    {
+      "id": "updaterSwitch",
+      "owner": "updater",
+      "rva": 267465,
+      "hex": "48897424308bc1c1e81d8bf1d1ee81e6ffffff0fffc883f80677294c8d0515ebfbff4898418b9480c41504004903d0ffe2"
+    },
+    {
+      "id": "tag3Result",
+      "owner": "updater",
+      "rva": 267514,
+      "hex": "e8d1bd6200488bd84885db7406488bc3488707488b742430488bc3eba7"
+    },
+    {
+      "id": "constructorPrefix",
+      "owner": "constructor",
+      "rva": 111243584,
+      "hex": "48895c241048896c24184889742420574883ec30803db419d10a00498bf8488bf2488bd90f856f010000"
+    },
+    {
+      "id": "constructorCells",
+      "owner": "constructor",
+      "rva": 111243626,
+      "hex": "488d0ddf52c309e82aa362f9488d0dcb53c309e81ea362f9488d0dcf52c309e812a362f9488d0dcb52c309e806a362f9488d0d5752c309e8faa262f9488d0d5352c309e8eea262f9488d0d5f53c309e8e2a262f9488d0d4352c309e8d6a262f9488d0d3f52c309e8caa262f9488d0d3b52c309e8bea262f9488d0d3752c309e8b2a262f9488d0d3352c309e8a6a262f9488d0d2f52c309e89aa262f9488d0d9b52c309e88ea262f9488d0d9752c309e882a262f9488d0d9352c309e876a262f9488d0d8f52c309e86aa262f9488d0d8b52c309e85ea262f9488d0d8752c309e852a262f9488d0d8352c309e846a262f9488d0d7f52c309e83aa262f9488d0dfb51c309e82ea262f9488d0df751c309e822a262f9488d0df351c309e816a262f9488d0def51c309e80aa262f9488d0deb51c309e8fea162f9488d0de751c309e8f2a162f9488d0de351c309e8e6a162f9488d0d6752c309e8daa162f9488d0dd351c309e8cea162f9"
+    },
+    {
+      "id": "constructorReady",
+      "owner": "constructor",
+      "rva": 111243986,
+      "hex": "c6053618d10a01"
+    }
+  ],
+  "operands": {
+    "saveRbx": 16,
+    "restoreRbx": 56,
+    "saveRsi": 48,
+    "updaterFrame": 32,
+    "unresolvedMask": 1,
+    "unresolvedRva": 267465,
+    "restoreRva": 267454,
+    "noResultRva": 267533,
+    "kindShift": 29,
+    "indexMask": 268435455,
+    "maxKindIndex": 6,
+    "imageBaseRva": 0,
+    "tableRva": 267716,
+    "tableJumpRva": 267512,
+    "encodedRva": 6738640,
+    "ctorSaveRbx": 16,
+    "ctorSaveRbp": 24,
+    "ctorSaveRsi": 32,
+    "ctorFrame": 48,
+    "readyFlagCell": 292719375,
+    "constructorResumeRva": 111243993,
+    "readyStoreValue": 1
+  },
+  "pieces": [
+    {
+      "kind": "code",
+      "startRva": 267424,
+      "endRva": 267465
+    },
+    {
+      "kind": "code",
+      "startRva": 267465,
+      "endRva": 267543
+    },
+    {
+      "kind": "code",
+      "startRva": 267543,
+      "endRva": 267713
+    },
+    {
+      "kind": "padding",
+      "startRva": 267713,
+      "endRva": 267716
+    },
+    {
+      "kind": "table",
+      "startRva": 267716,
+      "endRva": 267744
+    }
+  ],
+  "rules": {
+    "originalProgramOnly": true,
+    "usageTag3PublicationCfgProved": true,
+    "completeUpdaterPartitionCfgAndFramesProved": true,
+    "atomicReadIsFetchAddZero": true,
+    "publicationIsExchangeNotCompareExchange": true,
+    "nonnullResolverReturnRequiredForExchange": true,
+    "returnsComputedPointerAfterExchange": true,
+    "tag3DispatchPreservesEncodedWord": true,
+    "usageInitializationToDefinitionCacheProved": true,
+    "constructorSelectedCellInitializationRequestProved": true,
+    "constructorReadyStoreAfterNormalCallsProved": true,
+    "independentConcurrentCellChangesPermitted": true,
+    "constructorReadyImpliesNonNullCellsProved": false,
+    "runtimeUsageInitializationObserved": false,
+    "actualToSkillMethodInfoContentsProved": false,
+    "liveCacheIdentityProved": false,
+    "runtimeOriginalImplementationObserved": false,
+    "wholeOtherUsageKindsProved": false
+  },
+  "rows": [
+    {
+      "id": "hotReadyWord",
+      "evidence": "conditional"
+    },
+    {
+      "id": "tag3NullResolution",
+      "evidence": "conditional"
+    },
+    {
+      "id": "tag3PublishComputed",
+      "evidence": "conditional"
+    },
+    {
+      "id": "constructorReadySkip",
+      "evidence": "conditional"
+    },
+    {
+      "id": "constructorInitializesCell",
+      "evidence": "conditional"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Selected original updater complete code/table/padding partition, seven-entry RVA table guard, all local CFG edges and normal frames. The tag3 selector reaches the existing encoded-method resolver and its plain definition-cache tail. Exact atomic XADD-zero read and conditional XCHG publication; constructor same-cell LEA/call and ready-flag read/store sequence."
+    ],
+    "conditional": [
+      "Valid writable usage cell and coherent local stack, original implementations and normal reached helper returns. The actual loaded word and computed resolver result are independent runtime inputs. Atomic exchange can replace a concurrently changed value; there is no compare-exchange winner test. Constructor ready byte is only a branch input; the ready store follows normal calls regardless of their pointer result. Existing class/cache/descriptor and MethodInfo source premises remain in force."
+    ],
+    "unresolved": [
+      "Runtime initialization execution, actual initialized MethodInfo pointee contents, cache/global coherence and object lifetime, race winner, actual runtime original-vs-patched body selection and semantics of other usage kinds remain unproved. The older MethodInfo fragment contract retains its narrower unresolved usage-publication boundary."
+    ]
+  }
+}

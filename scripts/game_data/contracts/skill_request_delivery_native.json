@@ -1,0 +1,219 @@
+{
+  "schema": "endfield.skill-request-delivery-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Exact selected named methods/fields and bounded getter-result argument bridge. Lookup internals, complete control flow, actual BeforeCast delivery and runtime receiver selection remain unresolved.",
+  "methods": {
+    "owner": {
+      "identity": [
+        49685,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+        "_ToSkill",
+        89282864
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "getter": {
+      "identity": [
+        59590,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "get_nextSkillId",
+        89510720
+      ],
+      "returnType": "string",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "lookup": {
+      "identity": [
+        59489,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "_TryGetSkill",
+        97646288
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": [
+        {
+          "name": "skillId",
+          "rawTypeHex": "7b0701000000000000000e0000000000",
+          "byref": false
+        },
+        {
+          "name": "skill",
+          "rawTypeHex": "d5240000000000000200122000000000",
+          "byref": true
+        }
+      ]
+    },
+    "wrapper": {
+      "identity": [
+        59353,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "GetNextSkillId",
+        118459520
+      ],
+      "returnType": "string",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "attackQuery": {
+      "identity": [
+        59352,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "GetNextAttackId",
+        89510496
+      ],
+      "returnType": "string",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": [
+        {
+          "name": "target",
+          "rawTypeHex": "56250000000000001010120000000000",
+          "byref": false
+        }
+      ]
+    },
+    "hasAttack": {
+      "identity": [
+        59355,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "HasNextAttackRequest",
+        89282672
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    }
+  },
+  "comboField": {
+    "type": "Beyond.Gameplay.Core.AbilitySystem",
+    "name": "m_comboController",
+    "offset": 1120,
+    "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+    "static": false,
+    "id": "Beyond.Gameplay.Core.AbilitySystem::m_comboController",
+    "ordinaryKind": 18
+  },
+  "codeWindows": [
+    {
+      "role": "transfer",
+      "methodRole": "owner",
+      "startRva": 89283169,
+      "endRva": 89283217,
+      "sha256": "12036C45C11DF793CF6A6B5717EE58AF17DF1E095F13F0CA472ED47BAF76519A",
+      "hex": "488b8b600400004885c9743e33d2e8cc7803004533c94c8d8510010000488bd0488bcbe8479c7f0084c00f8446ffffff",
+      "boundary": "Conditional normal fallthrough bounded fragment; upstream receiver selection and live iFix branch not proved."
+    },
+    {
+      "role": "falseReturn",
+      "methodRole": "owner",
+      "startRva": 89283031,
+      "endRva": 89283033,
+      "sha256": "35B660100ACAC77A09EED3BDD6B22A8DB7B27C1E8C4C4ED44BD52D51C9084B03",
+      "hex": "32c0",
+      "boundary": "Conditional normal fallthrough bounded fragment; upstream receiver selection and live iFix branch not proved."
+    },
+    {
+      "role": "wrapper",
+      "methodRole": "wrapper",
+      "startRva": 118459544,
+      "endRva": 118459567,
+      "sha256": "80D58CBC5EBF3B161E1EA3FF98B3D26699378CB711A6366D4A12C1C18DE08D68",
+      "hex": "488b89600400004885c9741033d24883c428e9914646fe",
+      "boundary": "Conditional normal fallthrough bounded fragment; upstream receiver selection and live iFix branch not proved."
+    }
+  ],
+  "operands": {
+    "outSlotRbpDisplacement": 272,
+    "wrapperStackRelease": 40
+  },
+  "sites": {
+    "getterCall": 89283183,
+    "lookupCall": 89283204,
+    "falseBranch": 89283211,
+    "wrapperTail": 118459562
+  },
+  "recordedCallerSites": [
+    {
+      "returnRva": 89283188,
+      "familyEntry": 89282864,
+      "runtimeTriple": [
+        89283083,
+        89283795,
+        267976448
+      ]
+    },
+    {
+      "returnRva": 89510602,
+      "familyEntry": 89510496,
+      "runtimeTriple": [
+        89510541,
+        89510676,
+        268008852
+      ]
+    },
+    {
+      "returnRva": 89283320,
+      "familyEntry": 89282864,
+      "runtimeTriple": [
+        89283083,
+        89283795,
+        267976448
+      ]
+    },
+    {
+      "returnRva": 89282791,
+      "familyEntry": 89282672,
+      "runtimeTriple": [
+        89282672,
+        89282854,
+        267306112
+      ]
+    }
+  ],
+  "rules": {
+    "originalPathOnly": true,
+    "upstreamAbilityReceiverRequired": true,
+    "normalNonNullFallthroughRequired": true,
+    "getterResultForwardedAsSkillId": true,
+    "lookupOutParameterByref": true,
+    "lookupFalseReturnsFalse": true,
+    "lookupInternalsProved": false,
+    "completeReceiverContinuityProved": false,
+    "beforeCastLinkProved": false,
+    "actualCastProved": false,
+    "runtimeSelectionProved": false
+  }
+}

@@ -1,0 +1,1643 @@
+{
+  "schema": "endfield.skill-center-dispatch-native-contract.v9",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "registrations": [
+    {
+      "id": "switch",
+      "tableIndex": 377783,
+      "methodSpecIndex": 403256,
+      "pointerIndex": 377390,
+      "methodIndex": 6916,
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "entryRva": 105521456
+    },
+    {
+      "id": "lookup",
+      "tableIndex": 377776,
+      "methodSpecIndex": 403249,
+      "pointerIndex": 377383,
+      "methodIndex": 6914,
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "entryRva": 102928336
+    },
+    {
+      "id": "tick",
+      "tableIndex": 377784,
+      "methodSpecIndex": 403257,
+      "pointerIndex": 377391,
+      "methodIndex": 6910,
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "entryRva": 98182624
+    },
+    {
+      "id": "executor",
+      "tableIndex": 145083,
+      "methodSpecIndex": 154293,
+      "pointerIndex": 145005,
+      "methodIndex": 6933,
+      "classArguments": [
+        "System.Int32Enum"
+      ],
+      "entryRva": 105541184
+    },
+    {
+      "id": "selector",
+      "tableIndex": 145034,
+      "methodSpecIndex": 154177,
+      "pointerIndex": 144956,
+      "methodIndex": 6928,
+      "classArguments": [
+        "System.Int32Enum"
+      ],
+      "entryRva": 94948928
+    },
+    {
+      "id": "condition",
+      "tableIndex": 145080,
+      "methodSpecIndex": 154290,
+      "pointerIndex": 145002,
+      "methodIndex": 6931,
+      "classArguments": [
+        "System.Int32Enum"
+      ],
+      "entryRva": 95923376
+    },
+    {
+      "id": "add",
+      "tableIndex": 377772,
+      "methodSpecIndex": 403245,
+      "pointerIndex": 377379,
+      "methodIndex": 6913,
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "entryRva": 105615488
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "switch",
+      "startRva": 105521456,
+      "endRva": 105521669,
+      "sha256": "A303D107AA7C52856B8F1B340B0C576B2BFAEC83DB7253F87F90B62701A4A058",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "switch",
+      "startRva": 124701516,
+      "endRva": 124701565,
+      "sha256": "52CA488563CD43459480FAE9FBFF8B9FD3C4BD857F63BB5029CA1022B0162F50",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "lookup",
+      "startRva": 102928336,
+      "endRva": 102928535,
+      "sha256": "C01D584D9C20F149CF8880351B7FB95627143E716CDAE4F68BC50F9EA08B0B69",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "lookup",
+      "startRva": 121220900,
+      "endRva": 121220952,
+      "sha256": "B9BD8C29953D898B79D0810E50C63022A79F24751C8F8BC499593B6866CE3A69",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "tick",
+      "startRva": 98182624,
+      "endRva": 98182695,
+      "sha256": "3231AC17696082D000DC09485D2F0CA1168D70003FAF4CD96F96B077C2CCADF1",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "tick",
+      "startRva": 98182695,
+      "endRva": 98182873,
+      "sha256": "84118672BD961F84A71593A874022A3ADE5847F7E8096F25B1E4C58F057A4CEB",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "tick",
+      "startRva": 98182873,
+      "endRva": 98182889,
+      "sha256": "B03C1B7A6B126297D56BA2AF5898AA6443483F1257A04AC5FF06DE26315DC471",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "tick",
+      "startRva": 98182889,
+      "endRva": 98182981,
+      "sha256": "C95CCF9487E0439A0FF4204E6BB1536822AB512842A5512D9B42B9F5028A2557",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "tick",
+      "startRva": 120980816,
+      "endRva": 120980908,
+      "sha256": "2E966DBEB0E1760C4B35D7BE2A192429125ECB728C9CA0EFE514B3D6DC35AB24",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "executor",
+      "startRva": 105541184,
+      "endRva": 105541392,
+      "sha256": "A87F11563AABEFAEFE378DE9F414081834ED36943C10DFA0B63579556C96D9FF",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "executor",
+      "startRva": 121327434,
+      "endRva": 121327480,
+      "sha256": "18FAD4C2A81AA0EAFCBD114CA01F5F35ECADBCBF6FF35EBE96EB4E9AAC568BCF",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "selector",
+      "startRva": 94948928,
+      "endRva": 94949341,
+      "sha256": "063A2BAE4422D17009DB232CD7C7EC6F758F38E7DBA09BB49B0E36BBA9CAE697",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 95923376,
+      "endRva": 95923395,
+      "sha256": "AC4798F8F4E797BC50A08C9859E9F041C4EF3C5D0DCF48AAC63C3B906A9655F4",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 95923395,
+      "endRva": 95923522,
+      "sha256": "B9CD04D6E6B4ACAA80551B650AF3D03BB2774D01EACC0836387DABCC7FBC18A9",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 95923522,
+      "endRva": 95923527,
+      "sha256": "3297A0E4175E5D032A2BE5212C1A1980CD3DF21251DB492413A47FCB4B6187AC",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 95923527,
+      "endRva": 95923922,
+      "sha256": "DC1EF888D5D0833A55ABA2D547156671D6F85123B18D8E2B73ADCB3B79895C5D",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 123602284,
+      "endRva": 123602291,
+      "sha256": "D46887983637F150066EF490A6D6E22A7370B015CF23040468CF60518D32D51D",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 123602291,
+      "endRva": 123602314,
+      "sha256": "2A9712E05C1DC96F0D9BFE4B55511D9B05EB472E2A22A2A8FB0A3DA9E8AC8497",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "condition",
+      "startRva": 123602314,
+      "endRva": 123602636,
+      "sha256": "473B8302A99B461020E37ADE025B0BEFDB6CC3ADE497A95F29717A5AC717D85B",
+      "boundary": "complete selected canonical shared unwind family"
+    },
+    {
+      "owner": "enumVirtual",
+      "startRva": 310976,
+      "endRva": 311350,
+      "sha256": "7F28D79AEFB229F9947CF0F6B9C3F08CA564D9126E8E82E8AAECF17E59C230DB",
+      "boundary": "complete selected physical virtual helper unwind family; only three-mismatch fallback path is semantically admitted"
+    },
+    {
+      "owner": "enumVirtual",
+      "startRva": 311350,
+      "endRva": 313000,
+      "sha256": "3055FA69FAFD126267F65C30189ADD309FB64BA8B944DE13455AFC6C1D36FFEE",
+      "boundary": "complete selected physical virtual helper unwind family; only three-mismatch fallback path is semantically admitted"
+    },
+    {
+      "owner": "enumVirtual",
+      "startRva": 313000,
+      "endRva": 313256,
+      "sha256": "D88D8B509E5BCF6D18B0A0BA90A898B108DD30CEA3137CA370D9BEFC2846CC8B",
+      "boundary": "complete selected physical virtual helper unwind family; only three-mismatch fallback path is semantically admitted"
+    },
+    {
+      "owner": "add",
+      "startRva": 105615488,
+      "endRva": 105615687,
+      "sha256": "75544BAA8F53638E05601395AD733E3235B077531AA1D855EAF7564BA410702F",
+      "boundary": "complete selected canonical shared AddState unwind family"
+    },
+    {
+      "owner": "add",
+      "startRva": 121327928,
+      "endRva": 121327980,
+      "sha256": "421A6774087CBF2951B4C6D28E1D9EC71C20AB4332547BA94738246280B52706",
+      "boundary": "complete selected canonical shared AddState unwind family"
+    },
+    {
+      "owner": "moveNext",
+      "startRva": 83897104,
+      "endRva": 83897376,
+      "sha256": "9D5256C16798E65EFE6B6C9A8735311CDEEE3E3739AD461FAADC18B8FB9F8B1C",
+      "boundary": "complete selected MoveNext unwind family"
+    }
+  ],
+  "spans": [
+    {
+      "id": "switchLookupCall",
+      "rva": 105521510,
+      "hex": "488b47208bd6488bcb4c8b80c00000004d8b4028e8516ed8ff",
+      "owner": "switch"
+    },
+    {
+      "id": "switchAfterLookup",
+      "rva": 105521535,
+      "hex": "488be84885c07463488b53404885d2746fb905000000448bc6e8239dbaf9488b7340488d4b4048896b40e8b221c6f9488b5b404885f67448",
+      "owner": "switch"
+    },
+    {
+      "id": "switchContext",
+      "rva": 105521591,
+      "hex": "488b4720488b88c0000000488b81c000000048837820000f848fa92401",
+      "owner": "switch"
+    },
+    {
+      "id": "switchEnter",
+      "rva": 105521620,
+      "hex": "4885db7426448b4620b904000000488bd3e8d69cbaf9",
+      "owner": "switch"
+    },
+    {
+      "id": "switchReturn",
+      "rva": 105521642,
+      "hex": "488b5c2430488b6c2438488b7424404883c4205fc3",
+      "owner": "switch"
+    },
+    {
+      "id": "switchNull",
+      "rva": 105521663,
+      "hex": "e83cc7c3f9cc",
+      "owner": "switch"
+    },
+    {
+      "id": "switchInitializer",
+      "rva": 124701539,
+      "hex": "488b4720488b88c0000000488b81c0000000ff1090e95756dbfe",
+      "owner": "switch"
+    },
+    {
+      "id": "enumVirtualPrefix",
+      "owner": "enumVirtual",
+      "rva": 310976,
+      "hex": "40535741574881eca00000000fb7d9458bf8488b0a488bfae8138dfbff488b07488d4b144803c94c8b0cc84c8b44c808488d05097a0d064c3bc87542"
+    },
+    {
+      "id": "enumCompare2",
+      "owner": "enumVirtual",
+      "rva": 311102,
+      "hex": "488d057bad1a064c3bc87542"
+    },
+    {
+      "id": "enumCompare3",
+      "owner": "enumVirtual",
+      "rva": 311180,
+      "hex": "488d051db129054c3bc80f85bd070000"
+    },
+    {
+      "id": "enumFallback",
+      "owner": "enumVirtual",
+      "rva": 313177,
+      "hex": "418bd7488bcf41ffd14881c4a0000000415f5f5bc3"
+    },
+    {
+      "id": "tickEntry",
+      "owner": "tick",
+      "rva": 98182624,
+      "hex": "48895c2418574883ec3080794800498bf80f29742420488bd90f28f10f84d7000000488b51384885d2740db9070000000f28d1e828d329fa"
+    },
+    {
+      "id": "tickFirst",
+      "owner": "tick",
+      "rva": 98182680,
+      "hex": "48837b40000f84b6000000488b472048896c24404889742448488b7340488b90c0000000488b424848837820000f8405df5b01488b4720488bce488b90c0000000488b5248e8dea7ceff488be84885c0757f"
+    },
+    {
+      "id": "tickUpdate",
+      "owner": "tick",
+      "rva": 98182762,
+      "hex": "488b53404885d20f84c8000000b9060000000f28d6e8bcd229fa488b73404885f60f84ae000000"
+    },
+    {
+      "id": "tickSecond",
+      "owner": "tick",
+      "rva": 98182801,
+      "hex": "488b4720488b90c0000000488b4248483968200f84bdde5b01488b4720488bce488b90c0000000488b5248e87fa7ceff807b4800488bf074054885c07551"
+    },
+    {
+      "id": "tickReturn",
+      "owner": "tick",
+      "rva": 98182863,
+      "hex": "488b6c2440488b742448"
+    },
+    {
+      "id": "tickShortReturn",
+      "owner": "tick",
+      "rva": 98182873,
+      "hex": "488b5c24500f287424204883c4305fc3"
+    },
+    {
+      "id": "tickExecuteFirst",
+      "owner": "tick",
+      "rva": 98182889,
+      "hex": "488b4720488b88c0000000488b415848837820000f8492de5b01488bcd488b4720488d53404c8b80c00000004d8b4058e822477000ebaf"
+    },
+    {
+      "id": "tickExecuteSecond",
+      "owner": "tick",
+      "rva": 98182944,
+      "hex": "488b4f20488b91c0000000488b4a5848837920000f8444de5b01488bceebc7"
+    },
+    {
+      "id": "tickNull",
+      "owner": "tick",
+      "rva": 98182975,
+      "hex": "e8fcc133facc"
+    },
+    {
+      "id": "tickInitializeFirst",
+      "owner": "tick",
+      "rva": 120980816,
+      "hex": "488b4720488b90c0000000488b4248ff1090e9e420a4fe"
+    },
+    {
+      "id": "tickInitializeSecond",
+      "owner": "tick",
+      "rva": 120980839,
+      "hex": "488b4720488b90c0000000488b4248ff1090e92c21a4fe"
+    },
+    {
+      "id": "tickInitializeExecuteSecond",
+      "owner": "tick",
+      "rva": 120980862,
+      "hex": "488b4f20488b91c0000000488b4258ff1090e9a521a4fe"
+    },
+    {
+      "id": "tickInitializeExecuteFirst",
+      "owner": "tick",
+      "rva": 120980885,
+      "hex": "488b4720488b88c0000000488b4158ff1090e95721a4fe"
+    },
+    {
+      "id": "executorEntry",
+      "owner": "executor",
+      "rva": 105541184,
+      "hex": "48895c240848896c2410488974241848897c242041564883ec20488b7920498bf0488b69184c8bf2488bd94885ff0f8496000000498b4020488b88c0000000488b410848837820000f84bce0f000"
+    },
+    {
+      "id": "executorExit",
+      "owner": "executor",
+      "rva": 105541262,
+      "hex": "4885ed7477448b4720b905000000488bd5e81c50baf9488b4320498bce498906e8add4c5f9488b7b20488b5b184885db744a488b4620488b88c0000000488b410848837820000f8487e0f000"
+    },
+    {
+      "id": "executorEnter",
+      "owner": "executor",
+      "rva": 105541338,
+      "hex": "4885ff742b448b4320b904000000488bd7488b5c2430488b6c2438488b742440488b7c24484883c420415ee9b64fbaf9"
+    },
+    {
+      "id": "executorNull",
+      "owner": "executor",
+      "rva": 105541386,
+      "hex": "e8317ac3f9cc"
+    },
+    {
+      "id": "executorInitializeFirst",
+      "owner": "executor",
+      "rva": 121327434,
+      "hex": "498b4020488b88c0000000488b4108ff1090e92d1f0fff"
+    },
+    {
+      "id": "executorInitializeSecond",
+      "owner": "executor",
+      "rva": 121327457,
+      "hex": "488b4620488b88c0000000488b4108ff1090e9621f0fff"
+    },
+    {
+      "id": "selectorEntry",
+      "owner": "selector",
+      "rva": 94948928,
+      "hex": "4889542410534883ec600f57c033c00f114424404889442450488b59304885db0f8465010000"
+    },
+    {
+      "id": "selectorLoop",
+      "owner": "selector",
+      "rva": 94949168,
+      "hex": "488b442478488b4820488b91c0000000488b5270488d4c2440e8c25b57ff84c0745f488b5c24504885db7475488b542478488b4220488b88c0000000488b416848837820007516488b4220488b88c0000000488b4168ff10488b542478488b4220488b90c0000000488b5268488bcbe80cdd0e0084c07488"
+    },
+    {
+      "id": "selectorFound",
+      "owner": "selector",
+      "rva": 94949288,
+      "hex": "488bc34883c4605bc3"
+    },
+    {
+      "id": "selectorNoMore",
+      "owner": "selector",
+      "rva": 94949297,
+      "hex": "eb0a"
+    },
+    {
+      "id": "selectorNullReturn",
+      "owner": "selector",
+      "rva": 94949309,
+      "hex": "33c04883c4605bc3"
+    },
+    {
+      "id": "selectorListNull",
+      "owner": "selector",
+      "rva": 94949323,
+      "hex": "e8701965fa90"
+    },
+    {
+      "id": "selectorItemNull",
+      "owner": "selector",
+      "rva": 94949329,
+      "hex": "e85a1965fa90"
+    },
+    {
+      "id": "selectorCleanup",
+      "owner": "selector",
+      "rva": 94949335,
+      "hex": "e8d4cc5efacc"
+    },
+    {
+      "id": "lookupEntry",
+      "owner": "lookup",
+      "rva": 102928336,
+      "hex": "48895c240848896c24104889742418574883ec20488b7128498bd88bea488bf94885f60f8494000000498b40204c8b80c0000000498b80d000000048837820000f840e1f1701"
+    },
+    {
+      "id": "lookupContains",
+      "owner": "lookup",
+      "rva": 102928406,
+      "hex": "488b43208bd5488bce4c8b80c00000004d8b80d0000000e8de590dff84c0745d488b7f284885ff744e488b4320488b90c0000000488b82d800000048837820000f84e21e1701"
+    },
+    {
+      "id": "lookupItem",
+      "owner": "lookup",
+      "rva": 102928476,
+      "hex": "488b43208bd5488bcf4c8b80c00000004d8b80d8000000e8d8530dff"
+    },
+    {
+      "id": "lookupReturn",
+      "owner": "lookup",
+      "rva": 102928504,
+      "hex": "488b5c2430488b6c2438488b7424404883c4205fc3"
+    },
+    {
+      "id": "lookupNull",
+      "owner": "lookup",
+      "rva": 102928525,
+      "hex": "e8ae58ebf9cc"
+    },
+    {
+      "id": "lookupFalse",
+      "owner": "lookup",
+      "rva": 102928531,
+      "hex": "33c0ebe1"
+    },
+    {
+      "id": "lookupInitContains",
+      "owner": "lookup",
+      "rva": 121220900,
+      "hex": "488b4320488b90c0000000488b82d0000000ff1090e9d8e0e8fe"
+    },
+    {
+      "id": "lookupInitItem",
+      "owner": "lookup",
+      "rva": 121220926,
+      "hex": "488b4320488b90c0000000488b82d8000000ff1090e904e1e8fe"
+    },
+    {
+      "id": "conditionEntry",
+      "owner": "condition",
+      "rva": 95923376,
+      "hex": "4883ec2848837910000f84ad58a601488b422048895c2430488b591048897c2420488b88c0000000488b411848837820000f848c58a601"
+    },
+    {
+      "id": "conditionDispatch",
+      "owner": "condition",
+      "rva": 95923431,
+      "hex": "488b4318488d0d5ec39aff488b5328488b7b4048896c24384889742440483bc1743e488d0db0b49aff483bc10f8482000000488d0d90a59aff483bc10f84fc000000488bcfffd0"
+    },
+    {
+      "id": "conditionRestore",
+      "owner": "condition",
+      "rva": 95923502,
+      "hex": "488b742440488b6c2438488b5c2430488b7c2420"
+    },
+    {
+      "id": "conditionReturn",
+      "owner": "condition",
+      "rva": 95923522,
+      "hex": "4883c428c3"
+    },
+    {
+      "id": "conditionTrue",
+      "owner": "condition",
+      "rva": 123602284,
+      "hex": "b001e9cfa759fe"
+    },
+    {
+      "id": "conditionInit",
+      "owner": "condition",
+      "rva": 123602291,
+      "hex": "488b4220488b88c0000000488b4118ff1090e95da759fe"
+    },
+    {
+      "id": "addEntry",
+      "owner": "add",
+      "rva": 105615488,
+      "hex": "48895c240848896c24104889742418574883ec20488b4118498bf8488bda4c8bd14885d20f8497000000488d4a1048894210e8a9b2c4f94d8b4a20488d4b184c894b18e898b2c4f9488b4720498b7228488b88c0000000488b81c000000048837820000f844fc0ef00"
+    },
+    {
+      "id": "addReadId",
+      "owner": "add",
+      "rva": 105615593,
+      "hex": "8b6b204885f67450488b4720488b88c0000000488b81c800000048837820000f8444c0ef00"
+    },
+    {
+      "id": "addTail",
+      "owner": "add",
+      "rva": 105615630,
+      "hex": "488b47204c8bc38bd5488bce4c8b88c00000004d8b89c8000000488b5c2430488b6c2438488b7424404883c4205fe99f22a2ff"
+    },
+    {
+      "id": "addNull",
+      "owner": "add",
+      "rva": 105615681,
+      "hex": "e8fa57c2f9cc"
+    },
+    {
+      "id": "addInitState",
+      "owner": "add",
+      "rva": 121327928,
+      "hex": "488b4720488b88c0000000488b81c0000000ff1090e9973f10ff"
+    },
+    {
+      "id": "addInitDictionary",
+      "owner": "add",
+      "rva": 121327954,
+      "hex": "488b47204c8b80c0000000498b80c8000000ff1090e9a23f10ff"
+    },
+    {
+      "id": "selectorInitContext",
+      "owner": "selector",
+      "rva": 94948966,
+      "hex": "488b4220488b88c0000000488b415048837820007511488b4220488b88c0000000488b4150ff10"
+    },
+    {
+      "id": "selectorInitLocal",
+      "owner": "selector",
+      "rva": 94949005,
+      "hex": "0f57c0f30f7f44243048895c2428833d8e15c90b00743d"
+    },
+    {
+      "id": "selectorInitBarrier",
+      "owner": "selector",
+      "rva": 94949028,
+      "hex": "4c8d44242849c1e80c4181e0ffff1f00418bc048c1e806488d0d564ba30b488d14c14183e03f0f0d0a0f1f00488b02488bc84c0fabc1f0480fb10a75ef"
+    },
+    {
+      "id": "selectorInitFields",
+      "owner": "selector",
+      "rva": 94949089,
+      "hex": "33c9894c24304885db0f84d50000008b431c8944243433c048894424380f104424280f11442440f20f104c2438f20f114c245048894c2428488d4424404889442430488d44247848894424380f1f00"
+    },
+    {
+      "id": "selectorInitNull",
+      "owner": "selector",
+      "rva": 94949317,
+      "hex": "e8661965facc"
+    },
+    {
+      "id": "moveNextEntry",
+      "owner": "moveNext",
+      "rva": 83897104,
+      "hex": "48895c241048896c24184889742420574883ec20488b39488bd98b710c4885ff0f84d00000003b771c0f858c0000008b47183941080f8380000000488b7f10486371084885ff0f84b00000003b77180f83ad000000833dc4b8710c00488b44f72048894110743a"
+    },
+    {
+      "id": "moveNextBarrier",
+      "owner": "moveNext",
+      "rva": 83897207,
+      "hex": "4c8d411049c1e80c488d0d92ee4b0c4181e0ffff1f00418bc048c1e8064183e03f488d14c10f0d0a90488b02488bc84c0fabc1f0480fb10a75ef"
+    },
+    {
+      "id": "moveNextIncrement",
+      "owner": "moveNext",
+      "rva": 83897265,
+      "hex": "ff4308b001"
+    },
+    {
+      "id": "moveNextReturn",
+      "owner": "moveNext",
+      "rva": 83897270,
+      "hex": "488b5c2438488b6c2440488b7424484883c4205fc3"
+    },
+    {
+      "id": "moveNextSlow",
+      "owner": "moveNext",
+      "rva": 83897291,
+      "hex": "488b4a20f68138010000017505e8c3ea03fb"
+    },
+    {
+      "id": "moveNextRecheck",
+      "owner": "moveNext",
+      "rva": 83897309,
+      "hex": "488b034885c0741b8b401c39430c752b488b038b4818ffc133c0894b0848894310ebb6"
+    },
+    {
+      "id": "moveNextSlowNull",
+      "owner": "moveNext",
+      "rva": 83897344,
+      "hex": "e82bbd0dfbcc"
+    },
+    {
+      "id": "moveNextNull",
+      "owner": "moveNext",
+      "rva": 83897350,
+      "hex": "e835bd0dfbcc"
+    },
+    {
+      "id": "moveNextItemsNull",
+      "owner": "moveNext",
+      "rva": 83897356,
+      "hex": "e82fbd0dfbcc"
+    },
+    {
+      "id": "moveNextBounds",
+      "owner": "moveNext",
+      "rva": 83897362,
+      "hex": "e8a90102fbcc"
+    },
+    {
+      "id": "moveNextVersionFailure",
+      "owner": "moveNext",
+      "rva": 83897368,
+      "hex": "33c9e8e970a007cc"
+    }
+  ],
+  "operands": {
+    "rgctxOffset": 192,
+    "lookupContextOffset": 40,
+    "currentOffset": 64,
+    "stateContextOffset": 192,
+    "initializerOffset": 32,
+    "stateIdOffset": 32,
+    "exitSlot": 5,
+    "enterSlot": 4,
+    "restoreRbx": 48,
+    "restoreRbp": 56,
+    "restoreRsi": 64,
+    "frameSize": 32,
+    "lookupRva": 102928336,
+    "virtualEnumRva": 310976,
+    "barrierRva": 1065824,
+    "nullHelperRva": 911680,
+    "switchEnterRva": 105521620,
+    "switchReturnRva": 105521642,
+    "switchNullRva": 105521663,
+    "switchInitializerRva": 124701539,
+    "methodInfoClassOffset": 32,
+    "virtualFrame": 160,
+    "classPrepareRva": 19440,
+    "vtablePairBase": 20,
+    "vtableMethodInfoOffset": 8,
+    "inlineTarget1": 101857536,
+    "inlineTarget2": 102722752,
+    "inlineTarget3": 86929584,
+    "enumCompare2Rva": 311102,
+    "enumCompare3Rva": 311180,
+    "enumFallbackRva": 313177,
+    "tickSaveRbx": 24,
+    "tickFrame": 48,
+    "runningOffset": 72,
+    "tickSaveXmm6": 32,
+    "blackboardOffset": 56,
+    "blackboardTickSlot": 7,
+    "virtualFloatRva": 260416,
+    "tickSaveRbp": 64,
+    "tickSaveRsi": 72,
+    "selectorContextOffset": 72,
+    "selectorRva": 94948928,
+    "stateUpdateSlot": 6,
+    "tickRestoreRbx": 80,
+    "executorContextOffset": 88,
+    "executorRva": 105541184,
+    "tickSharedExecuteRva": 98182918,
+    "tickFirstCallPrepRva": 98182731,
+    "tickSecondCallPrepRva": 98182826,
+    "tickFirstExecutePrepRva": 98182915,
+    "tickSecondExecutePrepRva": 98182970,
+    "executorSaveRbx": 8,
+    "executorSaveRbp": 16,
+    "executorSaveRsi": 24,
+    "executorSaveRdi": 32,
+    "executorFrame": 32,
+    "transitionToOffset": 32,
+    "transitionFromOffset": 24,
+    "transitionTypeContextOffset": 8,
+    "executorRestoreRbx": 48,
+    "executorRestoreRbp": 56,
+    "executorRestoreRsi": 64,
+    "executorRestoreRdi": 72,
+    "selectorSaveMethodInfo": 16,
+    "selectorFrame": 96,
+    "selectorEnumLocal": 64,
+    "selectorCurrentLocal": 80,
+    "stateTransitionsOffset": 48,
+    "selectorMethodInfoLocal": 120,
+    "moveNextContextOffset": 112,
+    "conditionContextOffset": 104,
+    "moveNextRva": 83897104,
+    "conditionRva": 95923376,
+    "selectorConditionPrepRva": 94949261,
+    "selectorNullItemHelperRva": 911664,
+    "selectorCleanupHelperRva": 498864,
+    "tickEntryRva": 98182624,
+    "tickFirstRva": 98182680,
+    "tickUpdateRva": 98182762,
+    "tickSecondRva": 98182801,
+    "tickReturnRva": 98182863,
+    "tickShortReturnRva": 98182873,
+    "tickExecuteFirstRva": 98182889,
+    "tickExecuteSecondRva": 98182944,
+    "tickNullRva": 98182975,
+    "tickInitializeFirstRva": 120980816,
+    "tickInitializeSecondRva": 120980839,
+    "tickInitializeExecuteSecondRva": 120980862,
+    "tickInitializeExecuteFirstRva": 120980885,
+    "executorEntryRva": 105541184,
+    "executorExitRva": 105541262,
+    "executorEnterRva": 105541338,
+    "executorNullRva": 105541386,
+    "executorInitializeFirstRva": 121327434,
+    "executorInitializeSecondRva": 121327457,
+    "selectorEntryRva": 94948928,
+    "selectorLoopRva": 94949168,
+    "selectorFoundRva": 94949288,
+    "selectorNoMoreRva": 94949297,
+    "selectorNullReturnRva": 94949309,
+    "selectorListNullRva": 94949323,
+    "selectorItemNullRva": 94949329,
+    "selectorCleanupRva": 94949335,
+    "lookupEntryRva": 102928336,
+    "lookupContainsRva": 102928406,
+    "lookupItemRva": 102928476,
+    "lookupReturnRva": 102928504,
+    "lookupNullRva": 102928525,
+    "lookupFalseRva": 102928531,
+    "lookupInitContainsRva": 121220900,
+    "lookupInitItemRva": 121220926,
+    "conditionEntryRva": 95923376,
+    "conditionDispatchRva": 95923431,
+    "conditionRestoreRva": 95923502,
+    "conditionReturnRva": 95923522,
+    "conditionTrueRva": 123602284,
+    "conditionInitRva": 123602291,
+    "lookupSaveRbx": 8,
+    "lookupSaveRbp": 16,
+    "lookupSaveRsi": 24,
+    "dictionaryOffset": 40,
+    "containsContextOffset": 208,
+    "itemContextOffset": 216,
+    "containsRva": 87026192,
+    "itemRva": 87024720,
+    "conditionFrame": 40,
+    "checkerOffset": 16,
+    "conditionSaveRbx": 48,
+    "conditionSaveRdi": 32,
+    "conditionSaveRbp": 56,
+    "conditionSaveRsi": 64,
+    "checkerContextOffset": 24,
+    "delegatePointerOffset": 24,
+    "delegateMethodInfoOffset": 40,
+    "delegateTargetOffset": 64,
+    "conditionInline1": 89288784,
+    "conditionInline2": 89285056,
+    "conditionInline3": 89281200,
+    "conditionInlineBranch1": 95923527,
+    "conditionInlineBranch2": 95923611,
+    "conditionInlineBranch3": 95923749,
+    "addEntryRva": 105615488,
+    "addReadIdRva": 105615593,
+    "addTailRva": 105615630,
+    "addNullRva": 105615681,
+    "addInitStateRva": 121327928,
+    "addInitDictionaryRva": 121327954,
+    "machineContext1Offset": 24,
+    "machineContext2Offset": 32,
+    "stateContext1Offset": 16,
+    "stateContext2Offset": 24,
+    "addStateTypeContextOffset": 192,
+    "addContextOffset": 200,
+    "dictionaryAddRva": 99464160,
+    "selectorInitContextRva": 94948966,
+    "selectorInitLocalRva": 94949005,
+    "selectorInitBarrierRva": 94949028,
+    "selectorInitFieldsRva": 94949089,
+    "selectorInitNullRva": 94949317,
+    "moveNextEntryRva": 83897104,
+    "moveNextBarrierRva": 83897207,
+    "moveNextIncrementRva": 83897265,
+    "moveNextReturnRva": 83897270,
+    "moveNextSlowRva": 83897291,
+    "moveNextRecheckRva": 83897309,
+    "moveNextSlowNullRva": 83897344,
+    "moveNextNullRva": 83897350,
+    "moveNextItemsNullRva": 83897356,
+    "moveNextBoundsRva": 83897362,
+    "moveNextVersionFailureRva": 83897368,
+    "enumeratorContextOffset": 80,
+    "selectorTempList": 40,
+    "selectorTempIndex": 48,
+    "selectorTempVersion": 52,
+    "selectorTempCurrent": 56,
+    "listVersionOffset": 28,
+    "selectorBarrierLoopRva": 94949072,
+    "enumVersionOffset": 12,
+    "enumIndexOffset": 8,
+    "enumCurrentOffset": 16,
+    "listSizeOffset": 24,
+    "listItemsOffset": 16,
+    "arrayLengthOffset": 24,
+    "arrayDataOffset": 32,
+    "moveSaveRbx": 16,
+    "moveSaveRbp": 24,
+    "moveSaveRsi": 32,
+    "moveFrame": 32,
+    "moveRestoreRbx": 56,
+    "moveRestoreRbp": 64,
+    "moveRestoreRsi": 72,
+    "moveBarrierLoopRva": 83897248,
+    "moveClassFlagOffset": 312,
+    "moveClassPrepareRva": 267936,
+    "moveBoundsHelperRva": 142784,
+    "moveVersionHelperRva": 211852552,
+    "selectorBarrierEnabledRelativeEnd": 292676655,
+    "moveBarrierEnabledRelativeEnd": 292676655,
+    "selectorBitmapBase": 290200088,
+    "moveBitmapBase": 290200088
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "normalWin64CallsRequired": true,
+    "switchFragmentStartsAtLookupReturn": true,
+    "lookupNullReturnsWithoutCallbacks": true,
+    "exitUsesRequestedStateIdBits32": true,
+    "exitPrecedesCurrentStore": true,
+    "currentReloadedAfterExit": true,
+    "currentReloadedAfterBarrier": true,
+    "oldAfterExitCheckedBeforeEnterTarget": true,
+    "oldIdReadAfterBothNullChecks": true,
+    "enterUsesOldAfterExitStateIdBits32": true,
+    "noFinalCurrentReadAfterEnter": true,
+    "genericInitializerNormalReturnRequired": true,
+    "opaqueVirtualDispatchRequired": true,
+    "enumVirtualFallbackPreservesReceiverAndId": true,
+    "enumVirtualFallbackUsesSelectedMethodInfo": true,
+    "enumVirtualFallbackRequiresThreeTargetMismatches": true,
+    "centerStateAndCanonicalStateIdSignedInt32": true,
+    "tickChecksRunningAtEntry": true,
+    "tickFirstTransitionDoesNotRecheckRunning": true,
+    "tickNullFirstTransitionRequestsStateUpdate": true,
+    "tickReloadsStateAfterUpdate": true,
+    "tickSecondTransitionRequiresRunningReload": true,
+    "tickNullCurrentBeforeFirstSelectionReturns": true,
+    "tickReachedNullStateForUpdateOrSecondSelectionIsExceptional": true,
+    "tickSelectorAndExecutorHelperEffectsRequired": true,
+    "transitionExecutorFragmentProved": true,
+    "transitionExitUsesInitialFromAndToId": true,
+    "transitionTargetReloadedAfterExitForStore": true,
+    "transitionFromAndToReloadedAfterBarrier": true,
+    "transitionNullablePostExitTargetStored": true,
+    "transitionEnterIsTailRequest": true,
+    "centerSkillOnEnterNominalFallbackTargetProved": true,
+    "actualVirtualTargetEqualsNamedMethodPointerRequired": true,
+    "addStateWritesTwoContextReferencesBeforeDictionaryRequest": true,
+    "addStateBarrierPreservesMachineCarrier": true,
+    "addStateReloadsSourceAfterFirstBarrier": true,
+    "addStateReadsIdAfterContextInitialization": true,
+    "addStateDictionaryAddIsTailRequest": true,
+    "addStateDictionaryEffectsRequired": true,
+    "lookupContainsFalseReturnsNull": true,
+    "lookupReloadsDictionaryAfterContains": true,
+    "lookupGetItemUsesOriginalIdBits32": true,
+    "lookupContainsAndGetItemEffectsRequired": true,
+    "conditionAbsentCheckerReturnsTrue": true,
+    "conditionFallbackRequiresThreeTargetMismatches": true,
+    "conditionFallbackForwardsStoredTargetAndMethodInfo": true,
+    "conditionActualDelegateTargetRequired": true,
+    "selectorLoopReturnsFirstTrueYieldedItem": true,
+    "selectorNullYieldedItemIsExceptional": true,
+    "selectorMoveNextFalseReturnsNull": true,
+    "selectorNullReceiverCannotReturnNormally": true,
+    "selectorInitializesEnumeratorListIndexVersionCurrent": true,
+    "moveNextComparesVersionBeforeUnsignedIndex": true,
+    "moveNextSuccessfulYieldIncrementsIndex": true,
+    "moveNextEndClearsCurrentAndSetsSizePlusOne": true,
+    "moveNextVersionMismatchIsExceptional": true,
+    "selectorInitializedEnumeratorCarrierRequired": false,
+    "staticProvidedContextDeclarationsProved": true,
+    "runtimeRgctxSlotsProved": false,
+    "transitionPrioritySortOrderProved": false,
+    "callbackReentrancyExcluded": false,
+    "currentPhysicalSlotNominalOwnershipProved": false,
+    "compiledClosedCenterMethodIdentityProved": false,
+    "liveReceiverTypeProved": false,
+    "selectedOnEnterActualCalleeProved": false,
+    "fullFSMDispatchProved": false,
+    "sameLiveWriterConsumerBlackboardProved": false
+  },
+  "callerBindings": [
+    {
+      "role": "switchLookup",
+      "callRva": 105521530,
+      "returnRva": 105521535,
+      "targetRva": 102928336
+    },
+    {
+      "role": "switchExitRequest",
+      "callRva": 105521560,
+      "returnRva": 105521565,
+      "targetRva": 310976,
+      "virtualSlot": 5
+    },
+    {
+      "role": "switchEnterRequest",
+      "callRva": 105521637,
+      "returnRva": 105521642,
+      "targetRva": 310976,
+      "virtualSlot": 4
+    },
+    {
+      "role": "tickBlackboardRequest",
+      "callRva": 98182675,
+      "returnRva": 98182680,
+      "targetRva": 260416
+    },
+    {
+      "role": "tickFirstSelector",
+      "callRva": 98182749,
+      "returnRva": 98182754,
+      "targetRva": 94948928
+    },
+    {
+      "role": "tickStateUpdateRequest",
+      "callRva": 98182783,
+      "returnRva": 98182788,
+      "targetRva": 260416
+    },
+    {
+      "role": "tickSecondSelector",
+      "callRva": 98182844,
+      "returnRva": 98182849,
+      "targetRva": 94948928
+    },
+    {
+      "role": "tickTransitionRequest",
+      "callRva": 98182937,
+      "returnRva": 98182942,
+      "targetRva": 105541184
+    }
+  ],
+  "boundaries": [
+    "Rules start at the selected canonical lookup return, with RBX=provided machine, ESI=requested 32-bit state ID and RDI=provided shared MethodInfo. Entry capture/carrier continuity is not proved by these fragments.",
+    "Normal Win64 calls and the provided machine/MethodInfo carriers are explicit premises. Callback and barrier reentrancy is permitted; each post-call read is independent.",
+    "Physical current+64 and state ID+32 are selected reads, not closed nominal field-layout proofs.",
+    "Slot requests do not prove the virtual helper selected a particular live callback or CenterSkillState instance.",
+    "Canonical Int32Enum/object implementation registration is exact; closed Center specialization runtime selection remains unresolved.",
+    "Virtual enum helper fallback proves receiver/32-bit ID/MethodInfo forwarding only if the selected code pointer differs from each of three inlined targets. Class preparation must return normally; actual heap class/vtable population remains an external runtime premise.",
+    "CenterSkillState.OnEnter nominal vtable slot and original method pointer are proved to be a non-inlined enum-helper fallback target. This does not prove the actual runtime receiver class or selected callback target; equality to that original pointer remains an explicit premise.",
+    "Tick canonical body has complete selected main/cold-path semantic grammar. Selector and transition-executor effects, float virtual helper dispatch, supplied MethodInfo, heap field reads, and callbacks remain explicit inputs; no closed Center Tick runtime selection is inferred.",
+    "Transition executor original canonical Transit(ref curState) reads physical from/to pointers. Post-callback and post-barrier rereads are independent; no final current value is promised after enter tail-call. Physical transition field nominal ownership and live selected transition identity remain unresolved.",
+    "Lookup proves ContainsKey call AL controls null versus a fresh dictionary load followed by get_Item with the original 32-bit key; dictionary helper effects and initialized provided RGCTX are premises, so concurrent mutation is not excluded. Condition fragment proves absent checker returns true and three pointer mismatches call the stored delegate pointer with stored target RCX and MethodInfo RDX. It does not bind any CenterSkillState _ToSkill closure to that actual pointer or prove inlined target semantics.",
+    "AddState proves two physical context reference stores with the selected barrier, whose complete closed-leaf grammar from the lifecycle contract preserves R10/R11 on the same native image. Context initialization may have effects; the state ID is read after first initialization. Dictionary Add is an opaque tail request. Closed Center generic runtime selection, nominal ownership of physical context slots and dictionary effects remain unresolved.",
+    "Selector constructs a physical enumerator with the provided list, zero index, observed list version and null current. The selected MoveNext first compares version then unsigned index versus size; successful yield reads the bounded array element, stores current, increments index and returns true. Slow path rechecks version after optional class preparation, sets index=size+1/current=null and returns false, or requests opaque failure on version mismatch. Reached calls must return normally; helper effects, shared-memory races, runtime RGCTX and actual list lifetime remain conditional. Enumerated order is not a proved transition priority."
+  ],
+  "physicalVtable": {
+    "baseOffset": 320,
+    "stride": 16,
+    "methodInfoOffset": 8
+  },
+  "stateIdEnums": [
+    "System.Int32Enum",
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState"
+  ],
+  "skillOnEnter": {
+    "identity": [
+      49642,
+      "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+      "OnEnter",
+      89312128
+    ],
+    "slot": 4
+  },
+  "contextClaims": [
+    {
+      "definition": 1640,
+      "isMethod": false,
+      "token": 33556073,
+      "image": "Gameplay.Beyond.dll",
+      "typeName": "Beyond.Gameplay.StateMachine`2",
+      "methodName": null,
+      "start": 208,
+      "count": 39,
+      "entries": [
+        {
+          "relativeSlot": 5,
+          "moduleEntryIndex": 213,
+          "entryVa": 6676664304,
+          "rawHex": "03000000000000000804758F01000000",
+          "kind": 3,
+          "index": 403225,
+          "methodSpec": [
+            6914,
+            42449,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.StateMachine`2",
+          "methodName": "GetState",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "VAR[70]",
+              "typePointerVa": 6721521072,
+              "rawHex": "46000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 70,
+                "parameterOffset": 53844824,
+                "parameterRawHex": "3E0000007F4604002900010001000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 9,
+          "moduleEntryIndex": 217,
+          "entryVa": 6676664368,
+          "rawHex": "0300000000000000F003758F01000000",
+          "kind": 3,
+          "index": 154154,
+          "methodSpec": [
+            6928,
+            734,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMState`1",
+          "methodName": "CheckTransition",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 11,
+          "moduleEntryIndex": 219,
+          "entryVa": 6676664400,
+          "rawHex": "03000000000000004404758F01000000",
+          "kind": 3,
+          "index": 154288,
+          "methodSpec": [
+            6933,
+            734,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMTransition`1",
+          "methodName": "Transit",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 25,
+          "moduleEntryIndex": 233,
+          "entryVa": 6676664624,
+          "rawHex": "0300000000000000A8FC748F01000000",
+          "kind": 3,
+          "index": 49256,
+          "methodSpec": [
+            403972,
+            2741,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "Add",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMState`1<VAR[69]>",
+              "typePointerVa": 6704727240,
+              "rawHex": "58EB0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMState`1",
+                "typePointerVa": 6719798416,
+                "rawHex": "69060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 26,
+          "moduleEntryIndex": 234,
+          "entryVa": 6676664640,
+          "rawHex": "0300000000000000A4FC748F01000000",
+          "kind": 3,
+          "index": 49257,
+          "methodSpec": [
+            403977,
+            2741,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "ContainsKey",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMState`1<VAR[69]>",
+              "typePointerVa": 6704727240,
+              "rawHex": "58EB0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMState`1",
+                "typePointerVa": 6719798416,
+                "rawHex": "69060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 27,
+          "moduleEntryIndex": 235,
+          "entryVa": 6676664656,
+          "rawHex": "0300000000000000FCFC748F01000000",
+          "kind": 3,
+          "index": 49259,
+          "methodSpec": [
+            403970,
+            2741,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "get_Item",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMState`1<VAR[69]>",
+              "typePointerVa": 6704727240,
+              "rawHex": "58EB0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMState`1",
+                "typePointerVa": 6719798416,
+                "rawHex": "69060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        }
+      ],
+      "selectedSlots": [
+        5,
+        9,
+        11,
+        25,
+        26,
+        27
+      ]
+    },
+    {
+      "definition": 1641,
+      "isMethod": false,
+      "token": 33556074,
+      "image": "Gameplay.Beyond.dll",
+      "typeName": "Beyond.Gameplay.FSMState`1",
+      "methodName": null,
+      "start": 247,
+      "count": 17,
+      "entries": [
+        {
+          "relativeSlot": 10,
+          "moduleEntryIndex": 257,
+          "entryVa": 6676665008,
+          "rawHex": "030000000000000078FC748F01000000",
+          "kind": 3,
+          "index": 228765,
+          "methodSpec": [
+            404147,
+            18687,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1",
+          "methodName": "GetEnumerator",
+          "classArguments": [
+            {
+              "name": "Beyond.Gameplay.FSMTransition`1<VAR[71]>",
+              "typePointerVa": 6705064600,
+              "rawHex": "E8EC0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMTransition`1",
+                "typePointerVa": 6719798464,
+                "rawHex": "6B060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 714,
+              "classArguments": [
+                {
+                  "name": "VAR[71]",
+                  "typePointerVa": 6718829248,
+                  "rawHex": "47000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 71,
+                    "parameterOffset": 53844840,
+                    "parameterRawHex": "3F000000784604002A00010000000000",
+                    "containerIndex": 63,
+                    "containerOffset": 54263916,
+                    "containerRawHex": "69060000010000000000000047000000",
+                    "typeIndex": 1641,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.FSMState`1"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 13,
+          "moduleEntryIndex": 260,
+          "entryVa": 6676665056,
+          "rawHex": "030000000000000090FD748F01000000",
+          "kind": 3,
+          "index": 154287,
+          "methodSpec": [
+            6931,
+            714,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMTransition`1",
+          "methodName": "CheckCondition",
+          "classArguments": [
+            {
+              "name": "VAR[71]",
+              "typePointerVa": 6718829248,
+              "rawHex": "47000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 71,
+                "parameterOffset": 53844840,
+                "parameterRawHex": "3F000000784604002A00010000000000",
+                "containerIndex": 63,
+                "containerOffset": 54263916,
+                "containerRawHex": "69060000010000000000000047000000",
+                "typeIndex": 1641,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.FSMState`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 14,
+          "moduleEntryIndex": 261,
+          "entryVa": 6676665072,
+          "rawHex": "030000000000000088FD748F01000000",
+          "kind": 3,
+          "index": 115546,
+          "methodSpec": [
+            404179,
+            18687,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1+Enumerator",
+          "methodName": "MoveNext",
+          "classArguments": [
+            {
+              "name": "Beyond.Gameplay.FSMTransition`1<VAR[71]>",
+              "typePointerVa": 6705064600,
+              "rawHex": "E8EC0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMTransition`1",
+                "typePointerVa": 6719798464,
+                "rawHex": "6B060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 714,
+              "classArguments": [
+                {
+                  "name": "VAR[71]",
+                  "typePointerVa": 6718829248,
+                  "rawHex": "47000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 71,
+                    "parameterOffset": 53844840,
+                    "parameterRawHex": "3F000000784604002A00010000000000",
+                    "containerIndex": 63,
+                    "containerOffset": 54263916,
+                    "containerRawHex": "69060000010000000000000047000000",
+                    "typeIndex": 1641,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.FSMState`1"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        }
+      ],
+      "selectedSlots": [
+        10,
+        13,
+        14
+      ]
+    },
+    {
+      "definition": 1643,
+      "isMethod": false,
+      "token": 33556075,
+      "image": "Gameplay.Beyond.dll",
+      "typeName": "Beyond.Gameplay.FSMTransition`1",
+      "methodName": null,
+      "start": 264,
+      "count": 6,
+      "entries": [
+        {
+          "relativeSlot": 1,
+          "moduleEntryIndex": 265,
+          "entryVa": 6676665136,
+          "rawHex": "03000000000000006CFD748F01000000",
+          "kind": 3,
+          "index": 154150,
+          "methodSpec": [
+            6922,
+            2540,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMState`1",
+          "methodName": "GetStateId",
+          "classArguments": [
+            {
+              "name": "VAR[73]",
+              "typePointerVa": 6719944432,
+              "rawHex": "49000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 73,
+                "parameterOffset": 53844872,
+                "parameterRawHex": "41000000764704002C00010000000000",
+                "containerIndex": 65,
+                "containerOffset": 54263948,
+                "containerRawHex": "6B060000010000000000000049000000",
+                "typeIndex": 1643,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.FSMTransition`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 3,
+          "moduleEntryIndex": 267,
+          "entryVa": 6676665168,
+          "rawHex": "030000000000000064FD748F01000000",
+          "kind": 3,
+          "index": 46907,
+          "methodSpec": [
+            6936,
+            2540,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMTransition`1+ConditionChecker",
+          "methodName": "Invoke",
+          "classArguments": [
+            {
+              "name": "VAR[73]",
+              "typePointerVa": 6719944432,
+              "rawHex": "49000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 73,
+                "parameterOffset": 53844872,
+                "parameterRawHex": "41000000764704002C00010000000000",
+                "containerIndex": 65,
+                "containerOffset": 54263948,
+                "containerRawHex": "6B060000010000000000000049000000",
+                "typeIndex": 1643,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.FSMTransition`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        }
+      ],
+      "selectedSlots": [
+        1,
+        3
+      ]
+    }
+  ]
+}

@@ -162,7 +162,11 @@ result, with no file-stored method count or order. The conditional loader recipe
 is proved, while the projector exposes the authored low-half slot without
 inventing a file VTable row.
 
-## What the current patches author
+## What retained patch bodies author
+
+The following examples describe independently retained historical payloads.
+They are not the declared-target list of every later export; each analysis
+remains scoped to its own patch fingerprint.
 
 - **Gameplay.** The `_InitLoader` replacement body declares calls to three
   other VM bodies, and its external signatures include typed
@@ -201,12 +205,35 @@ ran or produced an effect.
   activation, or the path a PlaySound action takes. The default-body proof and
   its runtime boundary belong to [`audio_native_hooks.md`](audio_native_hooks.md).
 - **Missions.** An older local mission audit describes a different patch
-  payload and must not be carried forward. The current payload matches the
-  reviewed [`ifix_patch.json`](../../scripts/game_data/contracts/ifix_patch.json)
-  contract, whose fixed-target and external-reference classifications contain
-  no direct task-completion or receiver-ownership match: a narrow negative over
-  the decoded records, not proof that the patch has no indirect effect on
-  missions or Story.
+  payload and must not be carried forward. The reviewed
+  [`ifix_patch.json`](../../scripts/game_data/contracts/ifix_patch.json) catalog
+  classifies its pinned retained bytes, whose fixed-target and external-reference
+  rows contain no direct task-completion or receiver-ownership match. The supplied
+  Gameplay export now differs from that catalog despite a matching native pair;
+  do not call the catalog current or transfer this negative without matching
+  patch bytes and the selected complete outer set. A scoped target negative
+  never proves absence of indirect mission or Story effects.
+- **Damage factor.** Independently retained Gameplay and rendering patch files
+  from the current and previous export roots frame completely through the
+  maintained reader and contain no declared `get_defenderPoiseFactor` fix
+  record. This is a negative over those supplied bytes only. Neither export
+  tree is thereby admitted as current, and other loaded files, incremental
+  publication or native registrations remain possible. There is consequently
+  no replacement VM body to assign to this getter from those files; do not
+  choose an unrelated body by its numeric ID or infer the original value.
+
+- **Motion curves.** Supplied Gameplay, rendering and Lua patch files close to
+  EOF with no declared replacement target for the selected FAnimationCurve
+  evaluator/wrap/solver or MoveToAction methods. This is only a negative over
+  those supplied bytes. Retained outer-set audits belong to another native
+  cohort and cannot authenticate this one. Complete installed file selection,
+  actual loading, wrapper-slot registration and other runtime writers remain
+  unproved, so the simulator retains its `noIFix` condition. In particular,
+  null-table/null-slot source rules do not make a zero-initialized root an
+  observed runtime null, and slot displacement is not a VM body index. Detailed
+  supplied-file fingerprints and catalog differences are generated in the
+  [bounded audit](../../reports/single_attack_motion/ifix_supplied_targets_audit.json);
+  the format and guard rules remain owned by the readers linked above.
 
 ## Currentness gate
 
@@ -224,6 +251,95 @@ agreement. This joins the complete input set to the supplied outer receipt,
 which may be retained; it does not reread live VFS. Live currentness requires
 a fresh VFS audit. Without those arguments the result is a projection over
 caller-supplied bytes.
+
+## Damage factor publication boundary
+
+The selected [damage formula contract](../../scripts/game_data/contracts/damage_process_formula_native.json)
+and its [reader](../../scripts/game_data/damage_process_formula_native.py)
+identify the multiplier selector with the named
+`DamagePackData.get_defenderPoiseFactor` replacement selector. The original
+getter returns Double one on its null-table/null-function path. The root,
+table and selected function are runtime state: static zero-initialized
+storage, an absent stored fix record or an unhit named getter hook does not
+select that path. The arithmetic caller contains its own selector fragment,
+so it need not enter the named getter. A later explicit getter call is a
+separate boundary and needs receiver/selector continuity to describe the
+earlier multiplication.
+
+The bounded publication reading separates the managed wrapper array from the
+native replacement selector. Image-qualified `PatchManager.PublishState`
+requests `BuildHotPatchUpdate` and `ApplyHotPatchHandler`; the latter's API
+resolution names `Unity.IL2CPP.Runtime.HotPatch, Il2cppExt` and the reflected
+`SetPatch(MethodBase, Delegate)` / `ClearPatch(MethodBase)` methods. Their
+selected declarations are internal calls. The registered `SetPatch` thunk
+resolves or reuses a runtime target, restores its inputs and tail-forwards to
+that target. This is a publication **request boundary**, not a proof of the
+target implementation, a write to this getter's native slot, successful
+publication or a live replacement result. In particular, the ordinary managed
+`WrappersManagerImpl.GetPatch` array read is not an established accessor for
+the native selector root. Older wrapper-selection/assignment audits must pass
+their own native gates before supplying any stronger join.
+
+This publication-chain reading is a bounded current inspection finding, not
+a validated extension of either the damage formula contract or the older
+wrapper-assignment contracts. Its reproducible lookup is the selected
+metadata's `IFix.Core.PatchManager` in `IFix.Core.dll` (the named publication
+methods above), and `Unity.IL2CPP.Runtime.HotPatch` in `Il2cppExt.dll` (the
+internal-call declarations). Use the image/type/method partitions and
+`NativeImage.method_pointer_va` in the maintained
+[`native_image.py`](../../scripts/game_data/il2cpp/native_image.py) reader;
+the selected unresolved string/type usages are decoded with
+[`il2cpp/context.py`](../../scripts/game_data/il2cpp/context.py) and
+[`il2cpp/protocol.py`](../../scripts/game_data/il2cpp/protocol.py).
+These locations make the managed request finding recheckable without carrying
+a report's addresses or admitting its classifications as current proof.
+
+The independent [native publication reader](../../scripts/game_data/ifix_runtime_publication_native.py)
+and [reviewed contract](../../scripts/game_data/contracts/ifix_runtime_publication_native.json)
+extend the lower, physical boundary. Short internal-call names are paired with
+handler addresses in the registration-call fragment; the handler adapters lead
+to bounded native Set, Clear and ClearAll store programs. This does not prove
+the internal-call registry's live contents or that a historical request reached
+one of these handlers. The initializer stores the same returned pointer into
+the writer and getter root cells. These are distinct cells, not a permanent
+alias: later reset, reinitialization and other writes remain relevant.
+
+The Set program stores the receiver before publishing the function pointer,
+with a locked zero-OR instruction between the stores. Clear stores a zero
+function pointer before clearing the receiver, with the same kind of barrier.
+ClearAll clears function slots in one pass, then reloads its bounds/root for
+the receiver-clearing pass. These are ordered physical stores, not an atomic
+function/receiver pair or a proof that readers take the writers' guard. The
+common guard requests alone do not establish synchronization semantics.
+
+The metadata's stored native method-to-slot mapping also supplies a separate
+identity domain: a named method's unique stored row agrees with its native
+getter's page/slot arithmetic. This joins stored method identity and physical
+slot geometry; it does not bind the live mapping-table pointer, a managed AOT
+map field or a patch-file VM body. Keep those joins distinct.
+
+Under stable live roots and page backing, normal successful allocation, and
+the restriction that only these Set/Clear/ClearAll programs write the selected
+page, the page pointer can be published but is not cleared by these programs.
+Two null-page boundaries would then exclude an intervening successful page
+publication. The retained combat recordings do not establish those premises:
+they do not rule out reset/reinitialization, root-object reuse or other writes.
+This conditional result therefore leaves historical continuity and the actual
+factor unknown; it is not permission to promote equal boundary snapshots.
+
+The getter's image-qualified AOT map field, a same-numbered generated delegate
+type, the patch file's VM method ID and the native function-slot displacement
+remain separate identities until their factory/publication joins are proved.
+Current metadata can locate a delegate candidate; it cannot supply its live
+receiver, selected VM body or return expression. The
+[runtime-evidence audit](../../scripts/game_data/ifix_runtime_evidence.py)
+keeps these declaration/request facts separate from observed execution.
+Boundary snapshots of the selector can establish values at those boundaries
+only; matching entry/return snapshots do not prove the absence of an
+intervening change. A physical callback hit at the authenticated caller return
+site can observe that invocation's returned factor, while zero hits leave it
+unknown. No HP residual or retrospective branch fit substitutes for that
+missing selection/value evidence.
 
 ## Remaining boundary
 

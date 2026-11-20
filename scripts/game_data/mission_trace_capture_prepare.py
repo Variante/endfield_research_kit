@@ -44,6 +44,9 @@ RECEIVER_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v12"
 IMAGE_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v13"
 CALLER_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v14"
 BOUNDED_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v15"
+RETURN_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v16"
+SELECTOR_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v17"
+BOUNDED_SCHEMAS = {BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}
 BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v1"
 BOUNDED_BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v2"
 ABI_ID = "win64.transparent_entry_snapshot.v1"
@@ -90,11 +93,13 @@ def read_words(field):
     if field['kind']==6:return row+[field['byteCount']]
     if field['kind']==7:return row+[field[k]for k in ('countOffset','versionOffset','storageOffset','arrayLengthOffset','arrayDataOffset','elementStride','maxCount')]
     if field['kind']==8:return row+[field[k]for k in ('parentFieldIndex','itemIndex','byteCount')]
+    if field['kind']==9:return row+[field[k]for k in ('classInfoRva','uidOffset','ratioOffset','imageBytes')]
+    if field['kind']==10:return row+[field[k]for k in ('rootRva','tableOffset','functionOffset','imageBytes')]
     return row
 
 
 def validate_provider_selection(recipe):
-    if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and recipe.get('observerProviders',['mission-trace'])!=['mission-trace']:
+    if recipe.get('schema')in BOUNDED_SCHEMAS and recipe.get('observerProviders',['mission-trace'])!=['mission-trace']:
         raise PreparationError('mission_trace.providers: only mission-trace/128 is currently stageable; combined audio requires reviewed host and parent association')
 
 
@@ -103,17 +108,17 @@ def read_recipe(path: Path = RECIPE_PATH, *, _ancestors: tuple[Path, ...] = ()) 
     if path in _ancestors or len(_ancestors) >= 4:
         raise PreparationError('mission_trace.recipe: inheritance cycle or depth limit')
     value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
         raise PreparationError("mission_trace.recipe: unsupported schema")
     base_name = value.get('inheritsRecipe')
     if base_name is not None:
-        if value['schema'] not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not isinstance(base_name, str) or not re.fullmatch(r'[A-Za-z0-9_-]+\.json', base_name):
+        if value['schema'] not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or not isinstance(base_name, str) or not re.fullmatch(r'[A-Za-z0-9_-]+\.json', base_name):
             raise PreparationError('mission_trace.recipe: v9 requires a bounded sibling base filename')
         base_path = path.resolve().parent / base_name
         if base_path.parent != CONTRACTS_DIR.resolve() or base_path == path.resolve():
             raise PreparationError('mission_trace.recipe: base must be another reviewed sibling contract')
         base = json.loads(base_path.read_bytes())
-        if not isinstance(base, dict) or 'inheritsRecipe' in base and value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+        if not isinstance(base, dict) or 'inheritsRecipe' in base and value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError('mission_trace.recipe: nested inheritance is unsupported')
         base = read_recipe(base_path, _ancestors=(*_ancestors, path))
         if not isinstance(value.get('hooks'), list):
@@ -122,7 +127,7 @@ def read_recipe(path: Path = RECIPE_PATH, *, _ancestors: tuple[Path, ...] = ()) 
                  'coverageGaps': base.get('coverageGaps', []) + value.get('coverageGaps', [])}
     updates = value.pop('hookUpdates', [])
     if updates:
-        if value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or base_name is None or not isinstance(updates, list):
+        if value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or base_name is None or not isinstance(updates, list):
             raise PreparationError('mission_trace.recipe: hook updates require v10 inheritance')
         targets = {h['name']: h for h in value['hooks']}
         seen = set()
@@ -526,11 +531,27 @@ class SelectedMethods:
             raise PreparationError(f"{hook['name']}: signature matched {len(candidates)} methods; expected {hook['parameters']!r}")
         method, parameters = candidates[0]
         actual_return = self.type_name(method.return_type)
+        damage_lock = hook.get("name") == "damage.Source.Lock"
+        center_getter = hook.get("name") == "battle.Center.GetBlackboard"
+        center_delivery = hook.get('centerDeliveryRole') is not None
+        if center_delivery:
+            from scripts.game_data.battle_center_delivery_capture_abi import prove_signature
+            prove_signature(self, hook, method)
+        if damage_lock:
+            from scripts.game_data.damage_runtime_branch_abi import prove_damage_lock_signature
+            proof = prove_damage_lock_signature(self, hook, method)
+            if not hasattr(self, "_return_abi_proofs"): self._return_abi_proofs = {}
+            self._return_abi_proofs[hook["name"]] = proof
+        if center_getter:
+            from scripts.game_data.battle_center_capture_abi import prove_center_getter_signature
+            proof = prove_center_getter_signature(self, hook, method)
+            if not hasattr(self, "_return_abi_proofs"): self._return_abi_proofs = {}
+            self._return_abi_proofs[hook["name"]] = proof
         if actual_return != hook["returnType"] or bool(method.flags & 0x10) != hook["static"]:
             raise PreparationError(f"{hook['name']}: return/static drift; expected {hook['returnType']}/{hook['static']}, actual {actual_return}/{bool(method.flags & 0x10)}")
         if actual_return in {'float', 'double'}:
             self.scalar_return_abi(method.return_type, actual_return)
-        elif actual_return not in {"void", "bool", "int", "uint", "long", "ulong"} and not self.is_enum(actual_return):
+        elif not (damage_lock or center_getter or center_delivery) and actual_return not in {"void", "bool", "int", "uint", "long", "ulong"} and not self.is_enum(actual_return):
             proof = self.reference_return_abi(method.return_type)
             if proof is None:
                 raise PreparationError(f"{hook['name']}: hidden return ABI unsupported for {actual_return}")
@@ -538,6 +559,10 @@ class SelectedMethods:
                 self._return_abi_proofs = {}
             self._return_abi_proofs[hook["name"]] = proof
         pointer = self.image.method_pointer_va(method)
+        if hook.get('captureIndirectCaller') is not None:
+            from scripts.game_data.damage_runtime_branch_abi import callback_candidate_spec
+            if pointer-self.image.pe.image_base != int(callback_candidate_spec(self,hook)['entryRva'],16):
+                raise PreparationError('damage_branch.callback: selected normal candidate entry differs')
         generic = hook.get("genericEntry")
         if generic is not None:
             if pointer or not isinstance(generic, dict) or set(generic) != {"classArguments", "methodArguments"}:
@@ -546,22 +571,37 @@ class SelectedMethods:
                    any(not isinstance(item, str) or not item for item in generic[key]) for key in generic):
                 raise PreparationError(f"{hook['name']}: invalid generic instantiation arguments")
             try:
-                if not hasattr(self, "_generic_entries"):
-                    self._generic_entries = GenericEntries(self.image)
-                proof = self._generic_entries.resolve(method.index, generic["classArguments"], generic["methodArguments"])
+                if damage_lock:
+                    from scripts.game_data.damage_runtime_branch_abi import resolve_damage_lock_entry
+                    proof = resolve_damage_lock_entry(self, hook, method)
+                else:
+                    if not hasattr(self, "_generic_entries"):
+                        self._generic_entries = GenericEntries(self.image)
+                    proof = self._generic_entries.resolve(method.index, generic["classArguments"], generic["methodArguments"])
             except ValueError as exc:
                 raise PreparationError(f"{hook['name']}: {exc}") from exc
             pointer = proof["pointer"]
+            if center_getter:
+                from scripts.game_data.battle_center_capture_abi import validate_center_getter_entry
+                validate_center_getter_entry(self, hook, proof)
+            if damage_lock:
+                from scripts.game_data.damage_runtime_branch_abi import selected_contract
+                expected = int(selected_contract(self)["returnedPart"]["entryRva"], 16)
+                if pointer-self.image.pe.image_base != expected:
+                    raise PreparationError("damage_branch.lock: selected shared native entry differs")
             if not hasattr(self, "_generic_proofs"):
                 self._generic_proofs = {}
             self._generic_proofs[hook["name"]] = proof
+        if center_delivery:
+            from scripts.game_data.battle_center_delivery_capture_abi import validate_entry
+            validate_entry(self, hook, getattr(self,'_generic_proofs',{}).get(hook['name']), pointer)
         # Folded native bodies can receive unrelated instance types. Reject them
         # rather than applying one owner's field layout to another caller.
         aliases = self.index.names_by_pointer.get(pointer) or []
         symbols = {f"{row.get('type')}.{row.get('method')}" for row in aliases}
         alias_indices = {row.get("methodIndex") for row in aliases}
         expected = f"{hook['type']}.{hook['method']}"
-        if symbols != {expected} or alias_indices != {method.index}:
+        if (symbols != {expected} or alias_indices != {method.index}) and not center_delivery:
             raise PreparationError(f"{hook['name']}: shared or unregistered native body; expected={expected}, methodIndex={method.index}; aliasCount={len(symbols)}, aliases={sorted(symbols)[:8]!r}; methodIndexCount={len(alias_indices)}, methodIndices={sorted(str(index) for index in alias_indices)[:8]!r}")
         if declaring is not None:
             image_index,image_name=self._type_images[td.index]
@@ -632,9 +672,11 @@ class SelectedMethods:
         raw = self.image.pe.bytes_at_va(pointer, 16)
         if len(raw) != 16 or raw[11] != 0:
             return None
-        if raw[10]==0x1c and self.type_name(type_index)=='object':
-            return {'mode':'directReference','returnType':'object','typeIndex':type_index,
-                    'evidence':'selected undecorated IL2CPP_TYPE_OBJECT; Win64 pointer return has no hidden buffer',
+        primitive_reference={0x1c:'object',0x0e:'string'}.get(raw[10])
+        if primitive_reference is not None and self.type_name(type_index)==primitive_reference:
+            return {'mode':'directReference','returnType':primitive_reference,'typeIndex':type_index,
+                    'nativeTypeRecordHex':raw.hex(),
+                    'evidence':'selected undecorated IL2CPP primitive reference; Win64 pointer return has no hidden buffer',
                     'returnObserved':False}
         if raw[10]!=0x12:return None
         definition_index = int.from_bytes(raw[:8], "little")
@@ -644,6 +686,7 @@ class SelectedMethods:
             return None
         return {"mode": "directReference", "returnType": name,
                 "typeIndex": type_index, "typeDefinitionIndex": definition_index,
+                "nativeTypeRecordHex": raw.hex(),
                 "evidence": "selected undecorated IL2CPP_TYPE_CLASS; Win64 pointer return has no hidden return-buffer argument",
                 "returnObserved": False}
 
@@ -739,6 +782,16 @@ class SelectedMethods:
         if type(count)is not int or not 1<=count<=256:
             raise PreparationError('mission_trace.raw: byteCount must be an exact integer in 1..256')
         if spec.get('sourceWitness')is not None:
+            if spec['sourceWitness']=='battle-input':
+                from scripts.game_data.battle_input_capture_sources import derive_read_layouts
+                if not hasattr(self,'_battle_read_layouts'):
+                    self._battle_read_layouts=derive_read_layouts(self)
+                layouts=self._battle_read_layouts;proof=layouts['values'].get(name)
+                if members is not None or not isinstance(proof,dict) or proof['byteCount']!=count:
+                    raise PreparationError('mission_trace.raw: selected battle request storage differs')
+                return dict(type=name,offset=0,byteCount=count,fields=[],
+                    sourceWitness=dict(schema=layouts['schema'],type=name,byteCount=count),
+                    evidence='fresh selected native request construction/clear extent; non-atomic opaque snapshot')
             if spec['sourceWitness']!='patrol':raise PreparationError('mission_trace.raw: unsupported selected source witness')
             layouts=self.source_read_layouts(families=('values',));proof=layouts.get('values',{}).get(name)
             if members is None and isinstance(proof,dict):
@@ -1179,35 +1232,43 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
     hooks = []
     seen_rvas: set[int] = set()
     for spec in recipe["hooks"]:
-        if any(f.get('readMode') is not None for f in spec['fields']) and recipe.get('schema')!=BOUNDED_RECIPE_SCHEMA:
+        if spec.get('name')=='damage.Source.Lock' and recipe.get('schema') not in {RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
+            raise PreparationError('damage_branch.lock: selected shared-reference observer requires recipe v16')
+        if any(f.get('readMode') is not None for f in spec['fields']) and recipe.get('schema')not in BOUNDED_SCHEMAS:
             raise PreparationError('mission_trace.recipe: bounded raw/container reads require recipe v15')
-        if spec.get("genericEntry") is not None and recipe.get("schema") not in {GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+        if spec.get("genericEntry") is not None and recipe.get("schema") not in {GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: generic entries require recipe v5")
-        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") not in {REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") not in {REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: reference identities require recipe v4")
-        if spec.get("anonymousEntry") is not None and recipe.get("schema") not in {ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+        if spec.get("anonymousEntry") is not None and recipe.get("schema") not in {ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: anonymous assignment entries require recipe v6")
-        if any("layoutWitness" in step for field in spec["fields"] for step in field.get("path", [])) and recipe.get("schema") not in {LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+        if any("layoutWitness" in step for field in spec["fields"] for step in field.get("path", [])) and recipe.get("schema") not in {LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: closed reference layout witnesses require recipe v7")
         if (spec.get('observationMode') is not None or any(f.get('paramIdentityWitness') or
                 any('paramWitness' in s for s in f.get('path', [])) or
                 f.get('argumentRepresentation', {}).get('nativeProof') == 'stateEventCallback'
-                for f in spec['fields'])) and recipe.get('schema') not in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+                for f in spec['fields'])) and recipe.get('schema') not in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
             raise PreparationError('mission_trace.recipe: paired state witnesses require recipe v8')
-        if spec.get('declaringImage') is not None:
+        if spec.get('declaringImage') is not None and spec.get('captureIndirectCaller') is not None:
+            if recipe.get('schema') != SELECTOR_RECIPE_SCHEMA:
+                raise PreparationError('damage_branch.callback: candidate indirect observer requires recipe v17')
+            from scripts.game_data.damage_runtime_branch_abi import callback_candidate_spec
+            callback_candidate_spec(selected,spec)
+        elif spec.get('declaringImage') is not None:
             scalar_types={'bool','int','uint','long','ulong'}
-            if (recipe.get('schema') not in {IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not isinstance(spec['declaringImage'],str)
+            if (recipe.get('schema') not in {IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or not isinstance(spec['declaringImage'],str)
                     or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}\.dll',spec['declaringImage'])
                     or not spec['static'] or spec['returnType'] not in scalar_types|{'void','float','double'}
                     or any(p['type'] not in scalar_types for p in spec['parameters'])
                     or any(f.get('path') or f['argument']=='this' for f in spec['fields'])):
                 raise PreparationError('mission_trace.image: v13 image-qualified static scalar observer required')
         method, _parameters, pointer = selected.resolve(spec)
+        center_delivery = spec.get('centerDeliveryRole') is not None
         abi = ABI_ID
         value_receiver = not spec['static'] and selected.is_value_type(spec['type'])
         receiver_reads = [f for f in spec['fields'] if f['argument']=='this' and f.get('path')]
         if value_receiver and receiver_reads:
-            if recipe.get('schema') not in {RECEIVER_RECIPE_SCHEMA,IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or spec.get('observationMode') != 'paired':
+            if recipe.get('schema') not in {RECEIVER_RECIPE_SCHEMA,IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or spec.get('observationMode') != 'paired':
                 raise PreparationError('mission_trace.receiver: value receiver field reads require recipe v12 paired ABI')
             receiver_proof = selected.normal_value_receiver(spec)
             if any(f.get('argumentRepresentation') != {'mode':'indirectValue','bytes':receiver_proof['unboxedBytes']}
@@ -1216,17 +1277,17 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         if spec.get('observationMode') is not None:
             enum_return=selected.is_enum(spec['returnType'])
             reference_return=spec['name'] in getattr(selected,'_return_abi_proofs',{})
-            if (spec['observationMode'] != 'paired' or spec.get('genericEntry') or spec.get('anonymousEntry')
-                    or spec['returnType'] not in {'void','bool','float','double'} and not ((enum_return or reference_return) and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA})):
+            if (spec['observationMode'] != 'paired' or (spec.get('genericEntry') and not center_delivery and spec.get('name') not in {'damage.Source.Lock','battle.Center.GetBlackboard'}) or spec.get('anonymousEntry')
+                    or spec['returnType'] not in {'void','bool','float','double'} and not ((enum_return or reference_return) and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA})):
                 raise PreparationError(f"{spec['name']}: paired observer requires a unique nongeneric proved scalar/reference return")
-            if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+            if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
                 raise PreparationError(f"{spec['name']}: floating returns require recipe v9")
             count = len(spec['parameters']) + int(not spec['static']) + 1  # trailing IL2CPP MethodInfo
             if not 1 <= count <= 8:
                 raise PreparationError(f"{spec['name']}: paired observer supports one to eight GP ABI slots")
-            if count > 5 and recipe.get('schema') not in {CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+            if count > 5 and recipe.get('schema') not in {CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
                 raise PreparationError('mission_trace.recipe: sixth through eighth GP slots require recipe v14')
-            if count == 5 and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+            if count == 5 and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
                 raise PreparationError('mission_trace.recipe: fifth GP slot requires recipe v10')
             aggregate_arguments = []
             scalar_inputs = []
@@ -1236,22 +1297,26 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                 raise PreparationError('mission_trace.recipe: invalid opaque byref arguments')
             for p in spec['parameters']:
                 t = p['type']
+                if center_delivery and spec['centerDeliveryRole']=='executor':
+                    # Exact declared generic-reference byref and selected native
+                    # current-slot consumers were proved by the delivery module.
+                    continue
                 if p['name'] in opaque:
-                    if recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or any(f['argument']==p['name'] for f in spec['fields']):
+                    if recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or any(f['argument']==p['name'] for f in spec['fields']):
                         raise PreparationError('mission_trace.recipe: opaque byref requires v11 and no reads')
                     opaque_arguments.append(selected.opaque_byref_value_argument(spec,p));continue
                 if t in {'float', 'double'}:
                     register_fields = [f for f in spec['fields'] if f.get('argument') == p['name']
                                        and f.get('argumentRepresentation') == {'mode':'scalarRegister','type':t}]
                     if register_fields:
-                        single=(recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and count==3 and t=='float')
-                        if not single and (recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or count != 4 or t != 'double'):
+                        single=(recipe.get('schema')in BOUNDED_SCHEMAS and count==3 and t=='float')
+                        if not single and (recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or count != 4 or t != 'double'):
                             raise PreparationError('mission_trace.recipe: selected mixed Double input requires v10/four slots')
                         scalar_inputs.append(selected.scalar_register_argument(spec,p['name']))
                         continue
                     witnesses = [f for f in spec['fields'] if f.get('argument') == p['name']
                                  and f.get('argumentRepresentation') == {'mode': 'scalarByRef', 'type': t}]
-                    if recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not witnesses:
+                    if recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or not witnesses:
                         raise PreparationError(f"{spec['name']}: paired observer refuses XMM arguments without a selected scalar byref witness")
                     selected.scalar_byref_argument(spec, p['name'])
                     continue
@@ -1271,7 +1336,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                         indirect = any(f.get('argument') == p['name'] and
                             f.get('argumentRepresentation', {}).get('mode') == 'indirectValue'
                             for f in spec['fields'])
-                        if indirect and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+                        if indirect and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
                             raise PreparationError('mission_trace.recipe: paired indirect aggregate requires v10')
                         aggregate_arguments.append({"argument": p['name'],
                             **(selected.paired_indirect_value_argument(spec, p) if indirect else
@@ -1282,7 +1347,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                 if len(scalar_inputs)!=1:raise PreparationError('mission_trace.recipe: sole positional floating input required')
                 abi=f'win64.paired_float_slot1_{storage_return}_3.v1'if scalar_inputs[0]['type']=='float'else'win64.paired_double_slot2_void_4.v1'
         if spec.get('captureScope') is not None:
-            if (recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or spec['captureScope'] != 'paired-ancestor'
+            if (recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or spec['captureScope'] != 'paired-ancestor'
                     or not (abi.startswith('win64.paired_gp_')or abi.startswith('win64.paired_float_slot1_'))):
                 raise PreparationError('mission_trace.recipe: paired-ancestor scope requires v11 GP paired observer')
             abi=abi.replace('win64.paired_', 'win64.scoped_paired_',1)
@@ -1317,17 +1382,32 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         body = selected.image.pe.bytes_at_va(pointer, body_size)
         fields = []
         for field in spec['fields']:
-            if field.get('readMode') in {'boundedContainer','dependentReferenceBytes','virtualCallbackPair'}:
+            if field.get('readMode') == 'centerDelivery':
+                if recipe.get('schema') != SELECTOR_RECIPE_SCHEMA:
+                    raise PreparationError('battle_center.delivery: bounded native reads require v17')
+                from scripts.game_data.battle_center_delivery_capture_abi import compile_field
+                fields.append(compile_field(selected, spec, field))
+            elif field.get('readMode') == 'moduleCallbackSelector':
+                if recipe.get('schema') != SELECTOR_RECIPE_SCHEMA:
+                    raise PreparationError('damage_branch.selector: module selector snapshot requires recipe v17')
+                from scripts.game_data.damage_runtime_branch_abi import compile_module_selector
+                fields.append(compile_module_selector(selected, spec, field))
+            elif field.get('readMode') == 'returnedExactClass':
+                if recipe.get('schema') not in {RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA}:
+                    raise PreparationError('mission_trace.return: exact-class returned snapshot requires recipe v16')
+                from scripts.game_data.damage_runtime_branch_abi import compile_returned_part
+                fields.append(compile_returned_part(selected, spec, field))
+            elif field.get('readMode') in {'boundedContainer','dependentReferenceBytes','virtualCallbackPair'}:
                 fields.append(selected.compile_bounded_field(field_abi,field,fields))
             elif field.get('readMode') not in {None,'rawBytes'}:
                 raise PreparationError('mission_trace.recipe: unknown bounded readMode')
             else:fields.append(selected.compile_field(field_abi,field))
-        if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA:
+        if recipe.get('schema')in BOUNDED_SCHEMAS:
             for field in fields:
-                if field.get('argumentName')!='this'and not field.get('argumentRepresentation'):
+                if field.get('argumentName') not in {'this','returnValue','module'} and not field.get('argumentRepresentation'):
                     field['argumentAbi']=selected.ordinary_argument_proof(field_abi,field['argumentName'])
         labels = [f["label"] for f in fields]
-        limit = 24 if recipe.get('schema') in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} else 8
+        limit = 24 if recipe.get('schema') in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} else 8
         if len(fields) > limit or len(set(labels)) != len(labels):
             raise PreparationError(f"{spec['name']}: more than {limit} fields or duplicate field labels")
         rva = pointer - selected.image.pe.image_base
@@ -1336,7 +1416,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         seen_rvas.add(rva)
         hooks.append({"name": spec["name"], "module": "GameAssembly.dll", "rva": f"0x{rva:x}", "abiId": abi,
                       "expectedBytes": body[:window_size].hex(),
-                      "readProgram": ("v2:"if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else "")+"".join(
+                      "readProgram": ("v2:"if recipe.get('schema')in BOUNDED_SCHEMAS else "")+"".join(
                           ','.join(map(str,read_words(f)))+';'for f in fields),
                       "fields": fields, "symbol": f"{spec['type']}.{spec['method']}",
                       "methodIndex": method.index, "returnType": spec["returnType"], "parameters": spec["parameters"],
@@ -1348,12 +1428,15 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             hooks[-1]['declaringImage']=spec['declaringImage']
             hooks[-1]['declaringImageProof']=selected._declaring_image_proofs[spec['name']]
         if spec.get('captureScope'):hooks[-1]['captureScope']=spec['captureScope']
+        if spec.get('captureIndirectCaller') is not None:hooks[-1]['captureIndirectCaller']=spec['captureIndirectCaller']
+        if center_delivery:
+            hooks[-1]['centerDeliveryProof']=selected._center_delivery_proofs[spec['name']]
         if abi != ABI_ID:
             hooks[-1]['observationMode'] = 'paired'
             hooks[-1]['pairedAbiProof'] = {'argumentSlots': count, 'includesMethodInfo': True,
                 'returnType': spec['returnType'], 'phaseFieldPolicy': 'same typed paths at entry and return',
                 'boundary': 'synchronous selected GP caller only; exception or stop during invocation rejects completeness'}
-            if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and spec['returnType']in{'void','bool'}:
+            if recipe.get('schema')in BOUNDED_SCHEMAS and spec['returnType']in{'void','bool'}:
                 hooks[-1]['pairedAbiProof']['ordinaryReturn']=selected.ordinary_return_proof(method,spec['returnType'])
             if scalar_inputs:hooks[-1]['pairedAbiProof']['scalarInputs']=scalar_inputs
             if opaque_arguments:hooks[-1]['pairedAbiProof']['opaqueByRefArguments']=opaque_arguments
@@ -1382,7 +1465,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                                   "source": "proved helper entry action register; not a returned action"})
         if entry is None and spec["name"] in getattr(selected, "_return_abi_proofs", {}):
             hooks[-1]["returnAbiProof"] = {**selected._return_abi_proofs[spec["name"]],
-                'returnObserved':abi!=ABI_ID,'pointeeRead':False}
+                'returnObserved':abi!=ABI_ID,'pointeeRead':any(f['kind']==9 for f in fields)}
     return hooks
 
 
@@ -1414,19 +1497,26 @@ def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | No
     enum_types = sorted({field["type"] for hook in hooks for field in hook["fields"] if selected.is_enum(field["type"])} | {hook["returnType"] for hook in hooks if selected.is_enum(hook["returnType"])})
     enum_definitions = {name: selected.enum_members(name) for name in enum_types}
     compile_caller_scopes(selected, hooks, recipe)
+    if hasattr(selected,'_center_delivery_sources'):
+        from scripts.game_data.battle_center_delivery_capture_abi import bookend, check_scope
+        for hook in hooks:
+            if hook.get('centerDeliveryProof'):check_scope(hook,selected._center_delivery_sources)
+        bookend(selected)
     # Nothing is published if an installer changed the selected inputs mid-run.
     final_gate = check_installed_native_inputs(gate.gameassembly_sha256, gate.metadata_sha256,
                                               gameassembly=gate.gameassembly, metadata=gate.metadata)
     if not final_gate.validated or sha256_file(files["executable"][1]) != pins["executable"]["sha256"]:
         raise PreparationError("mission_trace.native: selected inputs changed during preparation")
-    return {"schema": BOUNDED_BUILD_SCHEMA if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else BUILD_SCHEMA, "gameBuild": f"endfield-gameassembly-{gate.gameassembly_sha256[:12]}",
+    return {"schema": BOUNDED_BUILD_SCHEMA if recipe.get('schema')in BOUNDED_SCHEMAS else BUILD_SCHEMA, "gameBuild": f"endfield-gameassembly-{gate.gameassembly_sha256[:12]}",
             "profile": "mission-trace", "processName": "Endfield.exe", "files": pins,
             "preparedAt": datetime.now(timezone.utc).isoformat(),
             "focusMission": mission, "recordingScope": "buff-runtime-unfiltered" if profile == "buff" else "all-named-context-unfiltered",
             "missionSelection": {"mode": "not-selected" if profile == "buff" else "all-missions" if mission == "all" else "named-analysis-focus", "nativeFilter": False},
             "recipeSchema": recipe["schema"], "missionTraceHooks": hooks,
-            **({'observerProviders':['mission-trace'],'providerMask':128}if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else{}),
+            **({'observerProviders':['mission-trace'],'providerMask':128}if recipe.get('schema')in BOUNDED_SCHEMAS else{}),
             **({'readLayouts':selected._source_read_layouts}if hasattr(selected,'_source_read_layouts')else{}),
+            **({'battleReadLayouts':selected._battle_read_layouts}if hasattr(selected,'_battle_read_layouts')else{}),
+            **({'centerDeliveryProfile':'endfield.battle-center-delivery-capture-abi.v1'}if hasattr(selected,'_center_delivery_sources')else{}),
             "enumDefinitions": enum_definitions,
             "coverageGaps": recipe.get("coverageGaps", []),
             "observerPolicy": {'pairedDepthLimit': 64, 'fieldCapacity': 24, 'callbacksCallGameGetters': False},
@@ -1438,8 +1528,13 @@ def _caller_scope_family(selected, caller):
     from scripts.game_data.memorypack.pointer_param import owned
     base=selected.image.pe.image_base;entry=int(caller['rva'],16);method_index=caller.get('methodIndex')
     methods=selected.image.metadata.methods
+    delivery_caller=False
+    if caller.get('centerDeliveryProof'):
+        from scripts.game_data.battle_center_delivery_capture_abi import validate_caller_entry
+        validate_caller_entry(selected,caller)
+        delivery_caller=True
     if (type(method_index)is not int or not 0<=method_index<len(methods)
-            or selected.image.method_pointer_va(methods[method_index])!=base+entry):
+            or (not delivery_caller and selected.image.method_pointer_va(methods[method_index])!=base+entry)):
         raise PreparationError('mission_trace.caller_scope: selected caller metadata/entry differs: '+caller['name'])
     try:
         ownership=selected.image.unwind_index.family(entry)
@@ -1479,7 +1574,7 @@ def compile_caller_scopes(selected, hooks, recipe):
     for spec in recipe['hooks']:
         callers=spec.get('captureCallerHooks')
         if callers is None:continue
-        if (recipe['schema'] not in {CALLER_RECIPE_SCHEMA,BOUNDED_RECIPE_SCHEMA} or spec.get('captureScope')!='paired-ancestor'
+        if (recipe['schema'] not in {CALLER_RECIPE_SCHEMA,BOUNDED_RECIPE_SCHEMA, RETURN_RECIPE_SCHEMA, SELECTOR_RECIPE_SCHEMA} or spec.get('captureScope')!='paired-ancestor'
                 or not isinstance(callers,list) or not 1<=len(callers)<=16
                 or any(not isinstance(n,str) for n in callers) or len(set(callers))!=len(callers)):
             raise PreparationError('mission_trace.caller_scope: v14 requires bounded unique scoped caller hooks')
@@ -1492,10 +1587,16 @@ def compile_caller_scopes(selected, hooks, recipe):
             raw=selected.image.pe.bytes_at_va(pointer,caller['bodyBytes'])
             if hashlib.sha256(raw).hexdigest()!=caller['bodySha256']:
                 raise PreparationError('mission_trace.caller_scope: caller body changed: '+name)
-            family_mode=recipe['schema']==BOUNDED_RECIPE_SCHEMA
+            family_mode=recipe['schema']in BOUNDED_SCHEMAS
             if family_mode:
                 family,rows=_caller_scope_family(selected,caller);family_index=len(families);families.append(family)
             else:rows=[(row,None)for row in selected.index._decode(pointer,len(raw))]
+            if spec.get('captureIndirectCaller') is not None:
+                if recipe['schema']!=SELECTOR_RECIPE_SCHEMA or not family_mode or len(callers)!=1:
+                    raise PreparationError('damage_branch.callback: bounded single Process indirect caller required')
+                from scripts.game_data.damage_runtime_branch_abi import indirect_callback_proofs
+                proofs.extend(indirect_callback_proofs(selected,spec,target,caller,family,rows))
+                continue
             direct=[]
             for row,window in rows:
                 encoded=bytes.fromhex(row['bytes']);va=int(row['va'],16)
@@ -1511,6 +1612,17 @@ def compile_caller_scopes(selected, hooks, recipe):
                     proofs.append(proof)
             checked.append({'hook':name,'rva':caller['rva'],'bodySha256':caller['bodySha256'],
                             'directCalls':len(direct),'firstTargets':[hex(r) for r in direct[:8]]})
+        if spec.get('name') == 'damage.Source.Lock':
+            from scripts.game_data.damage_runtime_branch_abi import damage_lock_caller_returns
+            allowed = set(damage_lock_caller_returns(selected))
+            proofs = [p for p in proofs if p['returnRva'] in allowed]
+            if {p['returnRva'] for p in proofs} != allowed:
+                raise PreparationError('damage_branch.caller: selected transferred-source callsite missing')
+        if spec.get('name') == 'battle.Center.GetBlackboard':
+            from scripts.game_data.battle_center_capture_abi import center_getter_caller_returns
+            allowed = set(center_getter_caller_returns(selected))
+            if {p['returnRva'] for p in proofs} != allowed:
+                raise PreparationError('battle_center.getter: exact two _ToSkill caller sites required')
         proofs.sort(key=lambda r:r['returnRva'])
         returns=[r['returnRva'] for r in proofs]
         if not 1<=len(proofs)<=32 or len(set(returns))!=len(returns):
@@ -1521,7 +1633,7 @@ def compile_caller_scopes(selected, hooks, recipe):
                 'actual':{'matchingCalls':len(proofs),'uniqueReturns':len(set(returns)),'checkedCallers':checked}},sort_keys=True))
         target['captureCallerReturnRvas']=','.join(f'{r:x}' for r in returns)
         target['captureCallerProofs']=proofs
-        if recipe['schema']==BOUNDED_RECIPE_SCHEMA:target['captureCallerSourceWindows']=families
+        if recipe['schema']in BOUNDED_SCHEMAS:target['captureCallerSourceWindows']=families
 
 
 def checked_output(path: Path) -> Path:

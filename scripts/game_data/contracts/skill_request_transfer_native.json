@@ -1,0 +1,308 @@
+{
+  "schema": "endfield.skill-request-transfer-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Typed first lookup skillType guard, followed by an independently read name. A finite local CFG proves second name RBX preservation and view-target stack carrier into name-based CanCastSkill, under normal Win64 calls/coherent local memory. Upstream lookup receiver, opaque provider effects, BB destination and actual cast remain unresolved.",
+  "methods": {
+    "owner": {
+      "identity": [
+        49685,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+        "_ToSkill",
+        89282864
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "wrapper": {
+      "identity": [
+        59353,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "GetNextSkillId",
+        118459520
+      ],
+      "returnType": "string",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "view": {
+      "identity": [
+        59354,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "GetNextSkillCastInputView",
+        89314448
+      ],
+      "returnType": "Beyond.Gameplay.Core.SkillCastInputView",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    },
+    "canCast": {
+      "identity": [
+        59179,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        97669504
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipInterruptCheck",
+          "type": "bool"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": [
+        {
+          "name": "skillId",
+          "rawTypeHex": "7b0701000000000000000e0000000000",
+          "byref": false
+        },
+        {
+          "name": "inputTarget",
+          "rawTypeHex": "e9290000000000000000118000000000",
+          "byref": false
+        },
+        {
+          "name": "skipAngle",
+          "rawTypeHex": "ae070100000000001010028000000000",
+          "byref": false
+        },
+        {
+          "name": "skipDistance",
+          "rawTypeHex": "ae070100000000001010028000000000",
+          "byref": false
+        },
+        {
+          "name": "skipInterruptCheck",
+          "rawTypeHex": "ae070100000000001010028000000000",
+          "byref": false
+        }
+      ]
+    },
+    "interrupt": {
+      "identity": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "newSkill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": [
+        {
+          "name": "newSkill",
+          "rawTypeHex": "d5240000000000000000120000000000",
+          "byref": false
+        }
+      ]
+    },
+    "getter": {
+      "identity": [
+        59590,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "get_nextSkillId",
+        89510720
+      ],
+      "returnType": "string",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "parameterAbi": []
+    }
+  },
+  "fields": {
+    "skillType": {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "<skillType>k__BackingField",
+      "offset": 216,
+      "valueType": "Beyond.Gameplay.SkillType",
+      "ordinaryKind": 17,
+      "id": "Beyond.Gameplay.Core.Skill::<skillType>k__BackingField"
+    },
+    "target": {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::targetHandleView",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "targetHandleView",
+      "offset": 24,
+      "valueType": "Beyond.Gameplay.Core.TargetHandleView",
+      "ordinaryKind": 17,
+      "static": false
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "lookupGuard",
+      "startRva": 89283217,
+      "endRva": 89283243,
+      "sha256": "6FDDAADAE5593E16E666C387361D24BF824F380DD10396087107D6F756B0FFDC",
+      "hex": "488b85100100004885c0740e39b8d80000000f862effffffeb26",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "rereadName",
+      "startRva": 89283313,
+      "endRva": 89283342,
+      "sha256": "BC940AEE23BB0F572122C520B03F7E5360C00CDA7684FE0C9BF5F2427F0FF09A",
+      "hex": "33d2e88831bd01488bd84885c00f84d3feffff837810000f86c9feffff",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "viewCall",
+      "startRva": 89283369,
+      "endRva": 89283387,
+      "sha256": "8DA5A1C1D1A015C36BA26066D69530ABCDF3FB18E061C33830744CBB98A7E14C",
+      "hex": "4533c0488d4df0498bd64c8be0e855790000",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "admission",
+      "startRva": 89283542,
+      "endRva": 89283576,
+      "sha256": "4C6C9924C0DE62AC31AF72F6BEA18DC21601400654B3CD5C3638A57A57669473",
+      "hex": "4c8b44244841b10148897c2430488bd344887c2428498bcec644242000e888f57f00",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "overwrittenOutSlot",
+      "startRva": 89283449,
+      "endRva": 89283462,
+      "sha256": "8FA055C8569B8430591FFC9783463EA21193798DE23C252A8BC827796F093F59",
+      "hex": "f20f104050f20f118510010000",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "falseReturn",
+      "startRva": 89283031,
+      "endRva": 89283033,
+      "sha256": "35B660100ACAC77A09EED3BDD6B22A8DB7B27C1E8C4C4ED44BD52D51C9084B03",
+      "hex": "32c0",
+      "boundary": "Selected owned conditional fragment; omitted inter-fragment carrier continuity is an explicit premise."
+    },
+    {
+      "role": "nameCarrier",
+      "startRva": 89283320,
+      "endRva": 89283576,
+      "sha256": "48B534F74AA407EB48304B40555E51E4FCA45C6BB047FE0C7B59B821768074E0",
+      "hex": "488bd84885c00f84d3feffff837810000f86c9feffff498b8e900200004885c974974c8b0597881f0b488bd0e8e786b2ff4533c0488d4df0498bd64c8be0e8557900000f1050400f10000f1048100f1145a00f1040100f294c24500f1048300f1145b00f1040200f294c2470f20f1048500f1145c00f1040300f1155e00f1145d0f20f104050f20f118510010000f20f1185c00000000f10000f2955800f294424400f104020f20f114d900f29442460660f6fc2660f73d804660f7ec084c00f85c5a1fc014533c0498bd4498bce4532ffe862f27f0084c00f8401feffff4c8b44244841b10148897c2430488bd344887c2428498bcec644242000e888f57f00",
+      "boundary": "Owned finite register/stack carrier CFG, normal Win64 calls and coherent local memory required."
+    },
+    {
+      "role": "carrierCold",
+      "startRva": 122617218,
+      "endRva": 122617245,
+      "sha256": "C9E881D64A8E61DEB8762391EA7E12F701C64E25EF33A5F2C7167F7BA7DD8972",
+      "hex": "488b85c000000048c1e82084c00f84285e03fe41b701e9395e03fe",
+      "boundary": "Owned finite register/stack carrier CFG, normal Win64 calls and coherent local memory required."
+    },
+    {
+      "role": "viewHeadCopy",
+      "startRva": 89283470,
+      "endRva": 89283482,
+      "sha256": "242D0003AC709A8315FA1D21DA60B8C5960C428A5A3DE7231A15D26816C81F2A",
+      "hex": "0f10000f2955800f29442440",
+      "boundary": "Owned finite register/stack carrier CFG, normal Win64 calls and coherent local memory required."
+    },
+    {
+      "role": "prologue",
+      "startRva": 89282864,
+      "endRva": 89282882,
+      "sha256": "F7347BE67684881A0EAB1BA0D783452F171BFFC4AD5859949788199BD57910CE",
+      "hex": "405556488dac2418ffffff4881ece8010000",
+      "boundary": "Frame-pointer and stack-pointer relation for local alias analysis."
+    }
+  ],
+  "operands": {
+    "lookupOutSlot": 272,
+    "viewEndSource": 80,
+    "viewResultStack": -16,
+    "viewArgumentCopyStack": 64,
+    "targetArgumentSlot": 72,
+    "outgoingMethodInfo": 48,
+    "outgoingSkipInterrupt": 40,
+    "outgoingSkipDistance": 32,
+    "guardNullDisp": 14,
+    "viewHeadCopyOtherStack": -128,
+    "frameBytes": 488,
+    "rbpLeaDisplacement": -232
+  },
+  "sites": {
+    "wrapperCall": 89283315,
+    "viewCall": 89283382,
+    "admissionCall": 89283571,
+    "providerCall": 89283364,
+    "interruptCall": 89283529,
+    "viewHeadStore": 89283477,
+    "firstGetterReturnRva": 89283188,
+    "secondGetterReturnRva": 89283320,
+    "canCastReturnRva": 89283576
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "lookupOutputUse": "typed-skillType-guard",
+    "secondSkillIdReadRequired": true,
+    "admissionSkillArgument": "second-name-in-RBX",
+    "admissionUsesLookupSkillPointer": false,
+    "separatelyReturnedViewRequired": true,
+    "lookupSlotOverwrittenByViewEndWord": true,
+    "interFragmentCarrierContinuityRequired": true,
+    "viewCopySourceContinuityRequired": false,
+    "opaqueProvidersNormalReturnRequired": true,
+    "viewTargetArgumentBindingProved": true,
+    "blackboardDestinationOwnershipProved": false,
+    "pendingDeliveryProved": false,
+    "actualCastProved": false,
+    "nameCarrierContinuityProved": true,
+    "normalWin64CalleeSavedRegistersRequired": true,
+    "coherentLocalStackRequired": true,
+    "firstLookupOutputForwardedToAdmission": false
+  },
+  "flow": {
+    "providerTarget": 84206096,
+    "falseReturn": 89283031,
+    "nullThrow": 89283249,
+    "coldReturn": 89283542,
+    "viewReturn": 89283387,
+    "initialNameSave": 89283320
+  },
+  "viewTypeSize": {
+    "type": "Beyond.Gameplay.Core.SkillCastInputView",
+    "hex": "68000000ffffffff0000000000000000",
+    "parent": "System.ValueType",
+    "valueType": true
+  },
+  "inputHeaderBytes": 16
+}

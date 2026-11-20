@@ -1,0 +1,49 @@
+{
+  "schema": "endfield.skill-center-construction-flow-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "dependency": "skill_center_fsm_native.json",
+  "owner": [
+    49678,
+    "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+    ".ctor",
+    111243584
+  ],
+  "startRva": 111243620,
+  "finishRva": 111244177,
+  "exceptionalExitRva": 111244049,
+  "codeWindows": [
+    {
+      "role": "entryToNull",
+      "startRva": 111243620,
+      "endRva": 111244049,
+      "hex": "0f856f010000488d0ddf52c309e82aa362f9488d0dcb53c309e81ea362f9488d0dcf52c309e812a362f9488d0dcb52c309e806a362f9488d0d5752c309e8faa262f9488d0d5352c309e8eea262f9488d0d5f53c309e8e2a262f9488d0d4352c309e8d6a262f9488d0d3f52c309e8caa262f9488d0d3b52c309e8bea262f9488d0d3752c309e8b2a262f9488d0d3352c309e8a6a262f9488d0d2f52c309e89aa262f9488d0d9b52c309e88ea262f9488d0d9752c309e882a262f9488d0d9352c309e876a262f9488d0d8f52c309e86aa262f9488d0d8b52c309e85ea262f9488d0d8752c309e852a262f9488d0d8352c309e846a262f9488d0d7f52c309e83aa262f9488d0dfb51c309e82ea262f9488d0df751c309e822a262f9488d0df351c309e816a262f9488d0def51c309e80aa262f9488d0deb51c309e8fea162f9488d0de751c309e8f2a162f9488d0de351c309e8e6a162f9488d0d6752c309e8daa162f9488d0dd351c309e8cea162f9c6053618d10a014c8b05c051c309488bd6488bcbe8951ed6ff4885ff0f85f81ad400488b0dfd50c309488b6b584c89742440e807eb5ff9488bf84885c07506",
+      "sha256": "7DACD0BC0B1234AD88E29BC6E8D4F85D12BCF73B3C682CB8E49A5C06E684EDD5"
+    },
+    {
+      "role": "priorStates",
+      "startRva": 111244055,
+      "endRva": 111244177,
+      "hex": "4533f6c7405c000080bf4c8bcd4c897424204c8bc6c740600000004033d2488bcfe8730d00004c8b054c51c309488bd7488bcbe8311daaff488b0dfa50c309488b6b58e8b1ea5ff9488bf84885c074aa4c8bcd4c897424204c8bc6ba01000000488bc8e8810c00004c8b050a51c309488bd7488bcbe8ef1caaff",
+      "sha256": "4E842AB03F9EB4DE236ABBC6AB96B054A9ABC863929C8DC463572CC61B855BB3"
+    },
+    {
+      "role": "entitySetup",
+      "startRva": 125144556,
+      "endRva": 125144595,
+      "hex": "488b8750010000488d4b5848894358e860b59af8488d4b6048897b60e853b59af890e9e1e42bff",
+      "sha256": "F405F104D2DDFCAA0B4ABF9B93F6162C1E194E8EC0A14648108C4034491347C6"
+    },
+    {
+      "role": "nullExit",
+      "startRva": 111244049,
+      "endRva": 111244055,
+      "hex": "e82a766cf9cc",
+      "sha256": "9D144E3A43B4A0B467B141DC51158B6471108FE477BED87C5FB0690677F012F6"
+    }
+  ],
+  "evidenceBoundary": "Direct selected constructor control flow from saved arguments to Skill allocation block. Normal Win64 external returns preserve RSI/RBX. No allocator type, collection effect, dynamic FSM selection or object lifetime inference."
+}

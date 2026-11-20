@@ -1,0 +1,5647 @@
+{
+  "schema": "endfield.skill-request-cache-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Conditional original-path selected request construction/clear, cache selector and input-copy requests. Collection, pool, target lifetime, iFix selection and actual cast remain unproved.",
+  "methods": [
+    {
+      "identity": [
+        59610,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "ClearSkillRequest",
+        98085376
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController.ClearSkillRequest"
+    },
+    {
+      "identity": [
+        59616,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RefreshNextSkillRequest",
+        89511376
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController.RefreshNextSkillRequest"
+    },
+    {
+      "identity": [
+        59622,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_GetCacheTime",
+        89511104
+      ],
+      "returnType": "float",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        },
+        {
+          "name": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController._GetCacheTime"
+    },
+    {
+      "identity": [
+        58908,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "CopyFrom",
+        89316080
+      ],
+      "returnType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "parameters": [
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": true,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.CopyFrom"
+    },
+    {
+      "identity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 4,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.Dispose"
+    },
+    {
+      "identity": [
+        59358,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "RefreshNextSkillRequest",
+        89511312
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem.RefreshNextSkillRequest"
+    },
+    {
+      "identity": [
+        59364,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearSkillRequest",
+        98085312
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.AbilitySystem.ClearSkillRequest"
+    },
+    {
+      "identity": [
+        64630,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "CopyFrom",
+        88292832
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "other",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.TargetHandle.CopyFrom"
+    },
+    {
+      "identity": [
+        64634,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "Dispose",
+        88273072
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 6,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.TargetHandle.Dispose"
+    },
+    {
+      "id": "Beyond.Gameplay.Core.MovementComponent.get_moveMode",
+      "identity": [
+        84040,
+        "Beyond.Gameplay.Core.MovementComponent",
+        "get_moveMode",
+        85185824
+      ],
+      "returnType": "Beyond.Gameplay.Core.MovementComponent+MoveMode",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem.get_inPerfectDodge",
+      "identity": [
+        59153,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_inPerfectDodge",
+        89509008
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    }
+  ],
+  "fields": [
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_realCommandMapping",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_realCommandMapping",
+      "offset": 48,
+      "valueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType,Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_nextSkillRequest",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_nextSkillRequest",
+      "offset": 56,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_allowedNextSkillPacks",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_allowedNextSkillPacks",
+      "offset": 184,
+      "valueType": "Beyond.ListSet`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillId",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::targetHandle",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "targetHandle",
+      "offset": 24,
+      "valueType": "Beyond.Gameplay.Core.TargetHandle",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillEndCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillEndCallback",
+      "offset": 32,
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::afterCastStartCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "afterCastStartCallback",
+      "offset": 40,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::onExclusiveTimeCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "onExclusiveTimeCallback",
+      "offset": 48,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skillCastInfo",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillCastInfo",
+      "offset": 56,
+      "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::skipApplyCost",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skipApplyCost",
+      "offset": 80,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputData::castSkillOptionsOverride",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "castSkillOptionsOverride",
+      "offset": 84,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillId",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::targetHandleView",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "targetHandleView",
+      "offset": 24,
+      "valueType": "Beyond.Gameplay.Core.TargetHandleView",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillEndCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillEndCallback",
+      "offset": 32,
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::afterCastStartCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "afterCastStartCallback",
+      "offset": 40,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::onExclusiveTimeCallback",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "onExclusiveTimeCallback",
+      "offset": 48,
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skillCastInfo",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillCastInfo",
+      "offset": 56,
+      "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::skipApplyCost",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skipApplyCost",
+      "offset": 80,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.SkillCastInputView::castSkillOptionsOverride",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "castSkillOptionsOverride",
+      "offset": 84,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::nextSkillId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "nextSkillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::remainingTime",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "remainingTime",
+      "offset": 24,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::allowToCastNextSkill",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "allowToCastNextSkill",
+      "offset": 28,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::modifierInstId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "modifierInstId",
+      "offset": 32,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest::skillCastInputData",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "skillCastInputData",
+      "offset": 40,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.SkillCastInputData>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::s_instId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "s_instId",
+      "offset": 0,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::skillId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::instId",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "instId",
+      "offset": 24,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::priority",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "priority",
+      "offset": 32,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+Priority",
+      "ordinaryKind": 17,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier::cacheTime",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "cacheTime",
+      "offset": 36,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "System.Nullable`1::hasValue",
+      "type": "System.Nullable`1",
+      "name": "hasValue",
+      "offset": 0,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "System.Nullable`1::value",
+      "type": "System.Nullable`1",
+      "name": "value",
+      "offset": 0,
+      "valueType": "VAR[15684]",
+      "ordinaryKind": 19,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BattleCommandMappingConfig::attackCacheTimeInDash",
+      "type": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "name": "attackCacheTimeInDash",
+      "offset": 44,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BattleCommandMappingConfig::attackCacheTimeInPerfectDodge",
+      "type": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "name": "attackCacheTimeInPerfectDodge",
+      "offset": 56,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curNormalSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curNormalSkill>k__BackingField",
+      "offset": 760,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curComboSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curComboSkill>k__BackingField",
+      "offset": 768,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curUltimateSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curUltimateSkill>k__BackingField",
+      "offset": 792,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem::<curSkill>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curSkill>k__BackingField",
+      "offset": 984,
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Entity::<abilityCom>k__BackingField",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<abilityCom>k__BackingField",
+      "offset": 296,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.Entity::<movementComponent>k__BackingField",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<movementComponent>k__BackingField",
+      "offset": 600,
+      "valueType": "Beyond.Gameplay.Core.MovementComponent",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "offset": 80,
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.GameInstance::dataManager",
+      "type": "Beyond.Gameplay.GameInstance",
+      "name": "dataManager",
+      "offset": 160,
+      "valueType": "Beyond.Gameplay.DataManager",
+      "ordinaryKind": 18,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.DataManager::<battleCommandMappingConfig>k__BackingField",
+      "type": "Beyond.Gameplay.DataManager",
+      "name": "<battleCommandMappingConfig>k__BackingField",
+      "offset": 664,
+      "valueType": "Beyond.Gameplay.Core.BattleCommandMappingConfig",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::s_instanceUid",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "s_instanceUid",
+      "offset": 0,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": true
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::m_owner",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "m_owner",
+      "offset": 16,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.AbilitySystem+SubFeature::<instanceUid>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+      "name": "<instanceUid>k__BackingField",
+      "offset": 24,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": false
+    }
+  ],
+  "typeSizes": [
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "hex": "68000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "hex": "68000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "hex": "88000000ffffffff0000000000000000",
+      "parent": "System.ValueType",
+      "valueType": true
+    }
+  ],
+  "parents": {
+    "Beyond.Gameplay.Core.AbilitySystem+ComboController": "Beyond.Gameplay.Core.AbilitySystem+SubFeature",
+    "Beyond.Gameplay.Core.AbilitySystem+SubFeature": "object"
+  },
+  "typedContexts": [
+    {
+      "instructionRva": 122670760,
+      "instructionHex": "488B0519F21809",
+      "usageCellRva": 275300552,
+      "usageRawHex": "5583032000000000",
+      "tag": 1,
+      "typeIndex": 115114,
+      "typeName": "Beyond.Gameplay.GameInstance",
+      "typeRawHex": "70080000000000000000120000000000"
+    },
+    {
+      "instructionRva": 122670840,
+      "instructionHex": "488B05C9F11809",
+      "usageCellRva": 275300552,
+      "usageRawHex": "5583032000000000",
+      "tag": 1,
+      "typeIndex": 115114,
+      "typeName": "Beyond.Gameplay.GameInstance",
+      "typeRawHex": "70080000000000000000120000000000"
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "refresh",
+      "method": "Beyond.Gameplay.Core.AbilitySystem+ComboController.RefreshNextSkillRequest",
+      "startRva": 89511376,
+      "endRva": 89513525,
+      "sha256": "702D8A276F3ED72CC5DFA8FE789BF29B3886DE0212D714601B37F880236CD184",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    },
+    {
+      "role": "cache",
+      "method": "Beyond.Gameplay.Core.AbilitySystem+ComboController._GetCacheTime",
+      "startRva": 89511104,
+      "endRva": 89511310,
+      "sha256": "D2C3D7030D0C45E47A5FB82C3299DA2F12637DDA1E058FF2AECDB047E3F68D72",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    },
+    {
+      "role": "cacheCold",
+      "method": null,
+      "startRva": 122670652,
+      "endRva": 122670920,
+      "sha256": "6B33CED93CDB29B5CADF3BC33EBE27F1C97EA58F7EAFB622074D8F5FD5B5B16E",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    },
+    {
+      "role": "copy",
+      "method": "Beyond.Gameplay.Core.SkillCastInputData.CopyFrom",
+      "startRva": 89316080,
+      "endRva": 89317159,
+      "sha256": "481171C4B2103A004ADD049C86ADA145B6E3375479B03A16694C6CCF85750A7B",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    },
+    {
+      "role": "dispose",
+      "method": "Beyond.Gameplay.Core.SkillCastInputData.Dispose",
+      "startRva": 98088288,
+      "endRva": 98088363,
+      "sha256": "2B27291FEEE4D4B99D36D4AA6E82AF8A8228E3C23CC78FEAE8F538503C5CFCE9",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    },
+    {
+      "role": "clear",
+      "method": "Beyond.Gameplay.Core.AbilitySystem+ComboController.ClearSkillRequest",
+      "startRva": 98085376,
+      "endRva": 98085623,
+      "sha256": "FE9C67D3063B0D6BE49578692C74DE68E25320E63EEF6B4288959B626A19588A",
+      "boundary": "Bounded selected original code; exceptional/patch/opaque callees remain explicit conditions."
+    }
+  ],
+  "programs": {
+    "refresh": [
+      {
+        "rva": 89511376,
+        "hex": "4055",
+        "reviewedInstruction": "push rbp"
+      },
+      {
+        "rva": 89511378,
+        "hex": "53",
+        "reviewedInstruction": "push rbx"
+      },
+      {
+        "rva": 89511379,
+        "hex": "57",
+        "reviewedInstruction": "push rdi"
+      },
+      {
+        "rva": 89511380,
+        "hex": "488dac2490fdffff",
+        "reviewedInstruction": "lea rbp, [rsp - 0x270]"
+      },
+      {
+        "rva": 89511388,
+        "hex": "4881ec70030000",
+        "reviewedInstruction": "sub rsp, 0x370"
+      },
+      {
+        "rva": 89511395,
+        "hex": "488b05661c1c0c",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0xc1c1c66]"
+      },
+      {
+        "rva": 89511402,
+        "hex": "488bd9",
+        "reviewedInstruction": "mov rbx, rcx"
+      },
+      {
+        "rva": 89511405,
+        "hex": "8bfa",
+        "reviewedInstruction": "mov edi, edx"
+      },
+      {
+        "rva": 89511407,
+        "hex": "488b4848",
+        "reviewedInstruction": "mov rcx, qword ptr [rax + 0x48]"
+      },
+      {
+        "rva": 89511411,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 89511414,
+        "hex": "7429",
+        "reviewedInstruction": "je 0x18555d621"
+      },
+      {
+        "rva": 89511416,
+        "hex": "488b8170720000",
+        "reviewedInstruction": "mov rax, qword ptr [rcx + 0x7270]"
+      },
+      {
+        "rva": 89511423,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511426,
+        "hex": "741d",
+        "reviewedInstruction": "je 0x18555d621"
+      },
+      {
+        "rva": 89511428,
+        "hex": "488b8978720000",
+        "reviewedInstruction": "mov rcx, qword ptr [rcx + 0x7278]"
+      },
+      {
+        "rva": 89511435,
+        "hex": "4d8bc8",
+        "reviewedInstruction": "mov r9, r8"
+      },
+      {
+        "rva": 89511438,
+        "hex": "448bc2",
+        "reviewedInstruction": "mov r8d, edx"
+      },
+      {
+        "rva": 89511441,
+        "hex": "488bd3",
+        "reviewedInstruction": "mov rdx, rbx"
+      },
+      {
+        "rva": 89511444,
+        "hex": "ffd0",
+        "reviewedInstruction": "call rax"
+      },
+      {
+        "rva": 89511446,
+        "hex": "4881c470030000",
+        "reviewedInstruction": "add rsp, 0x370"
+      },
+      {
+        "rva": 89511453,
+        "hex": "5f",
+        "reviewedInstruction": "pop rdi"
+      },
+      {
+        "rva": 89511454,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 89511455,
+        "hex": "5d",
+        "reviewedInstruction": "pop rbp"
+      },
+      {
+        "rva": 89511456,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      },
+      {
+        "rva": 89511457,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89511460,
+        "hex": "4889b42490030000",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x390], rsi"
+      },
+      {
+        "rva": 89511468,
+        "hex": "0f57c9",
+        "reviewedInstruction": "xorps xmm1, xmm1"
+      },
+      {
+        "rva": 89511471,
+        "hex": "4c89b42498030000",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x398], r14"
+      },
+      {
+        "rva": 89511479,
+        "hex": "33c0",
+        "reviewedInstruction": "xor eax, eax"
+      },
+      {
+        "rva": 89511481,
+        "hex": "48898520010000",
+        "reviewedInstruction": "mov qword ptr [rbp + 0x120], rax"
+      },
+      {
+        "rva": 89511488,
+        "hex": "488945e0",
+        "reviewedInstruction": "mov qword ptr [rbp - 0x20], rax"
+      },
+      {
+        "rva": 89511492,
+        "hex": "48898580010000",
+        "reviewedInstruction": "mov qword ptr [rbp + 0x180], rax"
+      },
+      {
+        "rva": 89511499,
+        "hex": "4889442440",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x40], rax"
+      },
+      {
+        "rva": 89511504,
+        "hex": "8d42ff",
+        "reviewedInstruction": "lea eax, [rdx - 1]"
+      },
+      {
+        "rva": 89511507,
+        "hex": "0f1185d0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xd0], xmm0"
+      },
+      {
+        "rva": 89511514,
+        "hex": "0f1185e0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xe0], xmm0"
+      },
+      {
+        "rva": 89511521,
+        "hex": "0f1185f0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xf0], xmm0"
+      },
+      {
+        "rva": 89511528,
+        "hex": "0f118500010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x100], xmm0"
+      },
+      {
+        "rva": 89511535,
+        "hex": "0f118510010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x110], xmm0"
+      },
+      {
+        "rva": 89511542,
+        "hex": "0f114c2470",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x70], xmm1"
+      },
+      {
+        "rva": 89511547,
+        "hex": "0f114d80",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x80], xmm1"
+      },
+      {
+        "rva": 89511551,
+        "hex": "0f114d90",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x70], xmm1"
+      },
+      {
+        "rva": 89511555,
+        "hex": "0f114da0",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x60], xmm1"
+      },
+      {
+        "rva": 89511559,
+        "hex": "0f114db0",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x50], xmm1"
+      },
+      {
+        "rva": 89511563,
+        "hex": "0f114dc0",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x40], xmm1"
+      },
+      {
+        "rva": 89511567,
+        "hex": "0f114dd0",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x30], xmm1"
+      },
+      {
+        "rva": 89511571,
+        "hex": "0f118530010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x130], xmm0"
+      },
+      {
+        "rva": 89511578,
+        "hex": "0f118540010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x140], xmm0"
+      },
+      {
+        "rva": 89511585,
+        "hex": "0f118550010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x150], xmm0"
+      },
+      {
+        "rva": 89511592,
+        "hex": "0f118560010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x160], xmm0"
+      },
+      {
+        "rva": 89511599,
+        "hex": "0f118570010000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x170], xmm0"
+      },
+      {
+        "rva": 89511606,
+        "hex": "0f114c2430",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x30], xmm1"
+      },
+      {
+        "rva": 89511611,
+        "hex": "0f114570",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x70], xmm0"
+      },
+      {
+        "rva": 89511615,
+        "hex": "0f118580000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x80], xmm0"
+      },
+      {
+        "rva": 89511622,
+        "hex": "0f118590000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x90], xmm0"
+      },
+      {
+        "rva": 89511629,
+        "hex": "0f1185a0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xa0], xmm0"
+      },
+      {
+        "rva": 89511636,
+        "hex": "0f1185b0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xb0], xmm0"
+      },
+      {
+        "rva": 89511643,
+        "hex": "0f1185c0000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xc0], xmm0"
+      },
+      {
+        "rva": 89511650,
+        "hex": "83f803",
+        "reviewedInstruction": "cmp eax, 3"
+      },
+      {
+        "rva": 89511653,
+        "hex": "0f8fcf020000",
+        "reviewedInstruction": "jg 0x18555d9ba"
+      },
+      {
+        "rva": 89511659,
+        "hex": "8d4aff",
+        "reviewedInstruction": "lea ecx, [rdx - 1]"
+      },
+      {
+        "rva": 89511662,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89511664,
+        "hex": "0f8493020000",
+        "reviewedInstruction": "je 0x18555d989"
+      },
+      {
+        "rva": 89511670,
+        "hex": "83e901",
+        "reviewedInstruction": "sub ecx, 1"
+      },
+      {
+        "rva": 89511673,
+        "hex": "0f8485020000",
+        "reviewedInstruction": "je 0x18555d984"
+      },
+      {
+        "rva": 89511679,
+        "hex": "83e901",
+        "reviewedInstruction": "sub ecx, 1"
+      },
+      {
+        "rva": 89511682,
+        "hex": "7411",
+        "reviewedInstruction": "je 0x18555d715"
+      },
+      {
+        "rva": 89511684,
+        "hex": "83f901",
+        "reviewedInstruction": "cmp ecx, 1"
+      },
+      {
+        "rva": 89511687,
+        "hex": "0f85ad020000",
+        "reviewedInstruction": "jne 0x18555d9ba"
+      },
+      {
+        "rva": 89511693,
+        "hex": "448bc1",
+        "reviewedInstruction": "mov r8d, ecx"
+      },
+      {
+        "rva": 89511696,
+        "hex": "e97a020000",
+        "reviewedInstruction": "jmp 0x18555d98f"
+      },
+      {
+        "rva": 89511701,
+        "hex": "488b0dace9120b",
+        "reviewedInstruction": "mov rcx, qword ptr [rip + 0xb12e9ac]"
+      },
+      {
+        "rva": 89511708,
+        "hex": "83b9e000000000",
+        "reviewedInstruction": "cmp dword ptr [rcx + 0xe0], 0"
+      },
+      {
+        "rva": 89511715,
+        "hex": "7505",
+        "reviewedInstruction": "jne 0x18555d72a"
+      },
+      {
+        "rva": 89511717,
+        "hex": "e8b68eabfa",
+        "reviewedInstruction": "call 0x1800165e0"
+      },
+      {
+        "rva": 89511722,
+        "hex": "33c9",
+        "reviewedInstruction": "xor ecx, ecx"
+      },
+      {
+        "rva": 89511724,
+        "hex": "e83fc1b7ff",
+        "reviewedInstruction": "call 0x1850d9870"
+      },
+      {
+        "rva": 89511729,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511732,
+        "hex": "0f84fb060000",
+        "reviewedInstruction": "je 0x18555de35"
+      },
+      {
+        "rva": 89511738,
+        "hex": "488b7078",
+        "reviewedInstruction": "mov rsi, qword ptr [rax + 0x78]"
+      },
+      {
+        "rva": 89511742,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89511745,
+        "hex": "0f84f4060000",
+        "reviewedInstruction": "je 0x18555de3b"
+      },
+      {
+        "rva": 89511751,
+        "hex": "4c8b05c24f180b",
+        "reviewedInstruction": "mov r8, qword ptr [rip + 0xb184fc2]"
+      },
+      {
+        "rva": 89511758,
+        "hex": "ba03000000",
+        "reviewedInstruction": "mov edx, 3"
+      },
+      {
+        "rva": 89511763,
+        "hex": "488bce",
+        "reviewedInstruction": "mov rcx, rsi"
+      },
+      {
+        "rva": 89511766,
+        "hex": "e8458abdff",
+        "reviewedInstruction": "call 0x1851361a0"
+      },
+      {
+        "rva": 89511771,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511774,
+        "hex": "0f8419020000",
+        "reviewedInstruction": "je 0x18555d97d"
+      },
+      {
+        "rva": 89511780,
+        "hex": "488b5310",
+        "reviewedInstruction": "mov rdx, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511784,
+        "hex": "4c8d85d0000000",
+        "reviewedInstruction": "lea r8, [rbp + 0xd0]"
+      },
+      {
+        "rva": 89511791,
+        "hex": "4533c9",
+        "reviewedInstruction": "xor r9d, r9d"
+      },
+      {
+        "rva": 89511794,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89511797,
+        "hex": "e876fffcff",
+        "reviewedInstruction": "call 0x18552d6f0"
+      },
+      {
+        "rva": 89511802,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 89511804,
+        "hex": "0f84fb010000",
+        "reviewedInstruction": "je 0x18555d97d"
+      },
+      {
+        "rva": 89511810,
+        "hex": "488b7310",
+        "reviewedInstruction": "mov rsi, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511814,
+        "hex": "4c8bb5d0000000",
+        "reviewedInstruction": "mov r14, qword ptr [rbp + 0xd0]"
+      },
+      {
+        "rva": 89511821,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89511824,
+        "hex": "0f84ab060000",
+        "reviewedInstruction": "je 0x18555de41"
+      },
+      {
+        "rva": 89511830,
+        "hex": "488bb6f8020000",
+        "reviewedInstruction": "mov rsi, qword ptr [rsi + 0x2f8]"
+      },
+      {
+        "rva": 89511837,
+        "hex": "4d85f6",
+        "reviewedInstruction": "test r14, r14"
+      },
+      {
+        "rva": 89511840,
+        "hex": "0f84a1060000",
+        "reviewedInstruction": "je 0x18555de47"
+      },
+      {
+        "rva": 89511846,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89511849,
+        "hex": "488bd6",
+        "reviewedInstruction": "mov rdx, rsi"
+      },
+      {
+        "rva": 89511852,
+        "hex": "498bce",
+        "reviewedInstruction": "mov rcx, r14"
+      },
+      {
+        "rva": 89511855,
+        "hex": "e8ccb9aeff",
+        "reviewedInstruction": "call 0x185049180"
+      },
+      {
+        "rva": 89511860,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 89511862,
+        "hex": "0f850d010000",
+        "reviewedInstruction": "jne 0x18555d8c9"
+      },
+      {
+        "rva": 89511868,
+        "hex": "488b7310",
+        "reviewedInstruction": "mov rsi, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511872,
+        "hex": "4c8bb5d0000000",
+        "reviewedInstruction": "mov r14, qword ptr [rbp + 0xd0]"
+      },
+      {
+        "rva": 89511879,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89511882,
+        "hex": "0f847d060000",
+        "reviewedInstruction": "je 0x18555de4d"
+      },
+      {
+        "rva": 89511888,
+        "hex": "488bb600030000",
+        "reviewedInstruction": "mov rsi, qword ptr [rsi + 0x300]"
+      },
+      {
+        "rva": 89511895,
+        "hex": "4d85f6",
+        "reviewedInstruction": "test r14, r14"
+      },
+      {
+        "rva": 89511898,
+        "hex": "0f8473060000",
+        "reviewedInstruction": "je 0x18555de53"
+      },
+      {
+        "rva": 89511904,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89511907,
+        "hex": "488bd6",
+        "reviewedInstruction": "mov rdx, rsi"
+      },
+      {
+        "rva": 89511910,
+        "hex": "498bce",
+        "reviewedInstruction": "mov rcx, r14"
+      },
+      {
+        "rva": 89511913,
+        "hex": "e892b9aeff",
+        "reviewedInstruction": "call 0x185049180"
+      },
+      {
+        "rva": 89511918,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 89511920,
+        "hex": "0f858c000000",
+        "reviewedInstruction": "jne 0x18555d882"
+      },
+      {
+        "rva": 89511926,
+        "hex": "488b7310",
+        "reviewedInstruction": "mov rsi, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511930,
+        "hex": "4c8bb5d0000000",
+        "reviewedInstruction": "mov r14, qword ptr [rbp + 0xd0]"
+      },
+      {
+        "rva": 89511937,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89511940,
+        "hex": "0f844f060000",
+        "reviewedInstruction": "je 0x18555de59"
+      },
+      {
+        "rva": 89511946,
+        "hex": "488bb618030000",
+        "reviewedInstruction": "mov rsi, qword ptr [rsi + 0x318]"
+      },
+      {
+        "rva": 89511953,
+        "hex": "4d85f6",
+        "reviewedInstruction": "test r14, r14"
+      },
+      {
+        "rva": 89511956,
+        "hex": "0f8445060000",
+        "reviewedInstruction": "je 0x18555de5f"
+      },
+      {
+        "rva": 89511962,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89511965,
+        "hex": "488bd6",
+        "reviewedInstruction": "mov rdx, rsi"
+      },
+      {
+        "rva": 89511968,
+        "hex": "498bce",
+        "reviewedInstruction": "mov rcx, r14"
+      },
+      {
+        "rva": 89511971,
+        "hex": "e858b9aeff",
+        "reviewedInstruction": "call 0x185049180"
+      },
+      {
+        "rva": 89511976,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 89511978,
+        "hex": "752a",
+        "reviewedInstruction": "jne 0x18555d856"
+      },
+      {
+        "rva": 89511980,
+        "hex": "f30f1015d47c5308",
+        "reviewedInstruction": "movss xmm2, dword ptr [rip + 0x8537cd4]"
+      },
+      {
+        "rva": 89511988,
+        "hex": "488d4c2430",
+        "reviewedInstruction": "lea rcx, [rsp + 0x30]"
+      },
+      {
+        "rva": 89511993,
+        "hex": "488b95d0000000",
+        "reviewedInstruction": "mov rdx, qword ptr [rbp + 0xd0]"
+      },
+      {
+        "rva": 89512000,
+        "hex": "4533c9",
+        "reviewedInstruction": "xor r9d, r9d"
+      },
+      {
+        "rva": 89512003,
+        "hex": "48c744242000000000",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x20], 0"
+      },
+      {
+        "rva": 89512012,
+        "hex": "e8bfedffff",
+        "reviewedInstruction": "call 0x18555c610"
+      },
+      {
+        "rva": 89512017,
+        "hex": "e9c7000000",
+        "reviewedInstruction": "jmp 0x18555d91d"
+      },
+      {
+        "rva": 89512022,
+        "hex": "488b5330",
+        "reviewedInstruction": "mov rdx, qword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89512026,
+        "hex": "488d4c2450",
+        "reviewedInstruction": "lea rcx, [rsp + 0x50]"
+      },
+      {
+        "rva": 89512031,
+        "hex": "41b805000000",
+        "reviewedInstruction": "mov r8d, 5"
+      },
+      {
+        "rva": 89512037,
+        "hex": "e81a9618fb",
+        "reviewedInstruction": "call 0x1806e6e84"
+      },
+      {
+        "rva": 89512042,
+        "hex": "0f1000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rax]"
+      },
+      {
+        "rva": 89512045,
+        "hex": "0f11442430",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x30], xmm0"
+      },
+      {
+        "rva": 89512050,
+        "hex": "f20f104810",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rax + 0x10]"
+      },
+      {
+        "rva": 89512055,
+        "hex": "f20f114c2440",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x40], xmm1"
+      },
+      {
+        "rva": 89512061,
+        "hex": "e99b000000",
+        "reviewedInstruction": "jmp 0x18555d91d"
+      },
+      {
+        "rva": 89512066,
+        "hex": "4c8b0d6f4c180b",
+        "reviewedInstruction": "mov r9, qword ptr [rip + 0xb184c6f]"
+      },
+      {
+        "rva": 89512073,
+        "hex": "488d4c2450",
+        "reviewedInstruction": "lea rcx, [rsp + 0x50]"
+      },
+      {
+        "rva": 89512078,
+        "hex": "488b5330",
+        "reviewedInstruction": "mov rdx, qword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89512082,
+        "hex": "41b804000000",
+        "reviewedInstruction": "mov r8d, 4"
+      },
+      {
+        "rva": 89512088,
+        "hex": "e8d31de700",
+        "reviewedInstruction": "call 0x1863cf670"
+      },
+      {
+        "rva": 89512093,
+        "hex": "0f10442450",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 89512098,
+        "hex": "488b7310",
+        "reviewedInstruction": "mov rsi, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89512102,
+        "hex": "f20f104c2460",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rsp + 0x60]"
+      },
+      {
+        "rva": 89512108,
+        "hex": "f20f114c2440",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x40], xmm1"
+      },
+      {
+        "rva": 89512114,
+        "hex": "0f11442430",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x30], xmm0"
+      },
+      {
+        "rva": 89512119,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89512122,
+        "hex": "0f84a5050000",
+        "reviewedInstruction": "je 0x18555de65"
+      },
+      {
+        "rva": 89512128,
+        "hex": "488b8600030000",
+        "reviewedInstruction": "mov rax, qword ptr [rsi + 0x300]"
+      },
+      {
+        "rva": 89512135,
+        "hex": "eb45",
+        "reviewedInstruction": "jmp 0x18555d90e"
+      },
+      {
+        "rva": 89512137,
+        "hex": "4c8b0d284c180b",
+        "reviewedInstruction": "mov r9, qword ptr [rip + 0xb184c28]"
+      },
+      {
+        "rva": 89512144,
+        "hex": "488d4c2450",
+        "reviewedInstruction": "lea rcx, [rsp + 0x50]"
+      },
+      {
+        "rva": 89512149,
+        "hex": "488b5330",
+        "reviewedInstruction": "mov rdx, qword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89512153,
+        "hex": "41b803000000",
+        "reviewedInstruction": "mov r8d, 3"
+      },
+      {
+        "rva": 89512159,
+        "hex": "e88c1de700",
+        "reviewedInstruction": "call 0x1863cf670"
+      },
+      {
+        "rva": 89512164,
+        "hex": "0f10442450",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 89512169,
+        "hex": "488b7310",
+        "reviewedInstruction": "mov rsi, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89512173,
+        "hex": "f20f104c2460",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rsp + 0x60]"
+      },
+      {
+        "rva": 89512179,
+        "hex": "f20f114c2440",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x40], xmm1"
+      },
+      {
+        "rva": 89512185,
+        "hex": "0f11442430",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x30], xmm0"
+      },
+      {
+        "rva": 89512190,
+        "hex": "4885f6",
+        "reviewedInstruction": "test rsi, rsi"
+      },
+      {
+        "rva": 89512193,
+        "hex": "0f8464050000",
+        "reviewedInstruction": "je 0x18555de6b"
+      },
+      {
+        "rva": 89512199,
+        "hex": "488b86f8020000",
+        "reviewedInstruction": "mov rax, qword ptr [rsi + 0x2f8]"
+      },
+      {
+        "rva": 89512206,
+        "hex": "488d4c2430",
+        "reviewedInstruction": "lea rcx, [rsp + 0x30]"
+      },
+      {
+        "rva": 89512211,
+        "hex": "4889442430",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x30], rax"
+      },
+      {
+        "rva": 89512216,
+        "hex": "e8436abafa",
+        "reviewedInstruction": "call 0x180104360"
+      },
+      {
+        "rva": 89512221,
+        "hex": "0f2885d0000000",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0xd0]"
+      },
+      {
+        "rva": 89512228,
+        "hex": "488d4d78",
+        "reviewedInstruction": "lea rcx, [rbp + 0x78]"
+      },
+      {
+        "rva": 89512232,
+        "hex": "0f288de0000000",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp + 0xe0]"
+      },
+      {
+        "rva": 89512239,
+        "hex": "0f114578",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x78], xmm0"
+      },
+      {
+        "rva": 89512243,
+        "hex": "0f2885f0000000",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0xf0]"
+      },
+      {
+        "rva": 89512250,
+        "hex": "0f118d88000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x88], xmm1"
+      },
+      {
+        "rva": 89512257,
+        "hex": "0f288d00010000",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp + 0x100]"
+      },
+      {
+        "rva": 89512264,
+        "hex": "0f118598000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x98], xmm0"
+      },
+      {
+        "rva": 89512271,
+        "hex": "0f288510010000",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0x110]"
+      },
+      {
+        "rva": 89512278,
+        "hex": "0f118da8000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xa8], xmm1"
+      },
+      {
+        "rva": 89512285,
+        "hex": "f20f108d20010000",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbp + 0x120]"
+      },
+      {
+        "rva": 89512293,
+        "hex": "0f1185b8000000",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0xb8], xmm0"
+      },
+      {
+        "rva": 89512300,
+        "hex": "f20f118dc8000000",
+        "reviewedInstruction": "movsd qword ptr [rbp + 0xc8], xmm1"
+      },
+      {
+        "rva": 89512308,
+        "hex": "e8e769bafa",
+        "reviewedInstruction": "call 0x180104360"
+      },
+      {
+        "rva": 89512313,
+        "hex": "c6457001",
+        "reviewedInstruction": "mov byte ptr [rbp + 0x70], 1"
+      },
+      {
+        "rva": 89512317,
+        "hex": "0f104c2430",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rsp + 0x30]"
+      },
+      {
+        "rva": 89512322,
+        "hex": "eb36",
+        "reviewedInstruction": "jmp 0x18555d9ba"
+      },
+      {
+        "rva": 89512324,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89512327,
+        "hex": "eb06",
+        "reviewedInstruction": "jmp 0x18555d98f"
+      },
+      {
+        "rva": 89512329,
+        "hex": "41b802000000",
+        "reviewedInstruction": "mov r8d, 2"
+      },
+      {
+        "rva": 89512335,
+        "hex": "4c8b0d624b180b",
+        "reviewedInstruction": "mov r9, qword ptr [rip + 0xb184b62]"
+      },
+      {
+        "rva": 89512342,
+        "hex": "488d4c2450",
+        "reviewedInstruction": "lea rcx, [rsp + 0x50]"
+      },
+      {
+        "rva": 89512347,
+        "hex": "488b5330",
+        "reviewedInstruction": "mov rdx, qword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89512351,
+        "hex": "e8cc1ce700",
+        "reviewedInstruction": "call 0x1863cf670"
+      },
+      {
+        "rva": 89512356,
+        "hex": "0f104c2450",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 89512361,
+        "hex": "f20f10442460",
+        "reviewedInstruction": "movsd xmm0, qword ptr [rsp + 0x60]"
+      },
+      {
+        "rva": 89512367,
+        "hex": "0f114c2430",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x30], xmm1"
+      },
+      {
+        "rva": 89512372,
+        "hex": "f20f11442440",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x40], xmm0"
+      },
+      {
+        "rva": 89512378,
+        "hex": "66480f7ec8",
+        "reviewedInstruction": "movq rax, xmm1"
+      },
+      {
+        "rva": 89512383,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89512386,
+        "hex": "0f8450040000",
+        "reviewedInstruction": "je 0x18555de18"
+      },
+      {
+        "rva": 89512392,
+        "hex": "83781000",
+        "reviewedInstruction": "cmp dword ptr [rax + 0x10], 0"
+      },
+      {
+        "rva": 89512396,
+        "hex": "0f8646040000",
+        "reviewedInstruction": "jbe 0x18555de18"
+      },
+      {
+        "rva": 89512402,
+        "hex": "0f29bc2450030000",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x350], xmm7"
+      },
+      {
+        "rva": 89512410,
+        "hex": "f20f10442440",
+        "reviewedInstruction": "movsd xmm0, qword ptr [rsp + 0x40]"
+      },
+      {
+        "rva": 89512416,
+        "hex": "4c8d442450",
+        "reviewedInstruction": "lea r8, [rsp + 0x50]"
+      },
+      {
+        "rva": 89512421,
+        "hex": "4533c9",
+        "reviewedInstruction": "xor r9d, r9d"
+      },
+      {
+        "rva": 89512424,
+        "hex": "f20f11442460",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x60], xmm0"
+      },
+      {
+        "rva": 89512430,
+        "hex": "8bd7",
+        "reviewedInstruction": "mov edx, edi"
+      },
+      {
+        "rva": 89512432,
+        "hex": "0f294c2450",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x50], xmm1"
+      },
+      {
+        "rva": 89512437,
+        "hex": "488bcb",
+        "reviewedInstruction": "mov rcx, rbx"
+      },
+      {
+        "rva": 89512440,
+        "hex": "e8c3faffff",
+        "reviewedInstruction": "call 0x18555d4c0"
+      },
+      {
+        "rva": 89512445,
+        "hex": "807b3800",
+        "reviewedInstruction": "cmp byte ptr [rbx + 0x38], 0"
+      },
+      {
+        "rva": 89512449,
+        "hex": "0f28f8",
+        "reviewedInstruction": "movaps xmm7, xmm0"
+      },
+      {
+        "rva": 89512452,
+        "hex": "0f849e000000",
+        "reviewedInstruction": "je 0x18555daa8"
+      },
+      {
+        "rva": 89512458,
+        "hex": "0f29b42460030000",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x360], xmm6"
+      },
+      {
+        "rva": 89512466,
+        "hex": "807b5800",
+        "reviewedInstruction": "cmp byte ptr [rbx + 0x58], 0"
+      },
+      {
+        "rva": 89512470,
+        "hex": "0f104b40",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89512474,
+        "hex": "0f105350",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89512478,
+        "hex": "0f105b70",
+        "reviewedInstruction": "movups xmm3, xmmword ptr [rbx + 0x70]"
+      },
+      {
+        "rva": 89512482,
+        "hex": "0f108380000000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x80]"
+      },
+      {
+        "rva": 89512489,
+        "hex": "0f10a390000000",
+        "reviewedInstruction": "movups xmm4, xmmword ptr [rbx + 0x90]"
+      },
+      {
+        "rva": 89512496,
+        "hex": "0f10aba0000000",
+        "reviewedInstruction": "movups xmm5, xmmword ptr [rbx + 0xa0]"
+      },
+      {
+        "rva": 89512503,
+        "hex": "f20f10b3b0000000",
+        "reviewedInstruction": "movsd xmm6, qword ptr [rbx + 0xb0]"
+      },
+      {
+        "rva": 89512511,
+        "hex": "0f294c2470",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x70], xmm1"
+      },
+      {
+        "rva": 89512516,
+        "hex": "0f104b60",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x60]"
+      },
+      {
+        "rva": 89512520,
+        "hex": "0f295580",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x80], xmm2"
+      },
+      {
+        "rva": 89512524,
+        "hex": "0f294d90",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x70], xmm1"
+      },
+      {
+        "rva": 89512528,
+        "hex": "0f295da0",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x60], xmm3"
+      },
+      {
+        "rva": 89512532,
+        "hex": "0f2945b0",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x50], xmm0"
+      },
+      {
+        "rva": 89512536,
+        "hex": "0f2965c0",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x40], xmm4"
+      },
+      {
+        "rva": 89512540,
+        "hex": "0f296dd0",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x30], xmm5"
+      },
+      {
+        "rva": 89512544,
+        "hex": "f20f1175e0",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x20], xmm6"
+      },
+      {
+        "rva": 89512549,
+        "hex": "7439",
+        "reviewedInstruction": "je 0x18555daa0"
+      },
+      {
+        "rva": 89512551,
+        "hex": "33d2",
+        "reviewedInstruction": "xor edx, edx"
+      },
+      {
+        "rva": 89512553,
+        "hex": "0f298d30010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x130], xmm1"
+      },
+      {
+        "rva": 89512560,
+        "hex": "488d8d30010000",
+        "reviewedInstruction": "lea rcx, [rbp + 0x130]"
+      },
+      {
+        "rva": 89512567,
+        "hex": "0f299d40010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x140], xmm3"
+      },
+      {
+        "rva": 89512574,
+        "hex": "0f298550010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x150], xmm0"
+      },
+      {
+        "rva": 89512581,
+        "hex": "0f29a560010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x160], xmm4"
+      },
+      {
+        "rva": 89512588,
+        "hex": "0f29ad70010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x170], xmm5"
+      },
+      {
+        "rva": 89512595,
+        "hex": "f20f11b580010000",
+        "reviewedInstruction": "movsd qword ptr [rbp + 0x180], xmm6"
+      },
+      {
+        "rva": 89512603,
+        "hex": "e8c0da8200",
+        "reviewedInstruction": "call 0x185d8b560"
+      },
+      {
+        "rva": 89512608,
+        "hex": "0f28b42460030000",
+        "reviewedInstruction": "movaps xmm6, xmmword ptr [rsp + 0x360]"
+      },
+      {
+        "rva": 89512616,
+        "hex": "833d81091c0c00",
+        "reviewedInstruction": "cmp dword ptr [rip + 0xc1c0981], 0"
+      },
+      {
+        "rva": 89512623,
+        "hex": "488d3d6ad0f10b",
+        "reviewedInstruction": "lea rdi, [rip + 0xbf1d06a]"
+      },
+      {
+        "rva": 89512630,
+        "hex": "488b442430",
+        "reviewedInstruction": "mov rax, qword ptr [rsp + 0x30]"
+      },
+      {
+        "rva": 89512635,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89512638,
+        "hex": "0f11442478",
+        "reviewedInstruction": "movups xmmword ptr [rsp + 0x78], xmm0"
+      },
+      {
+        "rva": 89512643,
+        "hex": "4889442470",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x70], rax"
+      },
+      {
+        "rva": 89512648,
+        "hex": "0f114588",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x78], xmm0"
+      },
+      {
+        "rva": 89512652,
+        "hex": "0f114598",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x68], xmm0"
+      },
+      {
+        "rva": 89512656,
+        "hex": "0f1145a8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x58], xmm0"
+      },
+      {
+        "rva": 89512660,
+        "hex": "0f1145b8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x48], xmm0"
+      },
+      {
+        "rva": 89512664,
+        "hex": "0f1145c8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x38], xmm0"
+      },
+      {
+        "rva": 89512668,
+        "hex": "0f1145d8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x28], xmm0"
+      },
+      {
+        "rva": 89512672,
+        "hex": "7449",
+        "reviewedInstruction": "je 0x18555db2b"
+      },
+      {
+        "rva": 89512674,
+        "hex": "4c8d442470",
+        "reviewedInstruction": "lea r8, [rsp + 0x70]"
+      },
+      {
+        "rva": 89512679,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89512683,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89512690,
+        "hex": "418bd0",
+        "reviewedInstruction": "mov edx, r8d"
+      },
+      {
+        "rva": 89512693,
+        "hex": "48c1ea06",
+        "reviewedInstruction": "shr rdx, 6"
+      },
+      {
+        "rva": 89512697,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89512701,
+        "hex": "0f0d8cd7f86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89512709,
+        "hex": "6666660f1f840000000000",
+        "reviewedInstruction": "nop word ptr [rax + rax]"
+      },
+      {
+        "rva": 89512720,
+        "hex": "488b84d7f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89512728,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89512731,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89512735,
+        "hex": "f0480fb18cd7f86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdi + rdx*8 + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89512745,
+        "hex": "75e5",
+        "reviewedInstruction": "jne 0x18555db10"
+      },
+      {
+        "rva": 89512747,
+        "hex": "807d7000",
+        "reviewedInstruction": "cmp byte ptr [rbp + 0x70], 0"
+      },
+      {
+        "rva": 89512751,
+        "hex": "488b442438",
+        "reviewedInstruction": "mov rax, qword ptr [rsp + 0x38]"
+      },
+      {
+        "rva": 89512756,
+        "hex": "f30f117c2478",
+        "reviewedInstruction": "movss dword ptr [rsp + 0x78], xmm7"
+      },
+      {
+        "rva": 89512762,
+        "hex": "0f28bc2450030000",
+        "reviewedInstruction": "movaps xmm7, xmmword ptr [rsp + 0x350]"
+      },
+      {
+        "rva": 89512770,
+        "hex": "48894580",
+        "reviewedInstruction": "mov qword ptr [rbp - 0x80], rax"
+      },
+      {
+        "rva": 89512774,
+        "hex": "c644247c00",
+        "reviewedInstruction": "mov byte ptr [rsp + 0x7c], 0"
+      },
+      {
+        "rva": 89512779,
+        "hex": "0f8408010000",
+        "reviewedInstruction": "je 0x18555dc59"
+      },
+      {
+        "rva": 89512785,
+        "hex": "0f104578",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbp + 0x78]"
+      },
+      {
+        "rva": 89512789,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89512792,
+        "hex": "488d9590010000",
+        "reviewedInstruction": "lea rdx, [rbp + 0x190]"
+      },
+      {
+        "rva": 89512799,
+        "hex": "0f108d88000000",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbp + 0x88]"
+      },
+      {
+        "rva": 89512806,
+        "hex": "488d8df0010000",
+        "reviewedInstruction": "lea rcx, [rbp + 0x1f0]"
+      },
+      {
+        "rva": 89512813,
+        "hex": "0f298590010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x190], xmm0"
+      },
+      {
+        "rva": 89512820,
+        "hex": "0f108598000000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbp + 0x98]"
+      },
+      {
+        "rva": 89512827,
+        "hex": "0f298da0010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x1a0], xmm1"
+      },
+      {
+        "rva": 89512834,
+        "hex": "0f108da8000000",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbp + 0xa8]"
+      },
+      {
+        "rva": 89512841,
+        "hex": "0f2985b0010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x1b0], xmm0"
+      },
+      {
+        "rva": 89512848,
+        "hex": "0f1085b8000000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbp + 0xb8]"
+      },
+      {
+        "rva": 89512855,
+        "hex": "0f298dc0010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x1c0], xmm1"
+      },
+      {
+        "rva": 89512862,
+        "hex": "f20f108dc8000000",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbp + 0xc8]"
+      },
+      {
+        "rva": 89512870,
+        "hex": "0f2985d0010000",
+        "reviewedInstruction": "movaps xmmword ptr [rbp + 0x1d0], xmm0"
+      },
+      {
+        "rva": 89512877,
+        "hex": "f20f118de0010000",
+        "reviewedInstruction": "movsd qword ptr [rbp + 0x1e0], xmm1"
+      },
+      {
+        "rva": 89512885,
+        "hex": "e836fffcff",
+        "reviewedInstruction": "call 0x18552daf0"
+      },
+      {
+        "rva": 89512890,
+        "hex": "0f1008",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rax]"
+      },
+      {
+        "rva": 89512893,
+        "hex": "0f105010",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rax + 0x10]"
+      },
+      {
+        "rva": 89512897,
+        "hex": "0f105820",
+        "reviewedInstruction": "movups xmm3, xmmword ptr [rax + 0x20]"
+      },
+      {
+        "rva": 89512901,
+        "hex": "0f106030",
+        "reviewedInstruction": "movups xmm4, xmmword ptr [rax + 0x30]"
+      },
+      {
+        "rva": 89512905,
+        "hex": "0f106840",
+        "reviewedInstruction": "movups xmm5, xmmword ptr [rax + 0x40]"
+      },
+      {
+        "rva": 89512909,
+        "hex": "f20f104050",
+        "reviewedInstruction": "movsd xmm0, qword ptr [rax + 0x50]"
+      },
+      {
+        "rva": 89512914,
+        "hex": "33c0",
+        "reviewedInstruction": "xor eax, eax"
+      },
+      {
+        "rva": 89512916,
+        "hex": "390556081c0c",
+        "reviewedInstruction": "cmp dword ptr [rip + 0xc1c0856], eax"
+      },
+      {
+        "rva": 89512922,
+        "hex": "0f114df8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 8], xmm1"
+      },
+      {
+        "rva": 89512926,
+        "hex": "488945f0",
+        "reviewedInstruction": "mov qword ptr [rbp - 0x10], rax"
+      },
+      {
+        "rva": 89512930,
+        "hex": "0f115508",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 8], xmm2"
+      },
+      {
+        "rva": 89512934,
+        "hex": "0f115d18",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x18], xmm3"
+      },
+      {
+        "rva": 89512938,
+        "hex": "0f116528",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x28], xmm4"
+      },
+      {
+        "rva": 89512942,
+        "hex": "0f116d38",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x38], xmm5"
+      },
+      {
+        "rva": 89512946,
+        "hex": "f20f114548",
+        "reviewedInstruction": "movsd qword ptr [rbp + 0x48], xmm0"
+      },
+      {
+        "rva": 89512951,
+        "hex": "7442",
+        "reviewedInstruction": "je 0x18555dc3b"
+      },
+      {
+        "rva": 89512953,
+        "hex": "4c8d45f8",
+        "reviewedInstruction": "lea r8, [rbp - 8]"
+      },
+      {
+        "rva": 89512957,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89512961,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89512968,
+        "hex": "418bd0",
+        "reviewedInstruction": "mov edx, r8d"
+      },
+      {
+        "rva": 89512971,
+        "hex": "48c1ea06",
+        "reviewedInstruction": "shr rdx, 6"
+      },
+      {
+        "rva": 89512975,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89512979,
+        "hex": "0f0d8cd7f86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89512987,
+        "hex": "0f1f440000",
+        "reviewedInstruction": "nop dword ptr [rax + rax]"
+      },
+      {
+        "rva": 89512992,
+        "hex": "488b84d7f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513000,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89513003,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89513007,
+        "hex": "f0480fb18cd7f86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdi + rdx*8 + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89513017,
+        "hex": "75e5",
+        "reviewedInstruction": "jne 0x18555dc20"
+      },
+      {
+        "rva": 89513019,
+        "hex": "0f284d00",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp]"
+      },
+      {
+        "rva": 89513023,
+        "hex": "0f285510",
+        "reviewedInstruction": "movaps xmm2, xmmword ptr [rbp + 0x10]"
+      },
+      {
+        "rva": 89513027,
+        "hex": "0f285d20",
+        "reviewedInstruction": "movaps xmm3, xmmword ptr [rbp + 0x20]"
+      },
+      {
+        "rva": 89513031,
+        "hex": "0f286530",
+        "reviewedInstruction": "movaps xmm4, xmmword ptr [rbp + 0x30]"
+      },
+      {
+        "rva": 89513035,
+        "hex": "0f286d40",
+        "reviewedInstruction": "movaps xmm5, xmmword ptr [rbp + 0x40]"
+      },
+      {
+        "rva": 89513039,
+        "hex": "c645f001",
+        "reviewedInstruction": "mov byte ptr [rbp - 0x10], 1"
+      },
+      {
+        "rva": 89513043,
+        "hex": "0f2845f0",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp - 0x10]"
+      },
+      {
+        "rva": 89513047,
+        "hex": "eb12",
+        "reviewedInstruction": "jmp 0x18555dc6b"
+      },
+      {
+        "rva": 89513049,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89513052,
+        "hex": "0f57c9",
+        "reviewedInstruction": "xorps xmm1, xmm1"
+      },
+      {
+        "rva": 89513055,
+        "hex": "0f57d2",
+        "reviewedInstruction": "xorps xmm2, xmm2"
+      },
+      {
+        "rva": 89513058,
+        "hex": "0f57db",
+        "reviewedInstruction": "xorps xmm3, xmm3"
+      },
+      {
+        "rva": 89513061,
+        "hex": "0f57e4",
+        "reviewedInstruction": "xorps xmm4, xmm4"
+      },
+      {
+        "rva": 89513064,
+        "hex": "0f57ed",
+        "reviewedInstruction": "xorps xmm5, xmm5"
+      },
+      {
+        "rva": 89513067,
+        "hex": "833dbe071c0c00",
+        "reviewedInstruction": "cmp dword ptr [rip + 0xc1c07be], 0"
+      },
+      {
+        "rva": 89513074,
+        "hex": "0f114588",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x78], xmm0"
+      },
+      {
+        "rva": 89513078,
+        "hex": "0f114d98",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x68], xmm1"
+      },
+      {
+        "rva": 89513082,
+        "hex": "0f1155a8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x58], xmm2"
+      },
+      {
+        "rva": 89513086,
+        "hex": "0f115db8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x48], xmm3"
+      },
+      {
+        "rva": 89513090,
+        "hex": "0f1165c8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x38], xmm4"
+      },
+      {
+        "rva": 89513094,
+        "hex": "0f116dd8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 0x28], xmm5"
+      },
+      {
+        "rva": 89513098,
+        "hex": "743f",
+        "reviewedInstruction": "je 0x18555dccb"
+      },
+      {
+        "rva": 89513100,
+        "hex": "4c8d4590",
+        "reviewedInstruction": "lea r8, [rbp - 0x70]"
+      },
+      {
+        "rva": 89513104,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89513108,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89513115,
+        "hex": "418bd0",
+        "reviewedInstruction": "mov edx, r8d"
+      },
+      {
+        "rva": 89513118,
+        "hex": "48c1ea06",
+        "reviewedInstruction": "shr rdx, 6"
+      },
+      {
+        "rva": 89513122,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89513126,
+        "hex": "0f0d8cd7f86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513134,
+        "hex": "6690",
+        "reviewedInstruction": "nop "
+      },
+      {
+        "rva": 89513136,
+        "hex": "488b84d7f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513144,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89513147,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89513151,
+        "hex": "f0480fb18cd7f86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdi + rdx*8 + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89513161,
+        "hex": "75e5",
+        "reviewedInstruction": "jne 0x18555dcb0"
+      },
+      {
+        "rva": 89513163,
+        "hex": "0f28442470",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rsp + 0x70]"
+      },
+      {
+        "rva": 89513168,
+        "hex": "33c0",
+        "reviewedInstruction": "xor eax, eax"
+      },
+      {
+        "rva": 89513170,
+        "hex": "390558071c0c",
+        "reviewedInstruction": "cmp dword ptr [rip + 0xc1c0758], eax"
+      },
+      {
+        "rva": 89513176,
+        "hex": "0f284d80",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp - 0x80]"
+      },
+      {
+        "rva": 89513180,
+        "hex": "0f1145f8",
+        "reviewedInstruction": "movups xmmword ptr [rbp - 8], xmm0"
+      },
+      {
+        "rva": 89513184,
+        "hex": "488945f0",
+        "reviewedInstruction": "mov qword ptr [rbp - 0x10], rax"
+      },
+      {
+        "rva": 89513188,
+        "hex": "0f284590",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp - 0x70]"
+      },
+      {
+        "rva": 89513192,
+        "hex": "0f114d08",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 8], xmm1"
+      },
+      {
+        "rva": 89513196,
+        "hex": "0f284da0",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp - 0x60]"
+      },
+      {
+        "rva": 89513200,
+        "hex": "0f114518",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x18], xmm0"
+      },
+      {
+        "rva": 89513204,
+        "hex": "0f2845b0",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp - 0x50]"
+      },
+      {
+        "rva": 89513208,
+        "hex": "0f114d28",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x28], xmm1"
+      },
+      {
+        "rva": 89513212,
+        "hex": "0f284dc0",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp - 0x40]"
+      },
+      {
+        "rva": 89513216,
+        "hex": "0f114538",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x38], xmm0"
+      },
+      {
+        "rva": 89513220,
+        "hex": "0f2845d0",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp - 0x30]"
+      },
+      {
+        "rva": 89513224,
+        "hex": "0f114d48",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x48], xmm1"
+      },
+      {
+        "rva": 89513228,
+        "hex": "f20f104de0",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbp - 0x20]"
+      },
+      {
+        "rva": 89513233,
+        "hex": "0f114558",
+        "reviewedInstruction": "movups xmmword ptr [rbp + 0x58], xmm0"
+      },
+      {
+        "rva": 89513237,
+        "hex": "f20f114d68",
+        "reviewedInstruction": "movsd qword ptr [rbp + 0x68], xmm1"
+      },
+      {
+        "rva": 89513242,
+        "hex": "743f",
+        "reviewedInstruction": "je 0x18555dd5b"
+      },
+      {
+        "rva": 89513244,
+        "hex": "4c8d45f8",
+        "reviewedInstruction": "lea r8, [rbp - 8]"
+      },
+      {
+        "rva": 89513248,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89513252,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89513259,
+        "hex": "418bd0",
+        "reviewedInstruction": "mov edx, r8d"
+      },
+      {
+        "rva": 89513262,
+        "hex": "48c1ea06",
+        "reviewedInstruction": "shr rdx, 6"
+      },
+      {
+        "rva": 89513266,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89513270,
+        "hex": "0f0d8cd7f86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513278,
+        "hex": "6690",
+        "reviewedInstruction": "nop "
+      },
+      {
+        "rva": 89513280,
+        "hex": "488b84d7f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513288,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89513291,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89513295,
+        "hex": "f0480fb18cd7f86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdi + rdx*8 + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89513305,
+        "hex": "75e5",
+        "reviewedInstruction": "jne 0x18555dd40"
+      },
+      {
+        "rva": 89513307,
+        "hex": "833dce061c0c00",
+        "reviewedInstruction": "cmp dword ptr [rip + 0xc1c06ce], 0"
+      },
+      {
+        "rva": 89513314,
+        "hex": "0f284d00",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp]"
+      },
+      {
+        "rva": 89513318,
+        "hex": "c645f001",
+        "reviewedInstruction": "mov byte ptr [rbp - 0x10], 1"
+      },
+      {
+        "rva": 89513322,
+        "hex": "0f2845f0",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp - 0x10]"
+      },
+      {
+        "rva": 89513326,
+        "hex": "0f114338",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x38], xmm0"
+      },
+      {
+        "rva": 89513330,
+        "hex": "0f284510",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0x10]"
+      },
+      {
+        "rva": 89513334,
+        "hex": "0f114b48",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x48], xmm1"
+      },
+      {
+        "rva": 89513338,
+        "hex": "0f284d20",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp + 0x20]"
+      },
+      {
+        "rva": 89513342,
+        "hex": "0f114358",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x58], xmm0"
+      },
+      {
+        "rva": 89513346,
+        "hex": "0f284530",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0x30]"
+      },
+      {
+        "rva": 89513350,
+        "hex": "0f114b68",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x68], xmm1"
+      },
+      {
+        "rva": 89513354,
+        "hex": "0f284d40",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp + 0x40]"
+      },
+      {
+        "rva": 89513358,
+        "hex": "0f114378",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x78], xmm0"
+      },
+      {
+        "rva": 89513362,
+        "hex": "0f284550",
+        "reviewedInstruction": "movaps xmm0, xmmword ptr [rbp + 0x50]"
+      },
+      {
+        "rva": 89513366,
+        "hex": "0f118b88000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x88], xmm1"
+      },
+      {
+        "rva": 89513373,
+        "hex": "0f284d60",
+        "reviewedInstruction": "movaps xmm1, xmmword ptr [rbp + 0x60]"
+      },
+      {
+        "rva": 89513377,
+        "hex": "0f118398000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x98], xmm0"
+      },
+      {
+        "rva": 89513384,
+        "hex": "0f118ba8000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0xa8], xmm1"
+      },
+      {
+        "rva": 89513391,
+        "hex": "744a",
+        "reviewedInstruction": "je 0x18555ddfb"
+      },
+      {
+        "rva": 89513393,
+        "hex": "4c8d4340",
+        "reviewedInstruction": "lea r8, [rbx + 0x40]"
+      },
+      {
+        "rva": 89513397,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89513401,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89513408,
+        "hex": "418bd0",
+        "reviewedInstruction": "mov edx, r8d"
+      },
+      {
+        "rva": 89513411,
+        "hex": "48c1ea06",
+        "reviewedInstruction": "shr rdx, 6"
+      },
+      {
+        "rva": 89513415,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89513419,
+        "hex": "0f0d8cd7f86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513427,
+        "hex": "0f1f4000",
+        "reviewedInstruction": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 89513431,
+        "hex": "660f1f840000000000",
+        "reviewedInstruction": "nop word ptr [rax + rax]"
+      },
+      {
+        "rva": 89513440,
+        "hex": "488b84d7f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdi + rdx*8 + 0x46ef8]"
+      },
+      {
+        "rva": 89513448,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89513451,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89513455,
+        "hex": "f0480fb18cd7f86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdi + rdx*8 + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89513465,
+        "hex": "75e5",
+        "reviewedInstruction": "jne 0x18555dde0"
+      },
+      {
+        "rva": 89513467,
+        "hex": "0f57d2",
+        "reviewedInstruction": "xorps xmm2, xmm2"
+      },
+      {
+        "rva": 89513470,
+        "hex": "b90b000000",
+        "reviewedInstruction": "mov ecx, 0xb"
+      },
+      {
+        "rva": 89513475,
+        "hex": "0f57db",
+        "reviewedInstruction": "xorps xmm3, xmm3"
+      },
+      {
+        "rva": 89513478,
+        "hex": "f30f11542420",
+        "reviewedInstruction": "movss dword ptr [rsp + 0x20], xmm2"
+      },
+      {
+        "rva": 89513484,
+        "hex": "488bd3",
+        "reviewedInstruction": "mov rdx, rbx"
+      },
+      {
+        "rva": 89513487,
+        "hex": "e8cc4caffa",
+        "reviewedInstruction": "call 0x180052ae0"
+      },
+      {
+        "rva": 89513492,
+        "hex": "b001",
+        "reviewedInstruction": "mov al, 1"
+      },
+      {
+        "rva": 89513494,
+        "hex": "eb02",
+        "reviewedInstruction": "jmp 0x18555de1a"
+      },
+      {
+        "rva": 89513496,
+        "hex": "32c0",
+        "reviewedInstruction": "xor al, al"
+      },
+      {
+        "rva": 89513498,
+        "hex": "488bb42490030000",
+        "reviewedInstruction": "mov rsi, qword ptr [rsp + 0x390]"
+      },
+      {
+        "rva": 89513506,
+        "hex": "4c8bb42498030000",
+        "reviewedInstruction": "mov r14, qword ptr [rsp + 0x398]"
+      },
+      {
+        "rva": 89513514,
+        "hex": "4881c470030000",
+        "reviewedInstruction": "add rsp, 0x370"
+      },
+      {
+        "rva": 89513521,
+        "hex": "5f",
+        "reviewedInstruction": "pop rdi"
+      },
+      {
+        "rva": 89513522,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 89513523,
+        "hex": "5d",
+        "reviewedInstruction": "pop rbp"
+      },
+      {
+        "rva": 89513524,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      }
+    ],
+    "cache": [
+      {
+        "rva": 89511104,
+        "hex": "4053",
+        "reviewedInstruction": "push rbx"
+      },
+      {
+        "rva": 89511106,
+        "hex": "4883ec60",
+        "reviewedInstruction": "sub rsp, 0x60"
+      },
+      {
+        "rva": 89511110,
+        "hex": "4c8b15831d1c0c",
+        "reviewedInstruction": "mov r10, qword ptr [rip + 0xc1c1d83]"
+      },
+      {
+        "rva": 89511117,
+        "hex": "488bd9",
+        "reviewedInstruction": "mov rbx, rcx"
+      },
+      {
+        "rva": 89511120,
+        "hex": "498b4a48",
+        "reviewedInstruction": "mov rcx, qword ptr [r10 + 0x48]"
+      },
+      {
+        "rva": 89511124,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 89511127,
+        "hex": "0f855ff9f901",
+        "reviewedInstruction": "jne 0x1874fce3c"
+      },
+      {
+        "rva": 89511133,
+        "hex": "0f29742450",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x50], xmm6"
+      },
+      {
+        "rva": 89511138,
+        "hex": "f2410f107010",
+        "reviewedInstruction": "movsd xmm6, qword ptr [r8 + 0x10]"
+      },
+      {
+        "rva": 89511144,
+        "hex": "0fc6f655",
+        "reviewedInstruction": "shufps xmm6, xmm6, 0x55"
+      },
+      {
+        "rva": 89511148,
+        "hex": "83fa02",
+        "reviewedInstruction": "cmp edx, 2"
+      },
+      {
+        "rva": 89511151,
+        "hex": "0f8585000000",
+        "reviewedInstruction": "jne 0x18555d57a"
+      },
+      {
+        "rva": 89511157,
+        "hex": "488b4310",
+        "reviewedInstruction": "mov rax, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511161,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511164,
+        "hex": "0f8486000000",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511170,
+        "hex": "488b4850",
+        "reviewedInstruction": "mov rcx, qword ptr [rax + 0x50]"
+      },
+      {
+        "rva": 89511174,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 89511177,
+        "hex": "747d",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511179,
+        "hex": "488b8958020000",
+        "reviewedInstruction": "mov rcx, qword ptr [rcx + 0x258]"
+      },
+      {
+        "rva": 89511186,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 89511189,
+        "hex": "7471",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511191,
+        "hex": "498b4268",
+        "reviewedInstruction": "mov rax, qword ptr [r10 + 0x68]"
+      },
+      {
+        "rva": 89511195,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511198,
+        "hex": "0f855cf9f901",
+        "reviewedInstruction": "jne 0x1874fce80"
+      },
+      {
+        "rva": 89511204,
+        "hex": "33d2",
+        "reviewedInstruction": "xor edx, edx"
+      },
+      {
+        "rva": 89511206,
+        "hex": "e8f5ffbdff",
+        "reviewedInstruction": "call 0x18513d520"
+      },
+      {
+        "rva": 89511211,
+        "hex": "83f814",
+        "reviewedInstruction": "cmp eax, 0x14"
+      },
+      {
+        "rva": 89511214,
+        "hex": "0f8474f9f901",
+        "reviewedInstruction": "je 0x1874fcea8"
+      },
+      {
+        "rva": 89511220,
+        "hex": "488b4310",
+        "reviewedInstruction": "mov rax, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511224,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511227,
+        "hex": "744b",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511229,
+        "hex": "488b4050",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0x50]"
+      },
+      {
+        "rva": 89511233,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511236,
+        "hex": "7442",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511238,
+        "hex": "488b8028010000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0x128]"
+      },
+      {
+        "rva": 89511245,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89511248,
+        "hex": "7436",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 89511250,
+        "hex": "4883b8d803000000",
+        "reviewedInstruction": "cmp qword ptr [rax + 0x3d8], 0"
+      },
+      {
+        "rva": 89511258,
+        "hex": "741e",
+        "reviewedInstruction": "je 0x18555d57a"
+      },
+      {
+        "rva": 89511260,
+        "hex": "488b4310",
+        "reviewedInstruction": "mov rax, qword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89511264,
+        "hex": "33d2",
+        "reviewedInstruction": "xor edx, edx"
+      },
+      {
+        "rva": 89511266,
+        "hex": "488b4850",
+        "reviewedInstruction": "mov rcx, qword ptr [rax + 0x50]"
+      },
+      {
+        "rva": 89511270,
+        "hex": "488b8928010000",
+        "reviewedInstruction": "mov rcx, qword ptr [rcx + 0x128]"
+      },
+      {
+        "rva": 89511277,
+        "hex": "e81ef7ffff",
+        "reviewedInstruction": "call 0x18555cc90"
+      },
+      {
+        "rva": 89511282,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 89511284,
+        "hex": "0f857ef9f901",
+        "reviewedInstruction": "jne 0x1874fcef8"
+      },
+      {
+        "rva": 89511290,
+        "hex": "0f28c6",
+        "reviewedInstruction": "movaps xmm0, xmm6"
+      },
+      {
+        "rva": 89511293,
+        "hex": "0f28742450",
+        "reviewedInstruction": "movaps xmm6, xmmword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 89511298,
+        "hex": "4883c460",
+        "reviewedInstruction": "add rsp, 0x60"
+      },
+      {
+        "rva": 89511302,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 89511303,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      },
+      {
+        "rva": 89511304,
+        "hex": "e8b313b8fa",
+        "reviewedInstruction": "call 0x1800de940"
+      },
+      {
+        "rva": 89511309,
+        "hex": "cc",
+        "reviewedInstruction": "int3 "
+      }
+    ],
+    "cacheCold": [
+      {
+        "rva": 122670652,
+        "hex": "488b81d0720000",
+        "reviewedInstruction": "mov rax, qword ptr [rcx + 0x72d0]"
+      },
+      {
+        "rva": 122670659,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 122670662,
+        "hex": "0f84910606fe",
+        "reviewedInstruction": "je 0x18555d4dd"
+      },
+      {
+        "rva": 122670668,
+        "hex": "410f1000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [r8]"
+      },
+      {
+        "rva": 122670672,
+        "hex": "488b89d8720000",
+        "reviewedInstruction": "mov rcx, qword ptr [rcx + 0x72d8]"
+      },
+      {
+        "rva": 122670679,
+        "hex": "f2410f104810",
+        "reviewedInstruction": "movsd xmm1, qword ptr [r8 + 0x10]"
+      },
+      {
+        "rva": 122670685,
+        "hex": "448bc2",
+        "reviewedInstruction": "mov r8d, edx"
+      },
+      {
+        "rva": 122670688,
+        "hex": "4c894c2420",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x20], r9"
+      },
+      {
+        "rva": 122670693,
+        "hex": "488bd3",
+        "reviewedInstruction": "mov rdx, rbx"
+      },
+      {
+        "rva": 122670696,
+        "hex": "4c8d4c2430",
+        "reviewedInstruction": "lea r9, [rsp + 0x30]"
+      },
+      {
+        "rva": 122670701,
+        "hex": "0f29442430",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x30], xmm0"
+      },
+      {
+        "rva": 122670706,
+        "hex": "f20f114c2440",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x40], xmm1"
+      },
+      {
+        "rva": 122670712,
+        "hex": "ffd0",
+        "reviewedInstruction": "call rax"
+      },
+      {
+        "rva": 122670714,
+        "hex": "90",
+        "reviewedInstruction": "nop "
+      },
+      {
+        "rva": 122670715,
+        "hex": "e9020706fe",
+        "reviewedInstruction": "jmp 0x18555d582"
+      },
+      {
+        "rva": 122670720,
+        "hex": "4c8b8810260000",
+        "reviewedInstruction": "mov r9, qword ptr [rax + 0x2610]"
+      },
+      {
+        "rva": 122670727,
+        "hex": "4d85c9",
+        "reviewedInstruction": "test r9, r9"
+      },
+      {
+        "rva": 122670730,
+        "hex": "0f84940606fe",
+        "reviewedInstruction": "je 0x18555d524"
+      },
+      {
+        "rva": 122670736,
+        "hex": "488bd1",
+        "reviewedInstruction": "mov rdx, rcx"
+      },
+      {
+        "rva": 122670739,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 122670742,
+        "hex": "488b8818260000",
+        "reviewedInstruction": "mov rcx, qword ptr [rax + 0x2618]"
+      },
+      {
+        "rva": 122670749,
+        "hex": "41ffd1",
+        "reviewedInstruction": "call r9"
+      },
+      {
+        "rva": 122670752,
+        "hex": "84c0",
+        "reviewedInstruction": "test al, al"
+      },
+      {
+        "rva": 122670754,
+        "hex": "0f848c0606fe",
+        "reviewedInstruction": "je 0x18555d534"
+      },
+      {
+        "rva": 122670760,
+        "hex": "488b0519f21809",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0x918f219]"
+      },
+      {
+        "rva": 122670767,
+        "hex": "83b8e000000000",
+        "reviewedInstruction": "cmp dword ptr [rax + 0xe0], 0"
+      },
+      {
+        "rva": 122670774,
+        "hex": "750f",
+        "reviewedInstruction": "jne 0x1874fcec7"
+      },
+      {
+        "rva": 122670776,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 122670779,
+        "hex": "e82097b1f8",
+        "reviewedInstruction": "call 0x1800165e0"
+      },
+      {
+        "rva": 122670784,
+        "hex": "488b0501f21809",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0x918f201]"
+      },
+      {
+        "rva": 122670791,
+        "hex": "488b80b8000000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 122670798,
+        "hex": "488b80a0000000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0xa0]"
+      },
+      {
+        "rva": 122670805,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 122670808,
+        "hex": "0f84aa0606fe",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 122670814,
+        "hex": "488b8098020000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0x298]"
+      },
+      {
+        "rva": 122670821,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 122670824,
+        "hex": "0f849a0606fe",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 122670830,
+        "hex": "f30f10702c",
+        "reviewedInstruction": "movss xmm6, dword ptr [rax + 0x2c]"
+      },
+      {
+        "rva": 122670835,
+        "hex": "e9820606fe",
+        "reviewedInstruction": "jmp 0x18555d57a"
+      },
+      {
+        "rva": 122670840,
+        "hex": "488b05c9f11809",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0x918f1c9]"
+      },
+      {
+        "rva": 122670847,
+        "hex": "83b8e000000000",
+        "reviewedInstruction": "cmp dword ptr [rax + 0xe0], 0"
+      },
+      {
+        "rva": 122670854,
+        "hex": "750f",
+        "reviewedInstruction": "jne 0x1874fcf17"
+      },
+      {
+        "rva": 122670856,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 122670859,
+        "hex": "e8d096b1f8",
+        "reviewedInstruction": "call 0x1800165e0"
+      },
+      {
+        "rva": 122670864,
+        "hex": "488b05b1f11809",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0x918f1b1]"
+      },
+      {
+        "rva": 122670871,
+        "hex": "488b80b8000000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 122670878,
+        "hex": "488b80a0000000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0xa0]"
+      },
+      {
+        "rva": 122670885,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 122670888,
+        "hex": "0f845a0606fe",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 122670894,
+        "hex": "488b8098020000",
+        "reviewedInstruction": "mov rax, qword ptr [rax + 0x298]"
+      },
+      {
+        "rva": 122670901,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 122670904,
+        "hex": "0f844a0606fe",
+        "reviewedInstruction": "je 0x18555d588"
+      },
+      {
+        "rva": 122670910,
+        "hex": "f30f107038",
+        "reviewedInstruction": "movss xmm6, dword ptr [rax + 0x38]"
+      },
+      {
+        "rva": 122670915,
+        "hex": "e9320606fe",
+        "reviewedInstruction": "jmp 0x18555d57a"
+      }
+    ],
+    "copy": [
+      {
+        "rva": 89316080,
+        "hex": "48895c2418",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x18], rbx"
+      },
+      {
+        "rva": 89316085,
+        "hex": "48897c2420",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x20], rdi"
+      },
+      {
+        "rva": 89316090,
+        "hex": "55",
+        "reviewedInstruction": "push rbp"
+      },
+      {
+        "rva": 89316091,
+        "hex": "488d6c24a9",
+        "reviewedInstruction": "lea rbp, [rsp - 0x57]"
+      },
+      {
+        "rva": 89316096,
+        "hex": "4881ece0000000",
+        "reviewedInstruction": "sub rsp, 0xe0"
+      },
+      {
+        "rva": 89316103,
+        "hex": "488b0542171f0c",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0xc1f1742]"
+      },
+      {
+        "rva": 89316110,
+        "hex": "488bda",
+        "reviewedInstruction": "mov rbx, rdx"
+      },
+      {
+        "rva": 89316113,
+        "hex": "488bf9",
+        "reviewedInstruction": "mov rdi, rcx"
+      },
+      {
+        "rva": 89316116,
+        "hex": "488b5048",
+        "reviewedInstruction": "mov rdx, qword ptr [rax + 0x48]"
+      },
+      {
+        "rva": 89316120,
+        "hex": "4885d2",
+        "reviewedInstruction": "test rdx, rdx"
+      },
+      {
+        "rva": 89316123,
+        "hex": "0f8489000000",
+        "reviewedInstruction": "je 0x18552dbaa"
+      },
+      {
+        "rva": 89316129,
+        "hex": "488b82304e0000",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x4e30]"
+      },
+      {
+        "rva": 89316136,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89316139,
+        "hex": "747d",
+        "reviewedInstruction": "je 0x18552dbaa"
+      },
+      {
+        "rva": 89316141,
+        "hex": "0f1003",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx]"
+      },
+      {
+        "rva": 89316144,
+        "hex": "488b92384e0000",
+        "reviewedInstruction": "mov rdx, qword ptr [rdx + 0x4e38]"
+      },
+      {
+        "rva": 89316151,
+        "hex": "4d8bc8",
+        "reviewedInstruction": "mov r9, r8"
+      },
+      {
+        "rva": 89316154,
+        "hex": "0f104b10",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89316158,
+        "hex": "4c8d4597",
+        "reviewedInstruction": "lea r8, [rbp - 0x69]"
+      },
+      {
+        "rva": 89316162,
+        "hex": "0f294597",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x69], xmm0"
+      },
+      {
+        "rva": 89316166,
+        "hex": "488d4df7",
+        "reviewedInstruction": "lea rcx, [rbp - 9]"
+      },
+      {
+        "rva": 89316170,
+        "hex": "0f104320",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316174,
+        "hex": "0f294da7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x59], xmm1"
+      },
+      {
+        "rva": 89316178,
+        "hex": "0f104b30",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316182,
+        "hex": "0f2945b7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm0"
+      },
+      {
+        "rva": 89316186,
+        "hex": "0f104340",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316190,
+        "hex": "0f294dc7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm1"
+      },
+      {
+        "rva": 89316194,
+        "hex": "f20f104b50",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316199,
+        "hex": "0f2945d7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm0"
+      },
+      {
+        "rva": 89316203,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89316208,
+        "hex": "ffd0",
+        "reviewedInstruction": "call rax"
+      },
+      {
+        "rva": 89316210,
+        "hex": "0f1000",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rax]"
+      },
+      {
+        "rva": 89316213,
+        "hex": "0f1107",
+        "reviewedInstruction": "movups xmmword ptr [rdi], xmm0"
+      },
+      {
+        "rva": 89316216,
+        "hex": "0f104810",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rax + 0x10]"
+      },
+      {
+        "rva": 89316220,
+        "hex": "0f114f10",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x10], xmm1"
+      },
+      {
+        "rva": 89316224,
+        "hex": "0f104020",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rax + 0x20]"
+      },
+      {
+        "rva": 89316228,
+        "hex": "0f114720",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x20], xmm0"
+      },
+      {
+        "rva": 89316232,
+        "hex": "0f104830",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rax + 0x30]"
+      },
+      {
+        "rva": 89316236,
+        "hex": "0f114f30",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x30], xmm1"
+      },
+      {
+        "rva": 89316240,
+        "hex": "0f104040",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rax + 0x40]"
+      },
+      {
+        "rva": 89316244,
+        "hex": "0f114740",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x40], xmm0"
+      },
+      {
+        "rva": 89316248,
+        "hex": "f20f104850",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rax + 0x50]"
+      },
+      {
+        "rva": 89316253,
+        "hex": "488bc7",
+        "reviewedInstruction": "mov rax, rdi"
+      },
+      {
+        "rva": 89316256,
+        "hex": "f20f114f50",
+        "reviewedInstruction": "movsd qword ptr [rdi + 0x50], xmm1"
+      },
+      {
+        "rva": 89316261,
+        "hex": "e962030000",
+        "reviewedInstruction": "jmp 0x18552df0c"
+      },
+      {
+        "rva": 89316266,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89316269,
+        "hex": "4889b424f8000000",
+        "reviewedInstruction": "mov qword ptr [rsp + 0xf8], rsi"
+      },
+      {
+        "rva": 89316277,
+        "hex": "0f1101",
+        "reviewedInstruction": "movups xmmword ptr [rcx], xmm0"
+      },
+      {
+        "rva": 89316280,
+        "hex": "33c0",
+        "reviewedInstruction": "xor eax, eax"
+      },
+      {
+        "rva": 89316282,
+        "hex": "0f114110",
+        "reviewedInstruction": "movups xmmword ptr [rcx + 0x10], xmm0"
+      },
+      {
+        "rva": 89316286,
+        "hex": "0f114120",
+        "reviewedInstruction": "movups xmmword ptr [rcx + 0x20], xmm0"
+      },
+      {
+        "rva": 89316290,
+        "hex": "0f114130",
+        "reviewedInstruction": "movups xmmword ptr [rcx + 0x30], xmm0"
+      },
+      {
+        "rva": 89316294,
+        "hex": "0f114140",
+        "reviewedInstruction": "movups xmmword ptr [rcx + 0x40], xmm0"
+      },
+      {
+        "rva": 89316298,
+        "hex": "48894150",
+        "reviewedInstruction": "mov qword ptr [rcx + 0x50], rax"
+      },
+      {
+        "rva": 89316302,
+        "hex": "e80d26f0ff",
+        "reviewedInstruction": "call 0x1854301e0"
+      },
+      {
+        "rva": 89316307,
+        "hex": "488bf0",
+        "reviewedInstruction": "mov rsi, rax"
+      },
+      {
+        "rva": 89316310,
+        "hex": "0f1003",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx]"
+      },
+      {
+        "rva": 89316313,
+        "hex": "0f104b30",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316317,
+        "hex": "0f294597",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x69], xmm0"
+      },
+      {
+        "rva": 89316321,
+        "hex": "0f294dc7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm1"
+      },
+      {
+        "rva": 89316325,
+        "hex": "f20f104b50",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316330,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89316335,
+        "hex": "0f104320",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316339,
+        "hex": "0f2945b7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm0"
+      },
+      {
+        "rva": 89316343,
+        "hex": "0f104340",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316347,
+        "hex": "0f2945d7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm0"
+      },
+      {
+        "rva": 89316351,
+        "hex": "4885c0",
+        "reviewedInstruction": "test rax, rax"
+      },
+      {
+        "rva": 89316354,
+        "hex": "0f8419030000",
+        "reviewedInstruction": "je 0x18552df21"
+      },
+      {
+        "rva": 89316360,
+        "hex": "488b559f",
+        "reviewedInstruction": "mov rdx, qword ptr [rbp - 0x61]"
+      },
+      {
+        "rva": 89316364,
+        "hex": "4533c0",
+        "reviewedInstruction": "xor r8d, r8d"
+      },
+      {
+        "rva": 89316367,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316370,
+        "hex": "e8c961f0ff",
+        "reviewedInstruction": "call 0x185433de0"
+      },
+      {
+        "rva": 89316375,
+        "hex": "0f104b20",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316379,
+        "hex": "8b0d0f081f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f080f]"
+      },
+      {
+        "rva": 89316385,
+        "hex": "4c8d0df8cef40b",
+        "reviewedInstruction": "lea r9, [rip + 0xbf4cef8]"
+      },
+      {
+        "rva": 89316392,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89316395,
+        "hex": "0f294db7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm1"
+      },
+      {
+        "rva": 89316399,
+        "hex": "0f1013",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx]"
+      },
+      {
+        "rva": 89316402,
+        "hex": "0f104b40",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316406,
+        "hex": "0f114708",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 8], xmm0"
+      },
+      {
+        "rva": 89316410,
+        "hex": "0f294dd7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm1"
+      },
+      {
+        "rva": 89316414,
+        "hex": "0f114718",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x18], xmm0"
+      },
+      {
+        "rva": 89316418,
+        "hex": "0f114728",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x28], xmm0"
+      },
+      {
+        "rva": 89316422,
+        "hex": "0f114738",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x38], xmm0"
+      },
+      {
+        "rva": 89316426,
+        "hex": "0f114748",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x48], xmm0"
+      },
+      {
+        "rva": 89316430,
+        "hex": "66480fd617",
+        "reviewedInstruction": "movq qword ptr [rdi], xmm2"
+      },
+      {
+        "rva": 89316435,
+        "hex": "0f104330",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316439,
+        "hex": "0f2945c7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm0"
+      },
+      {
+        "rva": 89316443,
+        "hex": "f20f104350",
+        "reviewedInstruction": "movsd xmm0, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316448,
+        "hex": "f20f1145e7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm0"
+      },
+      {
+        "rva": 89316453,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89316455,
+        "hex": "7446",
+        "reviewedInstruction": "je 0x18552dcaf"
+      },
+      {
+        "rva": 89316457,
+        "hex": "4c8bc7",
+        "reviewedInstruction": "mov r8, rdi"
+      },
+      {
+        "rva": 89316460,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89316464,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89316471,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89316474,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89316478,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89316482,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89316486,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316493,
+        "hex": "0f1f00",
+        "reviewedInstruction": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 89316496,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316503,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316506,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89316510,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89316519,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552dc90"
+      },
+      {
+        "rva": 89316521,
+        "hex": "8b0d81071f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f0781]"
+      },
+      {
+        "rva": 89316527,
+        "hex": "48897708",
+        "reviewedInstruction": "mov qword ptr [rdi + 8], rsi"
+      },
+      {
+        "rva": 89316531,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89316533,
+        "hex": "7448",
+        "reviewedInstruction": "je 0x18552dcff"
+      },
+      {
+        "rva": 89316535,
+        "hex": "4c8d4708",
+        "reviewedInstruction": "lea r8, [rdi + 8]"
+      },
+      {
+        "rva": 89316539,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89316543,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89316550,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89316553,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89316557,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89316561,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89316565,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316572,
+        "hex": "0f1f4000",
+        "reviewedInstruction": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 89316576,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316583,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316586,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89316590,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89316599,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552dce0"
+      },
+      {
+        "rva": 89316601,
+        "hex": "8b0d31071f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f0731]"
+      },
+      {
+        "rva": 89316607,
+        "hex": "0f104320",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316611,
+        "hex": "0f104b30",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316615,
+        "hex": "0f2945b7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm0"
+      },
+      {
+        "rva": 89316619,
+        "hex": "0f294dc7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm1"
+      },
+      {
+        "rva": 89316623,
+        "hex": "f20f104b50",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316628,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89316633,
+        "hex": "0f104340",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316637,
+        "hex": "0f105310",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x10]"
+      },
+      {
+        "rva": 89316641,
+        "hex": "0f2945d7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm0"
+      },
+      {
+        "rva": 89316645,
+        "hex": "66480fd65710",
+        "reviewedInstruction": "movq qword ptr [rdi + 0x10], xmm2"
+      },
+      {
+        "rva": 89316651,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89316653,
+        "hex": "7450",
+        "reviewedInstruction": "je 0x18552dd7f"
+      },
+      {
+        "rva": 89316655,
+        "hex": "4c8d4710",
+        "reviewedInstruction": "lea r8, [rdi + 0x10]"
+      },
+      {
+        "rva": 89316659,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89316663,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89316670,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89316673,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89316677,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89316681,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89316685,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316692,
+        "hex": "0f1f4000",
+        "reviewedInstruction": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 89316696,
+        "hex": "0f1f840000000000",
+        "reviewedInstruction": "nop dword ptr [rax + rax]"
+      },
+      {
+        "rva": 89316704,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316711,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316714,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89316718,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89316727,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552dd60"
+      },
+      {
+        "rva": 89316729,
+        "hex": "8b0db1061f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f06b1]"
+      },
+      {
+        "rva": 89316735,
+        "hex": "f30f7e5318",
+        "reviewedInstruction": "movq xmm2, qword ptr [rbx + 0x18]"
+      },
+      {
+        "rva": 89316740,
+        "hex": "66480fd65718",
+        "reviewedInstruction": "movq qword ptr [rdi + 0x18], xmm2"
+      },
+      {
+        "rva": 89316746,
+        "hex": "0f104320",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316750,
+        "hex": "0f104b30",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316754,
+        "hex": "0f2945b7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm0"
+      },
+      {
+        "rva": 89316758,
+        "hex": "0f294dc7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm1"
+      },
+      {
+        "rva": 89316762,
+        "hex": "f20f104b50",
+        "reviewedInstruction": "movsd xmm1, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316767,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89316772,
+        "hex": "0f104340",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316776,
+        "hex": "0f2945d7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm0"
+      },
+      {
+        "rva": 89316780,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89316782,
+        "hex": "744f",
+        "reviewedInstruction": "je 0x18552ddff"
+      },
+      {
+        "rva": 89316784,
+        "hex": "4c8d4718",
+        "reviewedInstruction": "lea r8, [rdi + 0x18]"
+      },
+      {
+        "rva": 89316788,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89316792,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89316799,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89316802,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89316806,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89316810,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89316814,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316821,
+        "hex": "6666660f1f840000000000",
+        "reviewedInstruction": "nop word ptr [rax + rax]"
+      },
+      {
+        "rva": 89316832,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316839,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316842,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89316846,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89316855,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552dde0"
+      },
+      {
+        "rva": 89316857,
+        "hex": "8b0d31061f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f0631]"
+      },
+      {
+        "rva": 89316863,
+        "hex": "0f104330",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316867,
+        "hex": "0f105320",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x20]"
+      },
+      {
+        "rva": 89316871,
+        "hex": "0f2945c7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm0"
+      },
+      {
+        "rva": 89316875,
+        "hex": "f20f104350",
+        "reviewedInstruction": "movsd xmm0, qword ptr [rbx + 0x50]"
+      },
+      {
+        "rva": 89316880,
+        "hex": "f20f1145e7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm0"
+      },
+      {
+        "rva": 89316885,
+        "hex": "66480fd65720",
+        "reviewedInstruction": "movq qword ptr [rdi + 0x20], xmm2"
+      },
+      {
+        "rva": 89316891,
+        "hex": "0f104b40",
+        "reviewedInstruction": "movups xmm1, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89316895,
+        "hex": "0f294dd7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm1"
+      },
+      {
+        "rva": 89316899,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89316901,
+        "hex": "7448",
+        "reviewedInstruction": "je 0x18552de6f"
+      },
+      {
+        "rva": 89316903,
+        "hex": "4c8d4720",
+        "reviewedInstruction": "lea r8, [rdi + 0x20]"
+      },
+      {
+        "rva": 89316907,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89316911,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89316918,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89316921,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89316925,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89316929,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89316933,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316940,
+        "hex": "0f1f4000",
+        "reviewedInstruction": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 89316944,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89316951,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89316954,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89316958,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89316967,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552de50"
+      },
+      {
+        "rva": 89316969,
+        "hex": "8b0dc1051f0c",
+        "reviewedInstruction": "mov ecx, dword ptr [rip + 0xc1f05c1]"
+      },
+      {
+        "rva": 89316975,
+        "hex": "0f2955b7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x49], xmm2"
+      },
+      {
+        "rva": 89316979,
+        "hex": "0f294dd7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm1"
+      },
+      {
+        "rva": 89316983,
+        "hex": "0f28c8",
+        "reviewedInstruction": "movaps xmm1, xmm0"
+      },
+      {
+        "rva": 89316986,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89316991,
+        "hex": "0f105330",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x30]"
+      },
+      {
+        "rva": 89316995,
+        "hex": "0f2955c7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x39], xmm2"
+      },
+      {
+        "rva": 89316999,
+        "hex": "660f15d2",
+        "reviewedInstruction": "unpckhpd xmm2, xmm2"
+      },
+      {
+        "rva": 89317003,
+        "hex": "0f1045bf",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbp - 0x41]"
+      },
+      {
+        "rva": 89317007,
+        "hex": "0f114728",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x28], xmm0"
+      },
+      {
+        "rva": 89317011,
+        "hex": "f20f115738",
+        "reviewedInstruction": "movsd qword ptr [rdi + 0x38], xmm2"
+      },
+      {
+        "rva": 89317016,
+        "hex": "85c9",
+        "reviewedInstruction": "test ecx, ecx"
+      },
+      {
+        "rva": 89317018,
+        "hex": "743e",
+        "reviewedInstruction": "je 0x18552deda"
+      },
+      {
+        "rva": 89317020,
+        "hex": "4c8d4730",
+        "reviewedInstruction": "lea r8, [rdi + 0x30]"
+      },
+      {
+        "rva": 89317024,
+        "hex": "49c1e80c",
+        "reviewedInstruction": "shr r8, 0xc"
+      },
+      {
+        "rva": 89317028,
+        "hex": "4181e0ffff1f00",
+        "reviewedInstruction": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 89317035,
+        "hex": "418bc0",
+        "reviewedInstruction": "mov eax, r8d"
+      },
+      {
+        "rva": 89317038,
+        "hex": "48c1e806",
+        "reviewedInstruction": "shr rax, 6"
+      },
+      {
+        "rva": 89317042,
+        "hex": "4183e03f",
+        "reviewedInstruction": "and r8d, 0x3f"
+      },
+      {
+        "rva": 89317046,
+        "hex": "498d14c1",
+        "reviewedInstruction": "lea rdx, [r9 + rax*8]"
+      },
+      {
+        "rva": 89317050,
+        "hex": "0f0d8af86e0400",
+        "reviewedInstruction": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89317057,
+        "hex": "488b82f86e0400",
+        "reviewedInstruction": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 89317064,
+        "hex": "488bc8",
+        "reviewedInstruction": "mov rcx, rax"
+      },
+      {
+        "rva": 89317067,
+        "hex": "4c0fabc1",
+        "reviewedInstruction": "bts rcx, r8"
+      },
+      {
+        "rva": 89317071,
+        "hex": "f0480fb18af86e0400",
+        "reviewedInstruction": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 89317080,
+        "hex": "75e7",
+        "reviewedInstruction": "jne 0x18552dec1"
+      },
+      {
+        "rva": 89317082,
+        "hex": "0f105340",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 89317086,
+        "hex": "488bb424f8000000",
+        "reviewedInstruction": "mov rsi, qword ptr [rsp + 0xf8]"
+      },
+      {
+        "rva": 89317094,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89317099,
+        "hex": "660f7ed0",
+        "reviewedInstruction": "movd eax, xmm2"
+      },
+      {
+        "rva": 89317103,
+        "hex": "f20f114de7",
+        "reviewedInstruction": "movsd qword ptr [rbp - 0x19], xmm1"
+      },
+      {
+        "rva": 89317108,
+        "hex": "0f2955d7",
+        "reviewedInstruction": "movaps xmmword ptr [rbp - 0x29], xmm2"
+      },
+      {
+        "rva": 89317112,
+        "hex": "0f1045db",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbp - 0x25]"
+      },
+      {
+        "rva": 89317116,
+        "hex": "884740",
+        "reviewedInstruction": "mov byte ptr [rdi + 0x40], al"
+      },
+      {
+        "rva": 89317119,
+        "hex": "8b45eb",
+        "reviewedInstruction": "mov eax, dword ptr [rbp - 0x15]"
+      },
+      {
+        "rva": 89317122,
+        "hex": "0f114744",
+        "reviewedInstruction": "movups xmmword ptr [rdi + 0x44], xmm0"
+      },
+      {
+        "rva": 89317126,
+        "hex": "894754",
+        "reviewedInstruction": "mov dword ptr [rdi + 0x54], eax"
+      },
+      {
+        "rva": 89317129,
+        "hex": "488bc7",
+        "reviewedInstruction": "mov rax, rdi"
+      },
+      {
+        "rva": 89317132,
+        "hex": "4c8d9c24e0000000",
+        "reviewedInstruction": "lea r11, [rsp + 0xe0]"
+      },
+      {
+        "rva": 89317140,
+        "hex": "498b5b20",
+        "reviewedInstruction": "mov rbx, qword ptr [r11 + 0x20]"
+      },
+      {
+        "rva": 89317144,
+        "hex": "498b7b28",
+        "reviewedInstruction": "mov rdi, qword ptr [r11 + 0x28]"
+      },
+      {
+        "rva": 89317148,
+        "hex": "498be3",
+        "reviewedInstruction": "mov rsp, r11"
+      },
+      {
+        "rva": 89317151,
+        "hex": "5d",
+        "reviewedInstruction": "pop rbp"
+      },
+      {
+        "rva": 89317152,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      },
+      {
+        "rva": 89317153,
+        "hex": "e80a0abbfa",
+        "reviewedInstruction": "call 0x1800de930"
+      },
+      {
+        "rva": 89317158,
+        "hex": "cc",
+        "reviewedInstruction": "int3 "
+      }
+    ],
+    "dispose": [
+      {
+        "rva": 98088288,
+        "hex": "4053",
+        "reviewedInstruction": "push rbx"
+      },
+      {
+        "rva": 98088290,
+        "hex": "4883ec20",
+        "reviewedInstruction": "sub rsp, 0x20"
+      },
+      {
+        "rva": 98088294,
+        "hex": "488b05e33c990b",
+        "reviewedInstruction": "mov rax, qword ptr [rip + 0xb993ce3]"
+      },
+      {
+        "rva": 98088301,
+        "hex": "488bd9",
+        "reviewedInstruction": "mov rbx, rcx"
+      },
+      {
+        "rva": 98088304,
+        "hex": "488b4848",
+        "reviewedInstruction": "mov rcx, qword ptr [rax + 0x48]"
+      },
+      {
+        "rva": 98088308,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 98088311,
+        "hex": "0f85a3ec8801",
+        "reviewedInstruction": "jne 0x18761a220"
+      },
+      {
+        "rva": 98088317,
+        "hex": "488b4b08",
+        "reviewedInstruction": "mov rcx, qword ptr [rbx + 8]"
+      },
+      {
+        "rva": 98088321,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 98088324,
+        "hex": "751c",
+        "reviewedInstruction": "jne 0x185d8b5a2"
+      },
+      {
+        "rva": 98088326,
+        "hex": "488d4b08",
+        "reviewedInstruction": "lea rcx, [rbx + 8]"
+      },
+      {
+        "rva": 98088330,
+        "hex": "48c7430800000000",
+        "reviewedInstruction": "mov qword ptr [rbx + 8], 0"
+      },
+      {
+        "rva": 98088338,
+        "hex": "4883c420",
+        "reviewedInstruction": "add rsp, 0x20"
+      },
+      {
+        "rva": 98088342,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 98088343,
+        "hex": "e9c48d37fa",
+        "reviewedInstruction": "jmp 0x180104360"
+      },
+      {
+        "rva": 98088348,
+        "hex": "4883c420",
+        "reviewedInstruction": "add rsp, 0x20"
+      },
+      {
+        "rva": 98088352,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 98088353,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      },
+      {
+        "rva": 98088354,
+        "hex": "33d2",
+        "reviewedInstruction": "xor edx, edx"
+      },
+      {
+        "rva": 98088356,
+        "hex": "e8073b6aff",
+        "reviewedInstruction": "call 0x18542f0b0"
+      },
+      {
+        "rva": 98088361,
+        "hex": "ebdb",
+        "reviewedInstruction": "jmp 0x185d8b586"
+      }
+    ],
+    "clear": [
+      {
+        "rva": 98085376,
+        "hex": "4053",
+        "reviewedInstruction": "push rbx"
+      },
+      {
+        "rva": 98085378,
+        "hex": "4881ecb0000000",
+        "reviewedInstruction": "sub rsp, 0xb0"
+      },
+      {
+        "rva": 98085385,
+        "hex": "4c8b054048990b",
+        "reviewedInstruction": "mov r8, qword ptr [rip + 0xb994840]"
+      },
+      {
+        "rva": 98085392,
+        "hex": "488bd9",
+        "reviewedInstruction": "mov rbx, rcx"
+      },
+      {
+        "rva": 98085395,
+        "hex": "498b4848",
+        "reviewedInstruction": "mov rcx, qword ptr [r8 + 0x48]"
+      },
+      {
+        "rva": 98085399,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 98085402,
+        "hex": "0f853cf58801",
+        "reviewedInstruction": "jne 0x187619f5c"
+      },
+      {
+        "rva": 98085408,
+        "hex": "807b3800",
+        "reviewedInstruction": "cmp byte ptr [rbx + 0x38], 0"
+      },
+      {
+        "rva": 98085412,
+        "hex": "7535",
+        "reviewedInstruction": "jne 0x185d8aa5b"
+      },
+      {
+        "rva": 98085414,
+        "hex": "0f57c0",
+        "reviewedInstruction": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 98085417,
+        "hex": "0f114338",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x38], xmm0"
+      },
+      {
+        "rva": 98085421,
+        "hex": "0f114348",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x48], xmm0"
+      },
+      {
+        "rva": 98085425,
+        "hex": "0f114358",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x58], xmm0"
+      },
+      {
+        "rva": 98085429,
+        "hex": "0f114368",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x68], xmm0"
+      },
+      {
+        "rva": 98085433,
+        "hex": "0f114378",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x78], xmm0"
+      },
+      {
+        "rva": 98085437,
+        "hex": "0f118388000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x88], xmm0"
+      },
+      {
+        "rva": 98085444,
+        "hex": "0f118398000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0x98], xmm0"
+      },
+      {
+        "rva": 98085451,
+        "hex": "0f1183a8000000",
+        "reviewedInstruction": "movups xmmword ptr [rbx + 0xa8], xmm0"
+      },
+      {
+        "rva": 98085458,
+        "hex": "4881c4b0000000",
+        "reviewedInstruction": "add rsp, 0xb0"
+      },
+      {
+        "rva": 98085465,
+        "hex": "5b",
+        "reviewedInstruction": "pop rbx"
+      },
+      {
+        "rva": 98085466,
+        "hex": "c3",
+        "reviewedInstruction": "ret "
+      },
+      {
+        "rva": 98085467,
+        "hex": "0f29b424a0000000",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0xa0], xmm6"
+      },
+      {
+        "rva": 98085475,
+        "hex": "807b5800",
+        "reviewedInstruction": "cmp byte ptr [rbx + 0x58], 0"
+      },
+      {
+        "rva": 98085479,
+        "hex": "0f104340",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x40]"
+      },
+      {
+        "rva": 98085483,
+        "hex": "0f105370",
+        "reviewedInstruction": "movups xmm2, xmmword ptr [rbx + 0x70]"
+      },
+      {
+        "rva": 98085487,
+        "hex": "0f109b80000000",
+        "reviewedInstruction": "movups xmm3, xmmword ptr [rbx + 0x80]"
+      },
+      {
+        "rva": 98085494,
+        "hex": "0f10a390000000",
+        "reviewedInstruction": "movups xmm4, xmmword ptr [rbx + 0x90]"
+      },
+      {
+        "rva": 98085501,
+        "hex": "0f10aba0000000",
+        "reviewedInstruction": "movups xmm5, xmmword ptr [rbx + 0xa0]"
+      },
+      {
+        "rva": 98085508,
+        "hex": "f20f10b3b0000000",
+        "reviewedInstruction": "movsd xmm6, qword ptr [rbx + 0xb0]"
+      },
+      {
+        "rva": 98085516,
+        "hex": "0f29442420",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x20], xmm0"
+      },
+      {
+        "rva": 98085521,
+        "hex": "0f104360",
+        "reviewedInstruction": "movups xmm0, xmmword ptr [rbx + 0x60]"
+      },
+      {
+        "rva": 98085525,
+        "hex": "744a",
+        "reviewedInstruction": "je 0x185d8aae1"
+      },
+      {
+        "rva": 98085527,
+        "hex": "0f29442420",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x20], xmm0"
+      },
+      {
+        "rva": 98085532,
+        "hex": "0f29542430",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x30], xmm2"
+      },
+      {
+        "rva": 98085537,
+        "hex": "0f295c2440",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x40], xmm3"
+      },
+      {
+        "rva": 98085542,
+        "hex": "0f29642450",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x50], xmm4"
+      },
+      {
+        "rva": 98085547,
+        "hex": "0f296c2460",
+        "reviewedInstruction": "movaps xmmword ptr [rsp + 0x60], xmm5"
+      },
+      {
+        "rva": 98085552,
+        "hex": "f20f11742470",
+        "reviewedInstruction": "movsd qword ptr [rsp + 0x70], xmm6"
+      },
+      {
+        "rva": 98085558,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 98085561,
+        "hex": "0f85c2f48801",
+        "reviewedInstruction": "jne 0x187619f81"
+      },
+      {
+        "rva": 98085567,
+        "hex": "660f73d808",
+        "reviewedInstruction": "psrldq xmm0, 8"
+      },
+      {
+        "rva": 98085572,
+        "hex": "66480f7ec1",
+        "reviewedInstruction": "movq rcx, xmm0"
+      },
+      {
+        "rva": 98085577,
+        "hex": "4885c9",
+        "reviewedInstruction": "test rcx, rcx"
+      },
+      {
+        "rva": 98085580,
+        "hex": "7520",
+        "reviewedInstruction": "jne 0x185d8aaee"
+      },
+      {
+        "rva": 98085582,
+        "hex": "488d4c2428",
+        "reviewedInstruction": "lea rcx, [rsp + 0x28]"
+      },
+      {
+        "rva": 98085587,
+        "hex": "48c744242800000000",
+        "reviewedInstruction": "mov qword ptr [rsp + 0x28], 0"
+      },
+      {
+        "rva": 98085596,
+        "hex": "e87f9837fa",
+        "reviewedInstruction": "call 0x180104360"
+      },
+      {
+        "rva": 98085601,
+        "hex": "0f28b424a0000000",
+        "reviewedInstruction": "movaps xmm6, xmmword ptr [rsp + 0xa0]"
+      },
+      {
+        "rva": 98085609,
+        "hex": "e938ffffff",
+        "reviewedInstruction": "jmp 0x185d8aa26"
+      },
+      {
+        "rva": 98085614,
+        "hex": "33d2",
+        "reviewedInstruction": "xor edx, edx"
+      },
+      {
+        "rva": 98085616,
+        "hex": "e8bb456aff",
+        "reviewedInstruction": "call 0x18542f0b0"
+      },
+      {
+        "rva": 98085621,
+        "hex": "ebd7",
+        "reviewedInstruction": "jmp 0x185d8aace"
+      }
+    ]
+  },
+  "calls": [
+    {
+      "role": "refreshCache",
+      "rva": 89512440,
+      "targetMethod": "Beyond.Gameplay.Core.AbilitySystem+ComboController._GetCacheTime",
+      "targetIdentity": [
+        59622,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_GetCacheTime",
+        89511104
+      ]
+    },
+    {
+      "role": "refreshDispose",
+      "rva": 89512603,
+      "targetMethod": "Beyond.Gameplay.Core.SkillCastInputData.Dispose",
+      "targetIdentity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ]
+    },
+    {
+      "role": "refreshCopy",
+      "rva": 89512885,
+      "targetMethod": "Beyond.Gameplay.Core.SkillCastInputData.CopyFrom",
+      "targetIdentity": [
+        58908,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "CopyFrom",
+        89316080
+      ]
+    },
+    {
+      "role": "copyTarget",
+      "rva": 89316370,
+      "targetMethod": "Beyond.Gameplay.Core.TargetHandle.CopyFrom",
+      "targetIdentity": [
+        64630,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "CopyFrom",
+        88292832
+      ]
+    },
+    {
+      "role": "disposeTarget",
+      "rva": 98088356,
+      "targetMethod": "Beyond.Gameplay.Core.TargetHandle.Dispose",
+      "targetIdentity": [
+        64634,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "Dispose",
+        88273072
+      ]
+    },
+    {
+      "role": "clearTarget",
+      "rva": 98085616,
+      "targetMethod": "Beyond.Gameplay.Core.TargetHandle.Dispose",
+      "targetIdentity": [
+        64634,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "Dispose",
+        88273072
+      ]
+    },
+    {
+      "role": "cacheMove",
+      "rva": 89511206,
+      "targetMethod": "Beyond.Gameplay.Core.MovementComponent.get_moveMode",
+      "targetIdentity": [
+        84040,
+        "Beyond.Gameplay.Core.MovementComponent",
+        "get_moveMode",
+        85185824
+      ]
+    },
+    {
+      "role": "cachePerfect",
+      "rva": 89511277,
+      "targetMethod": "Beyond.Gameplay.Core.AbilitySystem.get_inPerfectDodge",
+      "targetIdentity": [
+        59153,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_inPerfectDodge",
+        89509008
+      ]
+    }
+  ],
+  "anchors": {
+    "cacheDefault": {
+      "rva": 89511133,
+      "hex": "0f29742450f2410f1070100fc6f65583fa020f8585000000"
+    },
+    "cacheReturn": {
+      "rva": 89511290,
+      "hex": "0f28c60f287424504883c4605bc3"
+    },
+    "cacheDashRead": {
+      "rva": 122670830,
+      "hex": "f30f10702ce9820606fe"
+    },
+    "cachePerfectRead": {
+      "rva": 122670910,
+      "hex": "f30f107038e9320606fe"
+    },
+    "refreshAccept": {
+      "rva": 89512378,
+      "hex": "66480f7ec84885c00f8450040000837810000f86460400000f29bc2450030000f20f104424404c8d4424504533c9f20f114424608bd70f294c2450488bcbe8c3faffff807b38000f28f80f849e000000"
+    },
+    "refreshOldInput": {
+      "rva": 89512466,
+      "hex": "807b58000f104b400f1053500f105b700f1083800000000f10a3900000000f10aba0000000f20f10b3b00000000f294c24700f104b600f2955800f294d900f295da00f2945b00f2965c00f296dd0f20f1175e07439"
+    },
+    "requestScalars": {
+      "rva": 89512747,
+      "hex": "807d7000488b442438f30f117c24780f28bc245003000048894580c644247c000f8408010000"
+    },
+    "requestStore": {
+      "rva": 89513307,
+      "hex": "833dce061c0c000f284d00c645f0010f2845f00f1143380f2845100f114b480f284d200f1143580f2845300f114b680f284d400f1143780f2845500f118b880000000f284d600f1183980000000f118ba8000000"
+    },
+    "refreshReturn": {
+      "rva": 89513492,
+      "hex": "b001eb0232c0488bb424900300004c8bb424980300004881c4700300005f5b5dc3"
+    },
+    "disposeOrdinary": {
+      "rva": 98088317,
+      "hex": "488b4b084885c9751c488d4b0848c74308000000004883c4205be9c48d37fa"
+    },
+    "disposeCall": {
+      "rva": 98088354,
+      "hex": "33d2e8073b6affebdb"
+    },
+    "clearZero": {
+      "rva": 98085414,
+      "hex": "0f57c00f1143380f1143480f1143580f1143680f1143780f1183880000000f1183980000000f1183a80000004881c4b00000005bc3"
+    },
+    "copySourceTarget": {
+      "rva": 89316360,
+      "hex": "488b559f4533c0488bc8e8c961f0ff"
+    },
+    "copyStoreTarget": {
+      "rva": 89316527,
+      "hex": "48897708"
+    },
+    "copyReturn": {
+      "rva": 89317129,
+      "hex": "488bc74c8d9c24e0000000498b5b20498b7b28498be35dc3"
+    }
+  },
+  "layout": {
+    "selectedNativeAbiOnly": true,
+    "allNullableInstantiationsProved": false,
+    "objectHeaderBytes": 16,
+    "closedValueAlignment": 8,
+    "inputDataBytes": 88,
+    "inputNullableBytes": 96,
+    "requestBytes": 120,
+    "requestNullableBytes": 128,
+    "outerHasValueOffset": 0,
+    "outerValueOffset": 8,
+    "inputHasValueOffset": 0,
+    "inputValueOffset": 8
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "runtimeExecutionProved": false,
+    "actualCastProved": false,
+    "completePlayerInputAcceptanceProved": false,
+    "collectionAndPoolEffectsProved": false,
+    "targetLifetimeEffectsProved": false,
+    "requestReplacement": {
+      "scope": "conditional-selected-construction",
+      "requiresNonemptySelectedModifierSkillId": true,
+      "oldInputDisposeRequestedBeforeReplacement": true,
+      "oldInputDisposedOnlyIfBothNullableFlags": true,
+      "remainingTime": "cacheSelectorReturnSingle",
+      "allowToCastNextSkill": false,
+      "modifierInstId": "selectedModifier.instId",
+      "nextSkillId": "selectedModifier.skillId",
+      "inputData": "CopyFrom(originalInputView) iff viewPresent",
+      "oldNewSkillPriorityComparison": false,
+      "returnsTrueAfterStore": true
+    },
+    "cacheTime": {
+      "scope": "conditional-original-selector",
+      "arithmetic": "Single",
+      "default": "MappingModifier.cacheTime",
+      "specialCommandValue": 2,
+      "movementModeValue": 20,
+      "movementOverride": "BattleCommandMappingConfig.attackCacheTimeInDash",
+      "perfectDodgeRequiresCurrentSkill": true,
+      "perfectDodgeOverride": "BattleCommandMappingConfig.attackCacheTimeInPerfectDodge",
+      "precedence": [
+        "movementMode20",
+        "currentSkillAndPerfectDodge",
+        "modifier"
+      ]
+    },
+    "inputCopy": {
+      "scope": "conditional-selected-copy-requests",
+      "targetProviderReturn": "opaqueNonNullTargetHandle",
+      "targetCopyRequestedWithOriginalViewTarget": true,
+      "storesReturnedHandleAtTargetField": true,
+      "targetHandleLifetimeEffectProved": false,
+      "allFieldCopySemanticsProved": false
+    },
+    "inputDispose": {
+      "scope": "conditional-original-local-clear",
+      "ifTargetNonNull": "request TargetHandle.Dispose",
+      "then": "zero local targetHandle slot",
+      "otherFieldsCleared": false
+    },
+    "requestClear": {
+      "scope": "conditional-original-local-clear",
+      "ifInputPresent": "request target Dispose on copied input",
+      "then": "zero entire selected request Nullable",
+      "clearedBytes": 128
+    },
+    "command2Mapping": {
+      "scope": "conditional-original-command-selection",
+      "rawCommand": 2,
+      "commandEnum": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+      "commandName": "Attack",
+      "lookupKey": 0,
+      "lookupEnum": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+      "lookupName": "Attack",
+      "receiverField": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_realCommandMapping",
+      "providedMethod": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault",
+      "physicalCallOutputIsSelectedModifier": true,
+      "returnedModifierBytes": 24,
+      "newInputViewPresent": false,
+      "collectionEffectsProved": false,
+      "compiledTargetClosedDeclarationProved": false
+    }
+  },
+  "facts": [
+    {
+      "id": "requestReplacement",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-selected-construction",
+        "requiresNonemptySelectedModifierSkillId": true,
+        "oldInputDisposeRequestedBeforeReplacement": true,
+        "oldInputDisposedOnlyIfBothNullableFlags": true,
+        "remainingTime": "cacheSelectorReturnSingle",
+        "allowToCastNextSkill": false,
+        "modifierInstId": "selectedModifier.instId",
+        "nextSkillId": "selectedModifier.skillId",
+        "inputData": "CopyFrom(originalInputView) iff viewPresent",
+        "oldNewSkillPriorityComparison": false,
+        "returnsTrueAfterStore": true
+      },
+      "boundary": "Original native selection, compatible nonthrowing helper results and selected value ABI; no live target ownership or actual casting."
+    },
+    {
+      "id": "cacheTime",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-original-selector",
+        "arithmetic": "Single",
+        "default": "MappingModifier.cacheTime",
+        "specialCommandValue": 2,
+        "movementModeValue": 20,
+        "movementOverride": "BattleCommandMappingConfig.attackCacheTimeInDash",
+        "perfectDodgeRequiresCurrentSkill": true,
+        "perfectDodgeOverride": "BattleCommandMappingConfig.attackCacheTimeInPerfectDodge",
+        "precedence": [
+          "movementMode20",
+          "currentSkillAndPerfectDodge",
+          "modifier"
+        ]
+      },
+      "boundary": "Original native selection, compatible nonthrowing helper results and selected value ABI; no live target ownership or actual casting."
+    },
+    {
+      "id": "inputCopy",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-selected-copy-requests",
+        "targetProviderReturn": "opaqueNonNullTargetHandle",
+        "targetCopyRequestedWithOriginalViewTarget": true,
+        "storesReturnedHandleAtTargetField": true,
+        "targetHandleLifetimeEffectProved": false,
+        "allFieldCopySemanticsProved": false
+      },
+      "boundary": "Original native selection, compatible nonthrowing helper results and selected value ABI; no live target ownership or actual casting."
+    },
+    {
+      "id": "inputDispose",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-original-local-clear",
+        "ifTargetNonNull": "request TargetHandle.Dispose",
+        "then": "zero local targetHandle slot",
+        "otherFieldsCleared": false
+      },
+      "boundary": "Original native selection, compatible nonthrowing helper results and selected value ABI; no live target ownership or actual casting."
+    },
+    {
+      "id": "requestClear",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-original-local-clear",
+        "ifInputPresent": "request target Dispose on copied input",
+        "then": "zero entire selected request Nullable",
+        "clearedBytes": 128
+      },
+      "boundary": "Original native selection, compatible nonthrowing helper results and selected value ABI; no live target ownership or actual casting."
+    },
+    {
+      "id": "command2Mapping",
+      "evidence": "conditional",
+      "rule": {
+        "scope": "conditional-original-command-selection",
+        "rawCommand": 2,
+        "commandEnum": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+        "commandName": "Attack",
+        "lookupKey": 0,
+        "lookupEnum": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+        "lookupName": "Attack",
+        "receiverField": "Beyond.Gameplay.Core.AbilitySystem+ComboController::m_realCommandMapping",
+        "providedMethod": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault",
+        "physicalCallOutputIsSelectedModifier": true,
+        "returnedModifierBytes": 24,
+        "newInputViewPresent": false,
+        "collectionEffectsProved": false,
+        "compiledTargetClosedDeclarationProved": false
+      },
+      "boundary": "Raw Attack command original branch supplies real-map receiver/key/closed MethodInfo. Physical callee output buffer is explicit; collection effects/compiled closed body ownership are not proved."
+    }
+  ],
+  "opaqueDependencies": [
+    "iFix original-path selection",
+    "GC write barrier helper normal return and slot preservation",
+    "collection lookup/provider results",
+    "TargetHandle pool allocation and lifetime effects",
+    "exception paths",
+    "caller command state",
+    "runtime object/config instance selection",
+    "target input views remain externally owned"
+  ],
+  "constructionProgram": {
+    "commonInit": [
+      89512616,
+      89512672
+    ],
+    "scalars": [
+      89512747,
+      89512785
+    ],
+    "copyArguments": [
+      89512785,
+      89512885
+    ],
+    "copyReturn": [
+      89512890,
+      89512951
+    ],
+    "inputPresent": [
+      89513019,
+      89513049
+    ],
+    "inputAbsent": [
+      89513049,
+      89513067
+    ],
+    "nestedStore": [
+      89513067,
+      89513098
+    ],
+    "outerCopy": [
+      89513163,
+      89513242
+    ],
+    "outerStore": [
+      89513307,
+      89513391
+    ]
+  },
+  "constructionLocals": {
+    "framePointerBias": 256,
+    "mapping": 48,
+    "inputPresent": 368,
+    "originalInputView": 376,
+    "copyArgument": 656,
+    "copiedInputPointer": 20000,
+    "outputObjectPointer": 10000
+  },
+  "command2Entry": {
+    "typedContext": {
+      "instructionRva": 89512335,
+      "instructionHex": "4C8B0D624B180B",
+      "usageCellRva": 275653880,
+      "usageRawHex": "41F512C000000000",
+      "tag": 6,
+      "methodSpecIndex": 621216,
+      "methodSpec": [
+        404220,
+        -1,
+        4854
+      ],
+      "typeName": "System.Collections.Generic.CollectionExtensions",
+      "methodName": "GetValueOrDefault",
+      "classArguments": [],
+      "methodArguments": [
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+      ]
+    },
+    "genericDeclaration": {
+      "metadataIndex": 404220,
+      "type": "System.Collections.Generic.CollectionExtensions",
+      "method": "GetValueOrDefault",
+      "returnType": "MVAR[16104]",
+      "parameters": [
+        {
+          "name": "dictionary",
+          "type": "System.Collections.Generic.IReadOnlyDictionary`2<MVAR[16103],MVAR[16104]>"
+        },
+        {
+          "name": "key",
+          "type": "MVAR[16103]"
+        }
+      ],
+      "isStatic": true
+    },
+    "enums": [
+      {
+        "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType",
+        "members": [
+          {
+            "id": 0,
+            "name": "StartMove",
+            "fieldIndex": 8452,
+            "token": "0x04002105"
+          },
+          {
+            "id": 1,
+            "name": "Jump",
+            "fieldIndex": 8453,
+            "token": "0x04002106"
+          },
+          {
+            "id": 2,
+            "name": "Attack",
+            "fieldIndex": 8454,
+            "token": "0x04002107"
+          },
+          {
+            "id": 3,
+            "name": "Skill",
+            "fieldIndex": 8455,
+            "token": "0x04002108"
+          },
+          {
+            "id": 4,
+            "name": "Dash",
+            "fieldIndex": 8456,
+            "token": "0x04002109"
+          },
+          {
+            "id": 5,
+            "name": "MoveAxis",
+            "fieldIndex": 8457,
+            "token": "0x0400210a"
+          },
+          {
+            "id": 6,
+            "name": "Enum",
+            "fieldIndex": 8458,
+            "token": "0x0400210b"
+          }
+        ]
+      },
+      {
+        "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+        "members": [
+          {
+            "id": 0,
+            "name": "Attack",
+            "fieldIndex": 43318,
+            "token": "0x0400a937"
+          },
+          {
+            "id": 1,
+            "name": "Dash",
+            "fieldIndex": 43319,
+            "token": "0x0400a938"
+          },
+          {
+            "id": 2,
+            "name": "Jump",
+            "fieldIndex": 43320,
+            "token": "0x0400a939"
+          },
+          {
+            "id": 3,
+            "name": "NormalSkill",
+            "fieldIndex": 43321,
+            "token": "0x0400a93a"
+          },
+          {
+            "id": 4,
+            "name": "ComboSkill",
+            "fieldIndex": 43322,
+            "token": "0x0400a93b"
+          },
+          {
+            "id": 5,
+            "name": "UltimateSkill",
+            "fieldIndex": 43323,
+            "token": "0x0400a93c"
+          },
+          {
+            "id": 6,
+            "name": "Count",
+            "fieldIndex": 43324,
+            "token": "0x0400a93d"
+          }
+        ]
+      }
+    ],
+    "sections": {
+      "initialize": [
+        89511457,
+        89511650
+      ],
+      "discriminate": [
+        89511650,
+        89511679
+      ],
+      "key": [
+        89512324,
+        89512329
+      ],
+      "lookupSetup": [
+        89512335,
+        89512356
+      ],
+      "returnCopy": [
+        89512356,
+        89512378
+      ]
+    },
+    "callRva": 89512351,
+    "physicalTargetRva": 104658544,
+    "resultBufferStack": 80,
+    "returnedBytes": 24
+  }
+}

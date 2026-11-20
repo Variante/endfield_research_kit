@@ -4,13 +4,18 @@ import argparse
 from collections import Counter, defaultdict
 import json
 import math
+import struct
 from pathlib import Path
 import tempfile
 from scripts.game_data.mission_trace_replay import fingerprint
 from scripts.game_data.damage_runtime_calibration import LIMIT
 
 WATCHED_NAMES = {'Def', 'CriticalRate', 'CriticalDamageIncrease', 'PhysicalInflictionDamageScalar',
-                 'IgniteDamageScalar', 'WeaknessDmgScalar', 'ShelterDmgScalar'}
+                 'IgniteDamageScalar', 'WeaknessDmgScalar', 'ShelterDmgScalar',
+                 'MaxPoise', 'PoiseRecTime', 'PoiseRecTimeScalar', 'PoiseDamageTakenScalar',
+                 'PoiseDamageOutputScalar', 'BreakingAttackDamageTakenScalar', 'DamageToBrokenUnitIncrease'}
+POISE_NAMES = {'MaxPoise', 'PoiseRecTime', 'PoiseRecTimeScalar', 'PoiseDamageTakenScalar',
+               'PoiseDamageOutputScalar', 'BreakingAttackDamageTakenScalar', 'DamageToBrokenUnitIncrease'}
 
 
 def analyze(calibration, attribute_rows):
@@ -163,9 +168,158 @@ def attach_branch_evidence(result, calibration, receipt, inspection):
         'counts': dict(counts)}
     result['conditionalDiceEvidence'] = {'declaration':dice, 'sourceCandidateCountsByGetterCaller':dict(dice_counts),
         'boundary':'Separate typed-source conditional predictions. Later flag values never select a formula branch.'}
+    result['defenderPoiseFactorConditionalRule'] = evidence.get('callbackSelection')
 
 
-def run(source, output, native_evidence=None):
+def attach_poise_inventory(result, inspection):
+    """Separate retained poise quantities from an unobserved selector result."""
+    rows = {r['sequence']:r for a in inspection['actions'] for r in a['observations']}
+    rows.update({r['sequence']:r for r in inspection.get('unownedObservations',[])})
+    hooks = inspection['sourceContext']['hooks']
+    declaration = result.get('defenderPoiseFactorConditionalRule') or {}
+    getter = declaration.get('logicalGetter')
+    factor_hooks = {h['name'] for h in hooks if getter is not None and h.get('symbol')==getter}
+    factor_returns = [r for r in rows.values() if r['hook'] in factor_hooks and r['phase']=='return']
+    candidate_hooks = {h['name'] for h in hooks if h.get('captureIndirectCaller')=='damage.defenderPoiseFactor'
+                       and h.get('returnType')=='double'}
+    hook_counts = Counter(r['hook'] for r in rows.values())
+    entries = {(r['threadId'],r['invocationId']):r for r in rows.values() if r['phase']=='enter'}
+    poise = []
+    selectors, callback_returns = [], []
+    def observation_ref(row):
+        return {k:row.get(k) for k in ('hook','sequence','threadId','invocationId','parentInvocationId',
+                                       'phase','callerGameAssemblyRva','returnAddress')}
+    def exact_fields(row):
+        return {f['label']:f for f in row.get('fields',[]) if f.get('stateName')=='exact'}
+    def compact(field):
+        return None if field is None else {k:field[k] for k in ('value','raw64','stateName','enumNames') if k in field}
+    for row in sorted(rows.values(),key=lambda r:r['sequence']):
+        if row['hook']=='damage.Action.ProcessDamage' and row['phase'] in ('enter','return'):
+            for snapshot in row.get('fields',[]):
+                if snapshot.get('readMode')!='moduleCallbackSelector':
+                    continue
+                selectors.append({'observation':observation_ref(row),
+                    'returnedNormally':None if row['phase']=='enter' else row.get('invocationReceipt',{}).get('returnedNormally') is True,
+                    'snapshot':{k:snapshot[k] for k in ('label','type','state','stateName','predicateReason',
+                        'before','after','rawHex','byteCount','snapshotStable','readMode') if k in snapshot},
+                    'actualSelectorPath':None,'actualFactor':None,
+                    'boundary':'Process entry/normal-return boundary snapshot only. Two equal tuples do not establish intermediate selector stability, absence of ABA, arithmetic branch selection or a per-Pack factor.'})
+        if row['hook'] in candidate_hooks and row['phase']=='return' and row.get('invocationReceipt',{}).get('returnedNormally') is True:
+            raw=row.get('returnValue')
+            number=struct.unpack('<d',raw.to_bytes(8,'little'))[0] if type(raw) is int and 0<=raw<2**64 else None
+            finite=math.isfinite(number) if number is not None else None
+            entered=entries.get((row['threadId'],row['invocationId']))
+            callback_returns.append({'entry':None if entered is None else observation_ref(entered),
+                'return':observation_ref(row),'returnedNormally':True,
+                'raw64':raw,'floatBits':f'0x{raw:016x}' if type(raw) is int and 0<=raw<2**64 else None,
+                'value':number if finite else None,'finite':finite,'actualPerPackFactor':None,
+                'boundary':'Observed original normal Double return at this scoped physical callback entry/caller site. It is not automatically assigned to any Pack or multiplied across samples.'})
+        fs=exact_fields(row)
+        if row['hook']!='buff.AbilitySystem.ApplyModifier' or row['phase']!='return' or 'Poise' not in fs.get('targetType',{}).get('enumNames',[]):
+            continue
+        entered=entries.get((row['threadId'],row['invocationId']))
+        before=exact_fields(entered or {})
+        poise.append({'threadId':row['threadId'],'invocationId':row['invocationId'],
+            'entrySequence':None if entered is None else entered['sequence'],'returnSequence':row['sequence'],
+            'before':{k:compact(before.get(k)) for k in ('attributesIdentity','attributesInstanceUid','modifierValue','deltaType','targetType')},
+            'after':{k:compact(fs.get(k)) for k in ('realDelta','deltaType','cancelReason','targetType')},
+            'returnedNormally':row.get('invocationReceipt',{}).get('returnedNormally') is True,
+            'currentPoiseBefore':None,'currentPoiseAfter':None})
+    summaries = {}
+    for sample in result['samples']:
+        for source in sample['typedAttributeSources']:
+            if source['packAssociation']!='explicit-parent-invocation':
+                continue
+            for name, item in source['watchedAttributes'].items():
+                if name not in POISE_NAMES:
+                    continue
+                key=json.dumps([source.get('nativeArrayRole'),source['getterCallerRva'],name])
+                summary=summaries.setdefault(key,{'role':source.get('nativeArrayRole'),'getterCallerRva':source['getterCallerRva'],
+                    'attributeName':name,'returns':0,'values':Counter()})
+                summary['returns']+=1
+                summary['values'][str(item.get('value'))]+=1
+    for summary in summaries.values():
+        summary['values']=dict(summary['values'])
+    result['defenderPoiseFactorRetainedCoverage'] = {
+        'actualFactor':None,'actualSelectorPath':None,'factorGetterConfigured':any(h.get('symbol')==getter for h in hooks) if getter else None,
+        'configuredHooks':[{'hook':h['name'],'symbol':h.get('symbol'),'fields':[f['label'] for f in h.get('fields',[])],
+            'inlineRows':hook_counts[h['name']]} for h in hooks],
+        'projectionCounts':inspection.get('projectionCounts'),
+        'getterDoubleReturnRetained':bool(factor_returns),
+        'getterReturnReferences':[{'sequence':r['sequence'],'invocationId':r['invocationId'],
+            'value':r.get('decodedReturnValue'),'raw64':r.get('returnValue')} for r in factor_returns],
+        'replacementTableFunctionReceiverSnapshotRetained':bool(selectors),
+        'processSelectorSnapshots':selectors,
+        'processSelectorSnapshotCounts':{'rows':len(selectors),
+            'entries':sum(s['observation']['phase']=='enter' for s in selectors),
+            'returns':sum(s['observation']['phase']=='return' for s in selectors),
+            'invocations':len({(s['observation']['threadId'],s['observation']['invocationId']) for s in selectors}),
+            'states':dict(Counter(s['snapshot'].get('stateName') for s in selectors))},
+        'candidateNormalDoubleReturns':callback_returns,
+        'candidateNormalDoubleReturnCounts':{'entries':sum(r['hook'] in candidate_hooks and r['phase']=='enter' for r in rows.values()),
+            'normalReturns':len(callback_returns),
+            'finite':sum(r['finite'] is True for r in callback_returns),
+            'nonFinite':sum(r['finite'] is False for r in callback_returns),
+            'unknownFinite':sum(r['finite'] is None for r in callback_returns),
+            'byHook':dict(Counter(r['return']['hook'] for r in callback_returns)),
+            'byCallerGameAssemblyRva':dict(Counter(str(r['return']['callerGameAssemblyRva']) for r in callback_returns))},
+        'fullPackBytesRetained':False,'currentPoiseBeforeAfterRetained':False,
+        'poiseModifierReturns':poise,'poiseAttributeSummaries':list(summaries.values()),
+        'sourceContextInventory':[{'path':p['path'],'bytes':p['bytes'],'sha256':p['sha256']}
+            for p in inspection['sourceContext']['inventory']['snapshotInputs']],
+        'decodedSourceReread':False,
+        'boundary':'Only GetValue rows are compacted; other configured observations are deduplicated by original sequence. Retained Process selector boundaries and scoped normal callback Double returns remain separate observations; no actual arithmetic path or per-Pack factor is assigned. Named poise attributes and Poise-target modifier deltas are not a factor or current-poise state. HP fields remain HP even on Poise modifiers. Raw GP pointers are not full Pack bytes. Getter/candidate absence cannot select the native default branch; no factor is inferred from HP or modifier residuals.'}
+
+
+def attach_source_roles(result, calibration, evidence, inspection):
+    from scripts.game_data.damage_runtime_source_roles_native import SCHEMA as ROLE_SCHEMA, CONTRACT_PATH, CLAIM_SCHEMA
+    if evidence.get('schema') != ROLE_SCHEMA or evidence.get('status') != 'validated' or evidence.get('failures') != []:
+        raise ValueError('requires validated native source role evidence')
+    if evidence.get('claimContractSchema') != CLAIM_SCHEMA or str(evidence.get('claimContractSha256','')).lower() != fingerprint(CONTRACT_PATH,LIMIT)['sha256'].lower():
+        raise ValueError('source role contract digest differs')
+    capture = inspection['sourceContext']['nativeInputs']
+    expected = {'gameAssemblySha256':capture['gameAssembly']['sha256'],'metadataSha256':capture['metadata']['sha256']}
+    pins = evidence.get('nativeInputs') or {}
+    if set(pins) != set(expected) or any(str(pins[k]).lower() != expected[k].lower() for k in expected):
+        raise ValueError('source role native pair differs from capture')
+    proof_sources = evidence.get('proofSources') or []
+    if not proof_sources:
+        raise ValueError('source role proof source fingerprints absent')
+    for pin in proof_sources:
+        if fingerprint(Path(pin['path']),LIMIT) != pin:
+            raise ValueError('source role proof source changed')
+    roles = evidence.get('roles') or []
+    if {r.get('role') for r in roles} != {'attacker','defender'} or len(roles) != 2 or len({r.get('getterCallerRva') for r in roles}) != 2:
+        raise ValueError('source role declarations incomplete or ambiguous')
+    if any(r.get('evidenceBoundary') != 'conditional' or not r.get('conditions') for r in roles):
+        raise ValueError('source role conditions absent')
+    by_caller = {r['getterCallerRva']:r for r in roles}
+    counts, dice_counts = Counter(), Counter()
+    for sample in result['samples']:
+        selected = {}
+        for source in sample['typedAttributeSources']:
+            role = by_caller.get(source['getterCallerRva'])
+            source['nativeArrayRole'] = None if role is None else role['role']
+            source['nativeArrayRoleEvidence'] = role
+            if source['packAssociation'] == 'explicit-parent-invocation':
+                selected[(source['dumpId'],source['getterCallerRva'])] = source['nativeArrayRole']
+                counts[str(source['nativeArrayRole'])] += 1
+        if 'conditionalNoCritSourcePredictions' in sample:
+            predictions = [p for p in sample['conditionalNoCritSourcePredictions']
+                if selected.get((p['dumpId'],p['getterCallerRva'])) == 'attacker']
+            for prediction in predictions:
+                prediction['nativeArrayRole'] = 'attacker'
+                prediction['conditions'].extend(by_caller[prediction['getterCallerRva']]['conditions'])
+                dice_counts[str(prediction['getterCallerRva'])] += 1
+            sample['conditionalNoCritSourcePredictions'] = predictions
+    result['nativeSourceRoleEvidence'] = {'declarations':roles,'explicitNestedSourceCounts':dict(counts),
+        'boundary':'Native caller-to-named array destination role. Generic Lock typed return, actual actor ownership and formula array/frame continuity remain conditional.'}
+    if 'conditionalDiceEvidence' in result:
+        result['conditionalDiceEvidence']['sourceCandidateCountsByGetterCaller'] = dict(dice_counts)
+        result['conditionalDiceEvidence']['sourceRoleSelection'] = 'only authenticated attacker-array destination callers in explicit own Pack final invocation dump'
+
+
+def run(source, output, native_evidence=None, source_role_evidence=None):
     from scripts.repo_paths import REPO_ROOT
     source, output = Path(source).resolve(), Path(output).resolve()
     root = (REPO_ROOT/'reports').resolve()
@@ -183,21 +337,33 @@ def run(source, output, native_evidence=None):
     with sidepath.open(encoding='utf-8') as handle:
         result = analyze(data, (json.loads(line) for line in handle))
     extra_sources = {}
-    if native_evidence is not None:
-        native_evidence = Path(native_evidence).resolve()
-        if not native_evidence.is_relative_to(root) or native_evidence == output:
-            raise ValueError('native evidence must be a distinct reports input')
-        evidence_pin = fingerprint(native_evidence, LIMIT)
+    if native_evidence is not None or source_role_evidence is not None:
         inspection_pin = data['sources']['before']['inspection']
         inspection_path = Path(inspection_pin['path']).resolve()
         if inspection_path == output or not inspection_path.is_relative_to(root) or fingerprint(inspection_path, LIMIT) != inspection_pin:
             raise ValueError('bound inspection fingerprint differs')
-        receipt = json.loads(native_evidence.read_text(encoding='utf-8'))
         inspection = json.loads(inspection_path.read_text(encoding='utf-8'))
-        attach_branch_evidence(result, data, receipt, inspection)
-        if fingerprint(native_evidence, LIMIT) != evidence_pin or fingerprint(inspection_path, LIMIT) != inspection_pin:
-            raise ValueError('native evidence or bound inspection changed')
-        extra_sources = {'nativeEvidence':evidence_pin, 'boundInspection':inspection_pin}
+        extra_sources = {'boundInspection':inspection_pin}
+        for name, path, attach in (('nativeEvidence',native_evidence,attach_branch_evidence),('sourceRoleEvidence',source_role_evidence,attach_source_roles)):
+            if path is None:
+                continue
+            path = Path(path).resolve()
+            if not path.is_relative_to(root) or path == output:
+                raise ValueError('native evidence must be a distinct reports input')
+            evidence_pin = fingerprint(path,LIMIT)
+            attach(result,data,json.loads(path.read_text(encoding='utf-8')),inspection)
+            if fingerprint(path,LIMIT) != evidence_pin:
+                raise ValueError('native evidence changed')
+            extra_sources[name] = evidence_pin
+        if fingerprint(inspection_path,LIMIT) != inspection_pin:
+            raise ValueError('bound inspection changed')
+    if native_evidence is not None and source_role_evidence is None:
+        for sample in result['samples']:
+            sample['conditionalNoCritSourcePredictions'] = []
+        result['conditionalDiceEvidence']['sourceCandidateCountsByGetterCaller'] = {}
+        result['conditionalDiceEvidence']['sourceRoleSelection'] = 'withheld: authenticated attacker-array caller evidence was not supplied'
+    if native_evidence is not None or source_role_evidence is not None:
+        attach_poise_inventory(result,inspection)
     if result['counts']['attributeRows'] != data['counts']['attributeRows']:
         raise ValueError('calibration attribute row count differs')
     after, side_after = fingerprint(source, LIMIT), fingerprint(sidepath, LIMIT)
@@ -224,8 +390,9 @@ def main():
     parser.add_argument('--calibration',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--native-evidence',type=Path)
+    parser.add_argument('--source-role-evidence',type=Path)
     args=parser.parse_args()
-    print(json.dumps(run(args.calibration,args.output,args.native_evidence)['counts']))
+    print(json.dumps(run(args.calibration,args.output,args.native_evidence,args.source_role_evidence)['counts']))
 
 
 if __name__ == '__main__':

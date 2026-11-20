@@ -1,0 +1,179 @@
+{
+  "schema": "endfield.skill-blackboard-getter-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "writerDependency": "skill_input_blackboard_native.json",
+  "evidenceBoundary": "Static closed MethodInfo request and RGCTX type-parameter substitution; physical storage/filter/cast request flow on ordinary class-bit path. Runtime initialized context, compiled closed getter identity, named closed storage slot and dynamic object identity remain unproved.",
+  "codeWindows": [
+    {
+      "role": "getter",
+      "startRva": 98785584,
+      "endRva": 98785753,
+      "sha256": "FC0586F9F8FB6DCA96B114A5355BA50C37E1CF48AE9EC0E70F576A298A6C8B04",
+      "hex": "48895c240848896c24104889742418574883ec20488b5938488bfa488b4a2033d2488b89c0000000e873e92cfa488b4f2033d2488be8488b89c0000000e85ee92cfa488bf04885db7449488b3b488bc8488bd7e8d8e11cfa84c0742a488b3b488bcd488bd7e8c6e11cfa84c07429488b6c2438488bc3488b5c2430488b7424404883c4205fc3f68739010000100f859d357f0133dbebd7f68739010000100f840d367f01e9ca357f01",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    },
+    {
+      "role": "slotResolver",
+      "startRva": 1065680,
+      "endRva": 1065695,
+      "sha256": "6DD3B95E2A2114563D5AEDC634664A4BA2CCD4379612C8A9D8E9FA35325891CB",
+      "hex": "488bc14863ca488b0cc8e91d010000",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    },
+    {
+      "role": "initializedClass",
+      "startRva": 1065980,
+      "endRva": 1066000,
+      "sha256": "FE3FC22B50F3E51A9FC894BAC89E8328A51BA5EEEB646E965A4CDFC416459514",
+      "hex": "f68138010000017405488bc1eb05e991d2f3ffc3",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    },
+    {
+      "role": "relationPrefix",
+      "startRva": 15200,
+      "endRva": 15245,
+      "sha256": "83945AB6B03212A960F5D06A97C18860B27EBF66CE6773CE9E67E4F5C84B388C",
+      "hex": "48895c2420488954241048894c240855565741544155415641574883ec204c8be24c8bf9483bca0f84b0000000",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    },
+    {
+      "role": "relationTrue",
+      "startRva": 15421,
+      "endRva": 15444,
+      "sha256": "E2623E30BA200013D54F06747F2872F05EF08257D7123BC6437F5156E40E781F",
+      "hex": "b001488b5c24784883c420415f415e415d415c5f5e5dc3",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    },
+    {
+      "role": "castFailure",
+      "startRva": 123899873,
+      "endRva": 123899885,
+      "sha256": "F7CEEDF64ACF6EC2782EDF58DB094D394CFA5B3E3FD0420C1BA733B848050337",
+      "hex": "488bd5488bcbe8b06f03f9cc",
+      "boundary": "Reviewed finite conditional original helper fragment. Nonordinary class paths and unresolved runtime context binding remain outside proof."
+    }
+  ],
+  "staticContext": {
+    "definition": 1640,
+    "isMethod": false,
+    "token": 33556073,
+    "image": "Gameplay.Beyond.dll",
+    "typeName": "Beyond.Gameplay.StateMachine`2",
+    "methodName": null,
+    "start": 208,
+    "count": 39,
+    "entries": [
+      {
+        "relativeSlot": 0,
+        "moduleEntryIndex": 208,
+        "entryVa": 6676664224,
+        "rawHex": "02000000000000008004758F01000000",
+        "kind": 2,
+        "index": 11082,
+        "type": {
+          "name": "VAR[70]",
+          "typePointerVa": 6721521072,
+          "rawHex": "46000000000000000000130000000000",
+          "parameterOwner": {
+            "parameterIndex": 70,
+            "parameterOffset": 53844824,
+            "parameterRawHex": "3E0000007F4604002900010001000000",
+            "containerIndex": 62,
+            "containerOffset": 54263900,
+            "containerRawHex": "68060000020000000000000045000000",
+            "typeIndex": 1640,
+            "ordinal": 1,
+            "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+            "typeName": "Beyond.Gameplay.StateMachine`2"
+          }
+        },
+        "typeName": "VAR[70]"
+      }
+    ],
+    "selectedSlots": [
+      0
+    ]
+  },
+  "operands": {
+    "sourceOffset": 56,
+    "methodInfoClassOffset": 32,
+    "classContextOffset": 192,
+    "slotIndex": 0,
+    "specialClassFlagOffset": 313,
+    "specialClassMask": 16,
+    "initializedClassFlagOffset": 312,
+    "initializedClassMask": 1,
+    "stackFrame": 32,
+    "saveRbxStack": 8,
+    "saveRbpStack": 16,
+    "saveRsiStack": 24,
+    "relationSaveRbxStack": 32,
+    "relationSaveRcxStack": 8,
+    "relationSaveRdxStack": 16,
+    "relationFrameBytes": 32,
+    "relationPushBytes": 56
+  },
+  "sites": {
+    "sourceRead": 98785604,
+    "slotCall1": 98785624,
+    "firstTypeSave": 98785635,
+    "slotCall2": 98785645,
+    "secondTypeSave": 98785650,
+    "sourceNullBranch": 98785656,
+    "relation1Call": 98785667,
+    "relation1Branch": 98785674,
+    "relation2Call": 98785685,
+    "relation2Branch": 98785692,
+    "returnSource": 98785699,
+    "returnZero": 98785731,
+    "returnRestore": 98785694,
+    "flag1": 98785718,
+    "flag1Branch": 98785725,
+    "flag2": 98785735,
+    "flag2Branch": 98785742,
+    "castFailureCall": 123899879,
+    "relationEquality": 15236,
+    "relationEqualityBranch": 15239,
+    "relationReturnTrue": 15421
+  },
+  "targets": {
+    "slotResolver": 1065680,
+    "slotResolverClassInit": 1065980,
+    "slowClassInit": 267936,
+    "relation": 15200,
+    "castFailure": 123899873,
+    "castFailureHelper": 6684572,
+    "special1": 123899744,
+    "special2": 123899811
+  },
+  "rules": {
+    "ordinaryFailureClassBitMustBeClear": true,
+    "specialClassPathsProved": false,
+    "sourceReadCount": 1,
+    "typeResolverCallCountBeforeNullTest": 2,
+    "resolverResultsIndependent": true,
+    "nullSourceReturnsNullAfterResolvers": true,
+    "firstRelationUsesSecondResolvedType": true,
+    "firstRelationFalseReturnsNull": true,
+    "secondRelationUsesFirstResolvedType": true,
+    "secondRelationFalseRequestsCastFailure": true,
+    "bothRelationsTrueReturnsOriginalSource": true,
+    "classEqualityFastPathReturnsTrue": true,
+    "staticContextTypeParameterOrdinal": 1,
+    "staticClosedSubstitution": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+    "runtimeContextSlotBindingProved": false,
+    "compiledGetterClosedIdentityProved": false,
+    "namedClosedSourceFieldOwnershipProved": false,
+    "dynamicInstanceTypeProved": false,
+    "sameWriterConsumerInstanceProved": false,
+    "normalWin64CallsRequired": true,
+    "coherentObjectsRequired": true,
+    "completeRelationHelperSemanticsProved": false,
+    "completeCastFailureHelperSemanticsProved": false,
+    "initializedClassFastPathReturnsInputPointer": true
+  }
+}

@@ -1,0 +1,1955 @@
+{
+  "schema": "endfield.skill-center-transition-storage-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "dependencies": {
+    "construction": "skill_center_transition_construction_native.json",
+    "dispatch": "skill_center_dispatch_native.json"
+  },
+  "registrations": [
+    {
+      "tableIndex": 55824,
+      "methodSpecIndex": 61359,
+      "pointerIndex": 55764,
+      "methodIndex": 403977,
+      "owner": "System.Collections.Generic.Dictionary`2",
+      "name": "ContainsKey",
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "methodInst": -1,
+      "entryRva": 87026192,
+      "id": "contains"
+    },
+    {
+      "tableIndex": 55869,
+      "methodSpecIndex": 61404,
+      "pointerIndex": 55809,
+      "methodIndex": 403970,
+      "owner": "System.Collections.Generic.Dictionary`2",
+      "name": "get_Item",
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "methodInst": -1,
+      "entryRva": 87024720,
+      "id": "lookup"
+    },
+    {
+      "tableIndex": 55872,
+      "methodSpecIndex": 61407,
+      "pointerIndex": 55812,
+      "methodIndex": 403971,
+      "owner": "System.Collections.Generic.Dictionary`2",
+      "name": "set_Item",
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "methodInst": -1,
+      "entryRva": 99464032,
+      "id": "setItem"
+    },
+    {
+      "tableIndex": 145033,
+      "methodSpecIndex": 154176,
+      "pointerIndex": 144955,
+      "methodIndex": 6921,
+      "owner": "Beyond.Gameplay.FSMState`1",
+      "name": "AddTransition",
+      "classArguments": [
+        "System.Int32Enum"
+      ],
+      "methodInst": -1,
+      "entryRva": 104235232,
+      "id": "state"
+    },
+    {
+      "tableIndex": 377773,
+      "methodSpecIndex": 403246,
+      "pointerIndex": 377380,
+      "methodIndex": 6918,
+      "owner": "Beyond.Gameplay.StateMachine`2",
+      "name": "AddTransition",
+      "classArguments": [
+        "System.Int32Enum",
+        "object"
+      ],
+      "methodInst": -1,
+      "entryRva": 102928544,
+      "id": "machine"
+    }
+  ],
+  "programs": {
+    "machine": {
+      "entry": 102928544,
+      "instructions": [
+        {
+          "rva": 102928544,
+          "hex": "48895c2408",
+          "assembly": "mov qword ptr [rsp + 8], rbx"
+        },
+        {
+          "rva": 102928549,
+          "hex": "48896c2410",
+          "assembly": "mov qword ptr [rsp + 0x10], rbp"
+        },
+        {
+          "rva": 102928554,
+          "hex": "4889742418",
+          "assembly": "mov qword ptr [rsp + 0x18], rsi"
+        },
+        {
+          "rva": 102928559,
+          "hex": "57",
+          "assembly": "push rdi"
+        },
+        {
+          "rva": 102928560,
+          "hex": "4156",
+          "assembly": "push r14"
+        },
+        {
+          "rva": 102928562,
+          "hex": "4157",
+          "assembly": "push r15"
+        },
+        {
+          "rva": 102928564,
+          "hex": "4883ec30",
+          "assembly": "sub rsp, 0x30"
+        },
+        {
+          "rva": 102928568,
+          "hex": "488b7128",
+          "assembly": "mov rsi, qword ptr [rcx + 0x28]"
+        },
+        {
+          "rva": 102928572,
+          "hex": "458bf9",
+          "assembly": "mov r15d, r9d"
+        },
+        {
+          "rva": 102928575,
+          "hex": "418be8",
+          "assembly": "mov ebp, r8d"
+        },
+        {
+          "rva": 102928578,
+          "hex": "448bf2",
+          "assembly": "mov r14d, edx"
+        },
+        {
+          "rva": 102928581,
+          "hex": "488bf9",
+          "assembly": "mov rdi, rcx"
+        },
+        {
+          "rva": 102928584,
+          "hex": "4885f6",
+          "assembly": "test rsi, rsi"
+        },
+        {
+          "rva": 102928587,
+          "hex": "0f84d5010000",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928593,
+          "hex": "488b5c2478",
+          "assembly": "mov rbx, qword ptr [rsp + 0x78]"
+        },
+        {
+          "rva": 102928598,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928602,
+          "hex": "4c8b90c0000000",
+          "assembly": "mov r10, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928609,
+          "hex": "498b82d0000000",
+          "assembly": "mov rax, qword ptr [r10 + 0xd0]"
+        },
+        {
+          "rva": 102928616,
+          "hex": "4883782000",
+          "assembly": "cmp qword ptr [rax + 0x20], 0"
+        },
+        {
+          "rva": 102928621,
+          "hex": "0f84651e1701",
+          "assembly": "je 0x18739af58"
+        },
+        {
+          "rva": 102928627,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928631,
+          "hex": "418bd6",
+          "assembly": "mov edx, r14d"
+        },
+        {
+          "rva": 102928634,
+          "hex": "488bce",
+          "assembly": "mov rcx, rsi"
+        },
+        {
+          "rva": 102928637,
+          "hex": "4c8b80c0000000",
+          "assembly": "mov r8, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928644,
+          "hex": "4d8b80d0000000",
+          "assembly": "mov r8, qword ptr [r8 + 0xd0]"
+        },
+        {
+          "rva": 102928651,
+          "hex": "e800590dff",
+          "assembly": "call 0x1852fea10"
+        },
+        {
+          "rva": 102928656,
+          "hex": "84c0",
+          "assembly": "test al, al"
+        },
+        {
+          "rva": 102928658,
+          "hex": "0f84dd1e1701",
+          "assembly": "je 0x18739aff5"
+        },
+        {
+          "rva": 102928664,
+          "hex": "488b7728",
+          "assembly": "mov rsi, qword ptr [rdi + 0x28]"
+        },
+        {
+          "rva": 102928668,
+          "hex": "4885f6",
+          "assembly": "test rsi, rsi"
+        },
+        {
+          "rva": 102928671,
+          "hex": "0f8481010000",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928677,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928681,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928688,
+          "hex": "488b82d0000000",
+          "assembly": "mov rax, qword ptr [rdx + 0xd0]"
+        },
+        {
+          "rva": 102928695,
+          "hex": "4883782000",
+          "assembly": "cmp qword ptr [rax + 0x20], 0"
+        },
+        {
+          "rva": 102928700,
+          "hex": "0f84301e1701",
+          "assembly": "je 0x18739af72"
+        },
+        {
+          "rva": 102928706,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928710,
+          "hex": "8bd5",
+          "assembly": "mov edx, ebp"
+        },
+        {
+          "rva": 102928712,
+          "hex": "488bce",
+          "assembly": "mov rcx, rsi"
+        },
+        {
+          "rva": 102928715,
+          "hex": "4c8b80c0000000",
+          "assembly": "mov r8, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928722,
+          "hex": "4d8b80d0000000",
+          "assembly": "mov r8, qword ptr [r8 + 0xd0]"
+        },
+        {
+          "rva": 102928729,
+          "hex": "e8b2580dff",
+          "assembly": "call 0x1852fea10"
+        },
+        {
+          "rva": 102928734,
+          "hex": "84c0",
+          "assembly": "test al, al"
+        },
+        {
+          "rva": 102928736,
+          "hex": "0f84631e1701",
+          "assembly": "je 0x18739afc9"
+        },
+        {
+          "rva": 102928742,
+          "hex": "488b7728",
+          "assembly": "mov rsi, qword ptr [rdi + 0x28]"
+        },
+        {
+          "rva": 102928746,
+          "hex": "4885f6",
+          "assembly": "test rsi, rsi"
+        },
+        {
+          "rva": 102928749,
+          "hex": "0f8433010000",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928755,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928759,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928766,
+          "hex": "488b82d8000000",
+          "assembly": "mov rax, qword ptr [rdx + 0xd8]"
+        },
+        {
+          "rva": 102928773,
+          "hex": "4883782000",
+          "assembly": "cmp qword ptr [rax + 0x20], 0"
+        },
+        {
+          "rva": 102928778,
+          "hex": "0f84fc1d1701",
+          "assembly": "je 0x18739af8c"
+        },
+        {
+          "rva": 102928784,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928788,
+          "hex": "418bd6",
+          "assembly": "mov edx, r14d"
+        },
+        {
+          "rva": 102928791,
+          "hex": "488bce",
+          "assembly": "mov rcx, rsi"
+        },
+        {
+          "rva": 102928794,
+          "hex": "4c8b80c0000000",
+          "assembly": "mov r8, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928801,
+          "hex": "4d8b80d8000000",
+          "assembly": "mov r8, qword ptr [r8 + 0xd8]"
+        },
+        {
+          "rva": 102928808,
+          "hex": "e8a3520dff",
+          "assembly": "call 0x1852fe450"
+        },
+        {
+          "rva": 102928813,
+          "hex": "488b7728",
+          "assembly": "mov rsi, qword ptr [rdi + 0x28]"
+        },
+        {
+          "rva": 102928817,
+          "hex": "4c8bf0",
+          "assembly": "mov r14, rax"
+        },
+        {
+          "rva": 102928820,
+          "hex": "4885f6",
+          "assembly": "test rsi, rsi"
+        },
+        {
+          "rva": 102928823,
+          "hex": "0f84e9000000",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928829,
+          "hex": "488b4b20",
+          "assembly": "mov rcx, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928833,
+          "hex": "488b91c0000000",
+          "assembly": "mov rdx, qword ptr [rcx + 0xc0]"
+        },
+        {
+          "rva": 102928840,
+          "hex": "4c8b82d8000000",
+          "assembly": "mov r8, qword ptr [rdx + 0xd8]"
+        },
+        {
+          "rva": 102928847,
+          "hex": "4983782000",
+          "assembly": "cmp qword ptr [r8 + 0x20], 0"
+        },
+        {
+          "rva": 102928852,
+          "hex": "0f84cc1d1701",
+          "assembly": "je 0x18739afa6"
+        },
+        {
+          "rva": 102928858,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928862,
+          "hex": "8bd5",
+          "assembly": "mov edx, ebp"
+        },
+        {
+          "rva": 102928864,
+          "hex": "488bce",
+          "assembly": "mov rcx, rsi"
+        },
+        {
+          "rva": 102928867,
+          "hex": "4c8b80c0000000",
+          "assembly": "mov r8, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928874,
+          "hex": "4d8b80d8000000",
+          "assembly": "mov r8, qword ptr [r8 + 0xd8]"
+        },
+        {
+          "rva": 102928881,
+          "hex": "e85a520dff",
+          "assembly": "call 0x1852fe450"
+        },
+        {
+          "rva": 102928886,
+          "hex": "488bf0",
+          "assembly": "mov rsi, rax"
+        },
+        {
+          "rva": 102928889,
+          "hex": "4d85f6",
+          "assembly": "test r14, r14"
+        },
+        {
+          "rva": 102928892,
+          "hex": "0f84a4000000",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928898,
+          "hex": "488b4b20",
+          "assembly": "mov rcx, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928902,
+          "hex": "488b91c0000000",
+          "assembly": "mov rdx, qword ptr [rcx + 0xc0]"
+        },
+        {
+          "rva": 102928909,
+          "hex": "488b8af0000000",
+          "assembly": "mov rcx, qword ptr [rdx + 0xf0]"
+        },
+        {
+          "rva": 102928916,
+          "hex": "4883792000",
+          "assembly": "cmp qword ptr [rcx + 0x20], 0"
+        },
+        {
+          "rva": 102928921,
+          "hex": "0f84901d1701",
+          "assembly": "je 0x18739afaf"
+        },
+        {
+          "rva": 102928927,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928931,
+          "hex": "458bc7",
+          "assembly": "mov r8d, r15d"
+        },
+        {
+          "rva": 102928934,
+          "hex": "4c8b4c2470",
+          "assembly": "mov r9, qword ptr [rsp + 0x70]"
+        },
+        {
+          "rva": 102928939,
+          "hex": "488bd6",
+          "assembly": "mov rdx, rsi"
+        },
+        {
+          "rva": 102928942,
+          "hex": "488b88c0000000",
+          "assembly": "mov rcx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102928949,
+          "hex": "488b81f0000000",
+          "assembly": "mov rax, qword ptr [rcx + 0xf0]"
+        },
+        {
+          "rva": 102928956,
+          "hex": "498bce",
+          "assembly": "mov rcx, r14"
+        },
+        {
+          "rva": 102928959,
+          "hex": "4889442420",
+          "assembly": "mov qword ptr [rsp + 0x20], rax"
+        },
+        {
+          "rva": 102928964,
+          "hex": "e897ee1300",
+          "assembly": "call 0x1863680e0"
+        },
+        {
+          "rva": 102928969,
+          "hex": "488b7f30",
+          "assembly": "mov rdi, qword ptr [rdi + 0x30]"
+        },
+        {
+          "rva": 102928973,
+          "hex": "488bf0",
+          "assembly": "mov rsi, rax"
+        },
+        {
+          "rva": 102928976,
+          "hex": "4885ff",
+          "assembly": "test rdi, rdi"
+        },
+        {
+          "rva": 102928979,
+          "hex": "7451",
+          "assembly": "je 0x1862292a6"
+        },
+        {
+          "rva": 102928981,
+          "hex": "488b4b20",
+          "assembly": "mov rcx, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102928985,
+          "hex": "488b91c0000000",
+          "assembly": "mov rdx, qword ptr [rcx + 0xc0]"
+        },
+        {
+          "rva": 102928992,
+          "hex": "4c8b82f8000000",
+          "assembly": "mov r8, qword ptr [rdx + 0xf8]"
+        },
+        {
+          "rva": 102928999,
+          "hex": "4983782000",
+          "assembly": "cmp qword ptr [r8 + 0x20], 0"
+        },
+        {
+          "rva": 102929004,
+          "hex": "743e",
+          "assembly": "je 0x1862292ac"
+        },
+        {
+          "rva": 102929006,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 102929010,
+          "hex": "4c8bc6",
+          "assembly": "mov r8, rsi"
+        },
+        {
+          "rva": 102929013,
+          "hex": "8bd5",
+          "assembly": "mov edx, ebp"
+        },
+        {
+          "rva": 102929015,
+          "hex": "488bcf",
+          "assembly": "mov rcx, rdi"
+        },
+        {
+          "rva": 102929018,
+          "hex": "4c8b88c0000000",
+          "assembly": "mov r9, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 102929025,
+          "hex": "4d8b89f8000000",
+          "assembly": "mov r9, qword ptr [r9 + 0xf8]"
+        },
+        {
+          "rva": 102929032,
+          "hex": "e8d320cbff",
+          "assembly": "call 0x185edb360"
+        },
+        {
+          "rva": 102929037,
+          "hex": "488b5c2450",
+          "assembly": "mov rbx, qword ptr [rsp + 0x50]"
+        },
+        {
+          "rva": 102929042,
+          "hex": "488b6c2458",
+          "assembly": "mov rbp, qword ptr [rsp + 0x58]"
+        },
+        {
+          "rva": 102929047,
+          "hex": "488b742460",
+          "assembly": "mov rsi, qword ptr [rsp + 0x60]"
+        },
+        {
+          "rva": 102929052,
+          "hex": "4883c430",
+          "assembly": "add rsp, 0x30"
+        },
+        {
+          "rva": 102929056,
+          "hex": "415f",
+          "assembly": "pop r15"
+        },
+        {
+          "rva": 102929058,
+          "hex": "415e",
+          "assembly": "pop r14"
+        },
+        {
+          "rva": 102929060,
+          "hex": "5f",
+          "assembly": "pop rdi"
+        },
+        {
+          "rva": 102929061,
+          "hex": "c3",
+          "assembly": "ret "
+        },
+        {
+          "rva": 102929062,
+          "hex": "e89556ebf9",
+          "assembly": "call 0x1800de940"
+        },
+        {
+          "rva": 102929067,
+          "hex": "cc",
+          "assembly": "int3 "
+        },
+        {
+          "rva": 102929068,
+          "hex": "41ff10",
+          "assembly": "call qword ptr [r8]"
+        },
+        {
+          "rva": 102929071,
+          "hex": "ebbd",
+          "assembly": "jmp 0x18622926e"
+        },
+        {
+          "rva": 121220952,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121220956,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121220963,
+          "hex": "488b82d0000000",
+          "assembly": "mov rax, qword ptr [rdx + 0xd0]"
+        },
+        {
+          "rva": 121220970,
+          "hex": "ff10",
+          "assembly": "call qword ptr [rax]"
+        },
+        {
+          "rva": 121220972,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121220973,
+          "hex": "e981e1e8fe",
+          "assembly": "jmp 0x1862290f3"
+        },
+        {
+          "rva": 121220978,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121220982,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121220989,
+          "hex": "488b82d0000000",
+          "assembly": "mov rax, qword ptr [rdx + 0xd0]"
+        },
+        {
+          "rva": 121220996,
+          "hex": "ff10",
+          "assembly": "call qword ptr [rax]"
+        },
+        {
+          "rva": 121220998,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121220999,
+          "hex": "e9b6e1e8fe",
+          "assembly": "jmp 0x186229142"
+        },
+        {
+          "rva": 121221004,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121221008,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121221015,
+          "hex": "488b82d8000000",
+          "assembly": "mov rax, qword ptr [rdx + 0xd8]"
+        },
+        {
+          "rva": 121221022,
+          "hex": "ff10",
+          "assembly": "call qword ptr [rax]"
+        },
+        {
+          "rva": 121221024,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121221025,
+          "hex": "e9eae1e8fe",
+          "assembly": "jmp 0x186229190"
+        },
+        {
+          "rva": 121221030,
+          "hex": "41ff10",
+          "assembly": "call qword ptr [r8]"
+        },
+        {
+          "rva": 121221033,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121221034,
+          "hex": "e92be2e8fe",
+          "assembly": "jmp 0x1862291da"
+        },
+        {
+          "rva": 121221039,
+          "hex": "488b4b20",
+          "assembly": "mov rcx, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121221043,
+          "hex": "488b91c0000000",
+          "assembly": "mov rdx, qword ptr [rcx + 0xc0]"
+        },
+        {
+          "rva": 121221050,
+          "hex": "488b8af0000000",
+          "assembly": "mov rcx, qword ptr [rdx + 0xf0]"
+        },
+        {
+          "rva": 121221057,
+          "hex": "ff11",
+          "assembly": "call qword ptr [rcx]"
+        },
+        {
+          "rva": 121221059,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121221060,
+          "hex": "e956e2e8fe",
+          "assembly": "jmp 0x18622921f"
+        },
+        {
+          "rva": 121221065,
+          "hex": "488b0df80e3b09",
+          "assembly": "mov rcx, qword ptr [rip + 0x93b0ef8]"
+        },
+        {
+          "rva": 121221072,
+          "hex": "83b9e000000000",
+          "assembly": "cmp dword ptr [rcx + 0xe0], 0"
+        },
+        {
+          "rva": 121221079,
+          "hex": "7505",
+          "assembly": "jne 0x18739afde"
+        },
+        {
+          "rva": 121221081,
+          "hex": "e802b6c7f8",
+          "assembly": "call 0x1800165e0"
+        },
+        {
+          "rva": 121221086,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121221090,
+          "hex": "448bc5",
+          "assembly": "mov r8d, ebp"
+        },
+        {
+          "rva": 121221093,
+          "hex": "4c8b88c0000000",
+          "assembly": "mov r9, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121221100,
+          "hex": "4d8b89e8000000",
+          "assembly": "mov r9, qword ptr [r9 + 0xe8]"
+        },
+        {
+          "rva": 121221107,
+          "hex": "eb2a",
+          "assembly": "jmp 0x18739b01f"
+        },
+        {
+          "rva": 121221109,
+          "hex": "488b0dcc0e3b09",
+          "assembly": "mov rcx, qword ptr [rip + 0x93b0ecc]"
+        },
+        {
+          "rva": 121221116,
+          "hex": "83b9e000000000",
+          "assembly": "cmp dword ptr [rcx + 0xe0], 0"
+        },
+        {
+          "rva": 121221123,
+          "hex": "7505",
+          "assembly": "jne 0x18739b00a"
+        },
+        {
+          "rva": 121221125,
+          "hex": "e8d6b5c7f8",
+          "assembly": "call 0x1800165e0"
+        },
+        {
+          "rva": 121221130,
+          "hex": "488b4320",
+          "assembly": "mov rax, qword ptr [rbx + 0x20]"
+        },
+        {
+          "rva": 121221134,
+          "hex": "458bc6",
+          "assembly": "mov r8d, r14d"
+        },
+        {
+          "rva": 121221137,
+          "hex": "4c8b88c0000000",
+          "assembly": "mov r9, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121221144,
+          "hex": "4d8b89e8000000",
+          "assembly": "mov r9, qword ptr [r9 + 0xe8]"
+        },
+        {
+          "rva": 121221151,
+          "hex": "488b155a7a3309",
+          "assembly": "mov rdx, qword ptr [rip + 0x9337a5a]"
+        },
+        {
+          "rva": 121221158,
+          "hex": "b118",
+          "assembly": "mov cl, 0x18"
+        },
+        {
+          "rva": 121221160,
+          "hex": "e85715c302",
+          "assembly": "call 0x189fcc584"
+        },
+        {
+          "rva": 121221165,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121221166,
+          "hex": "e95ae2e8fe",
+          "assembly": "jmp 0x18622928d"
+        }
+      ],
+      "references": {
+        "13": 102929062,
+        "19": 121220952,
+        "25": 87026192,
+        "27": 121221109,
+        "30": 102929062,
+        "35": 121220978,
+        "41": 87026192,
+        "43": 121221065,
+        "46": 102929062,
+        "51": 121221004,
+        "57": 87024720,
+        "61": 102929062,
+        "66": 121221030,
+        "72": 87024720,
+        "75": 102929062,
+        "80": 121221039,
+        "89": 104235232,
+        "93": 102929062,
+        "98": 102929068,
+        "105": 99464032,
+        "114": 911680,
+        "117": 102929006,
+        "123": 102928627,
+        "129": 102928706,
+        "135": 102928784,
+        "138": 102928858,
+        "144": 102928927,
+        "147": 121221086,
+        "148": 91616,
+        "153": 121221151,
+        "156": 121221130,
+        "157": 91616,
+        "164": 167560580,
+        "166": 102929037
+      }
+    },
+    "state": {
+      "entry": 104235232,
+      "instructions": [
+        {
+          "rva": 104235232,
+          "hex": "48895c2408",
+          "assembly": "mov qword ptr [rsp + 8], rbx"
+        },
+        {
+          "rva": 104235237,
+          "hex": "48896c2410",
+          "assembly": "mov qword ptr [rsp + 0x10], rbp"
+        },
+        {
+          "rva": 104235242,
+          "hex": "4889742418",
+          "assembly": "mov qword ptr [rsp + 0x18], rsi"
+        },
+        {
+          "rva": 104235247,
+          "hex": "57",
+          "assembly": "push rdi"
+        },
+        {
+          "rva": 104235248,
+          "hex": "4156",
+          "assembly": "push r14"
+        },
+        {
+          "rva": 104235250,
+          "hex": "4157",
+          "assembly": "push r15"
+        },
+        {
+          "rva": 104235252,
+          "hex": "4883ec20",
+          "assembly": "sub rsp, 0x20"
+        },
+        {
+          "rva": 104235256,
+          "hex": "488b7c2460",
+          "assembly": "mov rdi, qword ptr [rsp + 0x60]"
+        },
+        {
+          "rva": 104235261,
+          "hex": "488bf1",
+          "assembly": "mov rsi, rcx"
+        },
+        {
+          "rva": 104235264,
+          "hex": "4c8bfa",
+          "assembly": "mov r15, rdx"
+        },
+        {
+          "rva": 104235267,
+          "hex": "498be9",
+          "assembly": "mov rbp, r9"
+        },
+        {
+          "rva": 104235270,
+          "hex": "ba02000000",
+          "assembly": "mov edx, 2"
+        },
+        {
+          "rva": 104235275,
+          "hex": "458bf0",
+          "assembly": "mov r14d, r8d"
+        },
+        {
+          "rva": 104235278,
+          "hex": "488b4f20",
+          "assembly": "mov rcx, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 104235282,
+          "hex": "488b89c0000000",
+          "assembly": "mov rcx, qword ptr [rcx + 0xc0]"
+        },
+        {
+          "rva": 104235289,
+          "hex": "e8b2c1d9f9",
+          "assembly": "call 0x1801042d0"
+        },
+        {
+          "rva": 104235294,
+          "hex": "488bc8",
+          "assembly": "mov rcx, rax"
+        },
+        {
+          "rva": 104235297,
+          "hex": "e8eadccaf9",
+          "assembly": "call 0x180015e10"
+        },
+        {
+          "rva": 104235302,
+          "hex": "488bd8",
+          "assembly": "mov rbx, rax"
+        },
+        {
+          "rva": 104235305,
+          "hex": "4885c0",
+          "assembly": "test rax, rax"
+        },
+        {
+          "rva": 104235308,
+          "hex": "0f849e000000",
+          "assembly": "je 0x1863681d0"
+        },
+        {
+          "rva": 104235314,
+          "hex": "488b4720",
+          "assembly": "mov rax, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 104235318,
+          "hex": "488b88c0000000",
+          "assembly": "mov rcx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 104235325,
+          "hex": "488b4118",
+          "assembly": "mov rax, qword ptr [rcx + 0x18]"
+        },
+        {
+          "rva": 104235329,
+          "hex": "4883782000",
+          "assembly": "cmp qword ptr [rax + 0x20], 0"
+        },
+        {
+          "rva": 104235334,
+          "hex": "0f848af40301",
+          "assembly": "je 0x1873a75d6"
+        },
+        {
+          "rva": 104235340,
+          "hex": "488d4b18",
+          "assembly": "lea rcx, [rbx + 0x18]"
+        },
+        {
+          "rva": 104235344,
+          "hex": "48897318",
+          "assembly": "mov qword ptr [rbx + 0x18], rsi"
+        },
+        {
+          "rva": 104235348,
+          "hex": "e807c2d9f9",
+          "assembly": "call 0x180104360"
+        },
+        {
+          "rva": 104235353,
+          "hex": "488d4b20",
+          "assembly": "lea rcx, [rbx + 0x20]"
+        },
+        {
+          "rva": 104235357,
+          "hex": "4c897b20",
+          "assembly": "mov qword ptr [rbx + 0x20], r15"
+        },
+        {
+          "rva": 104235361,
+          "hex": "e8fac1d9f9",
+          "assembly": "call 0x180104360"
+        },
+        {
+          "rva": 104235366,
+          "hex": "488d4b10",
+          "assembly": "lea rcx, [rbx + 0x10]"
+        },
+        {
+          "rva": 104235370,
+          "hex": "44897328",
+          "assembly": "mov dword ptr [rbx + 0x28], r14d"
+        },
+        {
+          "rva": 104235374,
+          "hex": "48896b10",
+          "assembly": "mov qword ptr [rbx + 0x10], rbp"
+        },
+        {
+          "rva": 104235378,
+          "hex": "e8e9c1d9f9",
+          "assembly": "call 0x180104360"
+        },
+        {
+          "rva": 104235383,
+          "hex": "488b7630",
+          "assembly": "mov rsi, qword ptr [rsi + 0x30]"
+        },
+        {
+          "rva": 104235387,
+          "hex": "4885f6",
+          "assembly": "test rsi, rsi"
+        },
+        {
+          "rva": 104235390,
+          "hex": "7450",
+          "assembly": "je 0x1863681d0"
+        },
+        {
+          "rva": 104235392,
+          "hex": "488b4720",
+          "assembly": "mov rax, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 104235396,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 104235403,
+          "hex": "488b4220",
+          "assembly": "mov rax, qword ptr [rdx + 0x20]"
+        },
+        {
+          "rva": 104235407,
+          "hex": "4883782000",
+          "assembly": "cmp qword ptr [rax + 0x20], 0"
+        },
+        {
+          "rva": 104235412,
+          "hex": "0f8453f40301",
+          "assembly": "je 0x1873a75ed"
+        },
+        {
+          "rva": 104235418,
+          "hex": "488b4720",
+          "assembly": "mov rax, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 104235422,
+          "hex": "488bd3",
+          "assembly": "mov rdx, rbx"
+        },
+        {
+          "rva": 104235425,
+          "hex": "488bce",
+          "assembly": "mov rcx, rsi"
+        },
+        {
+          "rva": 104235428,
+          "hex": "4c8b80c0000000",
+          "assembly": "mov r8, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 104235435,
+          "hex": "4d8b4020",
+          "assembly": "mov r8, qword ptr [r8 + 0x20]"
+        },
+        {
+          "rva": 104235439,
+          "hex": "e87c66c3fe",
+          "assembly": "call 0x184f9e830"
+        },
+        {
+          "rva": 104235444,
+          "hex": "488b6c2448",
+          "assembly": "mov rbp, qword ptr [rsp + 0x48]"
+        },
+        {
+          "rva": 104235449,
+          "hex": "488bc3",
+          "assembly": "mov rax, rbx"
+        },
+        {
+          "rva": 104235452,
+          "hex": "488b5c2440",
+          "assembly": "mov rbx, qword ptr [rsp + 0x40]"
+        },
+        {
+          "rva": 104235457,
+          "hex": "488b742450",
+          "assembly": "mov rsi, qword ptr [rsp + 0x50]"
+        },
+        {
+          "rva": 104235462,
+          "hex": "4883c420",
+          "assembly": "add rsp, 0x20"
+        },
+        {
+          "rva": 104235466,
+          "hex": "415f",
+          "assembly": "pop r15"
+        },
+        {
+          "rva": 104235468,
+          "hex": "415e",
+          "assembly": "pop r14"
+        },
+        {
+          "rva": 104235470,
+          "hex": "5f",
+          "assembly": "pop rdi"
+        },
+        {
+          "rva": 104235471,
+          "hex": "c3",
+          "assembly": "ret "
+        },
+        {
+          "rva": 104235472,
+          "hex": "e86b67d7f9",
+          "assembly": "call 0x1800de940"
+        },
+        {
+          "rva": 104235477,
+          "hex": "cc",
+          "assembly": "int3 "
+        },
+        {
+          "rva": 121271766,
+          "hex": "488b4720",
+          "assembly": "mov rax, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 121271770,
+          "hex": "488b88c0000000",
+          "assembly": "mov rcx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121271777,
+          "hex": "488b4118",
+          "assembly": "mov rax, qword ptr [rcx + 0x18]"
+        },
+        {
+          "rva": 121271781,
+          "hex": "ff10",
+          "assembly": "call qword ptr [rax]"
+        },
+        {
+          "rva": 121271783,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121271784,
+          "hex": "e95f0bfcfe",
+          "assembly": "jmp 0x18636814c"
+        },
+        {
+          "rva": 121271789,
+          "hex": "488b4720",
+          "assembly": "mov rax, qword ptr [rdi + 0x20]"
+        },
+        {
+          "rva": 121271793,
+          "hex": "488b90c0000000",
+          "assembly": "mov rdx, qword ptr [rax + 0xc0]"
+        },
+        {
+          "rva": 121271800,
+          "hex": "488b4220",
+          "assembly": "mov rax, qword ptr [rdx + 0x20]"
+        },
+        {
+          "rva": 121271804,
+          "hex": "ff10",
+          "assembly": "call qword ptr [rax]"
+        },
+        {
+          "rva": 121271806,
+          "hex": "90",
+          "assembly": "nop "
+        },
+        {
+          "rva": 121271807,
+          "hex": "e9960bfcfe",
+          "assembly": "jmp 0x18636819a"
+        }
+      ],
+      "references": {
+        "15": 1065680,
+        "17": 89616,
+        "20": 104235472,
+        "25": 121271766,
+        "28": 1065824,
+        "31": 1065824,
+        "35": 1065824,
+        "38": 104235472,
+        "43": 121271789,
+        "49": 83486768,
+        "59": 911680,
+        "66": 104235340,
+        "72": 104235418
+      }
+    }
+  },
+  "operands": {
+    "machineDisplacement0": 8,
+    "machineDisplacement1": 16,
+    "machineDisplacement2": 24,
+    "machineImmediate6": 48,
+    "machineStatesOffset": 40,
+    "machineDisplacement14": 120,
+    "machineDisplacement15": 32,
+    "machineDisplacement16": 192,
+    "machineDisplacement17": 208,
+    "machineDisplacement18": 32,
+    "machineDisplacement20": 32,
+    "machineDisplacement23": 192,
+    "machineDisplacement24": 208,
+    "machineDisplacement31": 32,
+    "machineDisplacement32": 192,
+    "machineDisplacement33": 208,
+    "machineDisplacement34": 32,
+    "machineDisplacement36": 32,
+    "machineDisplacement39": 192,
+    "machineDisplacement40": 208,
+    "machineDisplacement47": 32,
+    "machineDisplacement48": 192,
+    "machineDisplacement49": 216,
+    "machineDisplacement50": 32,
+    "machineDisplacement52": 32,
+    "machineDisplacement55": 192,
+    "machineDisplacement56": 216,
+    "machineDisplacement62": 32,
+    "machineDisplacement63": 192,
+    "machineDisplacement64": 216,
+    "machineDisplacement65": 32,
+    "machineDisplacement67": 32,
+    "machineDisplacement70": 192,
+    "machineDisplacement71": 216,
+    "machineDisplacement76": 32,
+    "machineDisplacement77": 192,
+    "machineDisplacement78": 240,
+    "machineDisplacement79": 32,
+    "machineDisplacement81": 32,
+    "machineDisplacement83": 112,
+    "machineDisplacement85": 192,
+    "machineDisplacement86": 240,
+    "machineDisplacement88": 32,
+    "machineTransitionsOffset": 48,
+    "machineDisplacement94": 32,
+    "machineDisplacement95": 192,
+    "machineDisplacement96": 248,
+    "machineDisplacement97": 32,
+    "machineDisplacement99": 32,
+    "machineDisplacement103": 192,
+    "machineDisplacement104": 248,
+    "machineDisplacement106": 80,
+    "machineDisplacement107": 88,
+    "machineDisplacement108": 96,
+    "machineImmediate109": 48,
+    "machineDisplacement118": 32,
+    "machineDisplacement119": 192,
+    "machineDisplacement120": 208,
+    "machineDisplacement124": 32,
+    "machineDisplacement125": 192,
+    "machineDisplacement126": 208,
+    "machineDisplacement130": 32,
+    "machineDisplacement131": 192,
+    "machineDisplacement132": 216,
+    "machineDisplacement139": 32,
+    "machineDisplacement140": 192,
+    "machineDisplacement141": 240,
+    "machineDisplacement145": 154865400,
+    "machineDisplacement146": 224,
+    "machineDisplacement149": 32,
+    "machineDisplacement151": 192,
+    "machineDisplacement152": 232,
+    "machineDisplacement154": 154865356,
+    "machineDisplacement155": 224,
+    "machineDisplacement158": 32,
+    "machineDisplacement160": 192,
+    "machineDisplacement161": 232,
+    "machineDisplacement162": 154368602,
+    "machineImmediate163": 24,
+    "stateDisplacement0": 8,
+    "stateDisplacement1": 16,
+    "stateDisplacement2": 24,
+    "stateImmediate6": 32,
+    "stateDisplacement7": 96,
+    "stateImmediate11": 2,
+    "stateDisplacement13": 32,
+    "stateDisplacement14": 192,
+    "stateDisplacement21": 32,
+    "stateDisplacement22": 192,
+    "stateDisplacement23": 24,
+    "stateDisplacement24": 32,
+    "transitionFromOffset": 24,
+    "transitionToOffset": 32,
+    "checkerOffset": 16,
+    "transitionPriorityOffset": 40,
+    "stateTransitionsOffset": 48,
+    "stateDisplacement39": 32,
+    "stateDisplacement40": 192,
+    "stateDisplacement41": 32,
+    "stateDisplacement42": 32,
+    "stateDisplacement44": 32,
+    "stateDisplacement47": 192,
+    "stateDisplacement48": 32,
+    "stateDisplacement50": 72,
+    "stateDisplacement52": 64,
+    "stateDisplacement53": 80,
+    "stateImmediate54": 32,
+    "stateDisplacement61": 32,
+    "stateDisplacement62": 192,
+    "stateDisplacement63": 24,
+    "stateDisplacement67": 32,
+    "stateDisplacement68": 192,
+    "stateDisplacement69": 32,
+    "methodInfoClassOffset": 32,
+    "rgctxOffset": 192,
+    "initializerOffset": 32,
+    "contextStride": 8
+  },
+  "codeWindows": [
+    {
+      "owner": "machine",
+      "startRva": 102928544,
+      "endRva": 102929073,
+      "sha256": "567e4384fed8633c992482b695e5258d8bf006df032cd1519915a89ee155f2ad",
+      "boundary": "complete selected canonical shared unwind range including cold initializers and diagnostic paths"
+    },
+    {
+      "owner": "machine",
+      "startRva": 121220952,
+      "endRva": 121221171,
+      "sha256": "6e7378d338e32b67c97047c9e81297b151a08a66b884e168268b697aee999780",
+      "boundary": "complete selected canonical shared unwind range including cold initializers and diagnostic paths"
+    },
+    {
+      "owner": "state",
+      "startRva": 104235232,
+      "endRva": 104235478,
+      "sha256": "97e42e2b0d3a1a967c066517514bb53f6242783b5a6b8f71803d253a944060aa",
+      "boundary": "complete selected canonical shared unwind range including cold initializers and diagnostic paths"
+    },
+    {
+      "owner": "state",
+      "startRva": 121271766,
+      "endRva": 121271812,
+      "sha256": "c6231c7c8a1b75f64a3d947f6e04281a8f6926cfe642b8f1483e7dcb92ec3c3a",
+      "boundary": "complete selected canonical shared unwind range including cold initializers and diagnostic paths"
+    }
+  ],
+  "contextClaims": [
+    {
+      "definition": 1640,
+      "isMethod": false,
+      "token": 33556073,
+      "image": "Gameplay.Beyond.dll",
+      "typeName": "Beyond.Gameplay.StateMachine`2",
+      "methodName": null,
+      "start": 208,
+      "count": 39,
+      "entries": [
+        {
+          "relativeSlot": 26,
+          "moduleEntryIndex": 234,
+          "entryVa": 6676664640,
+          "rawHex": "0300000000000000A4FC748F01000000",
+          "kind": 3,
+          "index": 49257,
+          "methodSpec": [
+            403977,
+            2741,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "ContainsKey",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMState`1<VAR[69]>",
+              "typePointerVa": 6704727240,
+              "rawHex": "58EB0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMState`1",
+                "typePointerVa": 6719798416,
+                "rawHex": "69060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 27,
+          "moduleEntryIndex": 235,
+          "entryVa": 6676664656,
+          "rawHex": "0300000000000000FCFC748F01000000",
+          "kind": 3,
+          "index": 49259,
+          "methodSpec": [
+            403970,
+            2741,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "get_Item",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMState`1<VAR[69]>",
+              "typePointerVa": 6704727240,
+              "rawHex": "58EB0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMState`1",
+                "typePointerVa": 6719798416,
+                "rawHex": "69060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 30,
+          "moduleEntryIndex": 238,
+          "entryVa": 6676664704,
+          "rawHex": "0300000000000000ECFC748F01000000",
+          "kind": 3,
+          "index": 154153,
+          "methodSpec": [
+            6921,
+            734,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMState`1",
+          "methodName": "AddTransition",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 31,
+          "moduleEntryIndex": 239,
+          "entryVa": 6676664720,
+          "rawHex": "0300000000000000E4FC748F01000000",
+          "kind": 3,
+          "index": 49262,
+          "methodSpec": [
+            403971,
+            2742,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.Dictionary`2",
+          "methodName": "set_Item",
+          "classArguments": [
+            {
+              "name": "VAR[69]",
+              "typePointerVa": 6718830304,
+              "rawHex": "45000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 69,
+                "parameterOffset": 53844808,
+                "parameterRawHex": "3E000000784604002800010000000000",
+                "containerIndex": 62,
+                "containerOffset": 54263900,
+                "containerRawHex": "68060000020000000000000045000000",
+                "typeIndex": 1640,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.StateMachine`2"
+              }
+            },
+            {
+              "name": "Beyond.Gameplay.FSMTransition`1<VAR[69]>",
+              "typePointerVa": 6704727256,
+              "rawHex": "C8EC0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMTransition`1",
+                "typePointerVa": 6719798464,
+                "rawHex": "6B060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 734,
+              "classArguments": [
+                {
+                  "name": "VAR[69]",
+                  "typePointerVa": 6718830304,
+                  "rawHex": "45000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 69,
+                    "parameterOffset": 53844808,
+                    "parameterRawHex": "3E000000784604002800010000000000",
+                    "containerIndex": 62,
+                    "containerOffset": 54263900,
+                    "containerRawHex": "68060000020000000000000045000000",
+                    "typeIndex": 1640,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.StateMachine`2"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        }
+      ],
+      "selectedSlots": [
+        26,
+        27,
+        30,
+        31
+      ]
+    },
+    {
+      "definition": 1641,
+      "isMethod": false,
+      "token": 33556074,
+      "image": "Gameplay.Beyond.dll",
+      "typeName": "Beyond.Gameplay.FSMState`1",
+      "methodName": null,
+      "start": 247,
+      "count": 17,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 247,
+          "entryVa": 6676664848,
+          "rawHex": "020000000000000054FC748F01000000",
+          "kind": 2,
+          "index": 235395,
+          "type": {
+            "name": "System.Collections.Generic.List`1<Beyond.Gameplay.FSMTransition`1<VAR[71]>>",
+            "typePointerVa": 6704692072,
+            "rawHex": "68F10B91010000000000150000000000",
+            "definition": {
+              "name": "System.Collections.Generic.List`1",
+              "typePointerVa": 6719647168,
+              "rawHex": "4D0D0100000000000000120000000000"
+            },
+            "classInstantiationIndex": 18687,
+            "classArguments": [
+              {
+                "name": "Beyond.Gameplay.FSMTransition`1<VAR[71]>",
+                "typePointerVa": 6705064600,
+                "rawHex": "E8EC0E91010000000000150000000000",
+                "definition": {
+                  "name": "Beyond.Gameplay.FSMTransition`1",
+                  "typePointerVa": 6719798464,
+                  "rawHex": "6B060000000000000000120000000000"
+                },
+                "classInstantiationIndex": 714,
+                "classArguments": [
+                  {
+                    "name": "VAR[71]",
+                    "typePointerVa": 6718829248,
+                    "rawHex": "47000000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 71,
+                      "parameterOffset": 53844840,
+                      "parameterRawHex": "3F000000784604002A00010000000000",
+                      "containerIndex": 63,
+                      "containerOffset": 54263916,
+                      "containerRawHex": "69060000010000000000000047000000",
+                      "typeIndex": 1641,
+                      "ordinal": 0,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.Gameplay.FSMState`1"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "typeName": "System.Collections.Generic.List`1<Beyond.Gameplay.FSMTransition`1<VAR[71]>>"
+        },
+        {
+          "relativeSlot": 2,
+          "moduleEntryIndex": 249,
+          "entryVa": 6676664880,
+          "rawHex": "020000000000000048FC748F01000000",
+          "kind": 2,
+          "index": 34025,
+          "type": {
+            "name": "Beyond.Gameplay.FSMTransition`1<VAR[71]>",
+            "typePointerVa": 6705064600,
+            "rawHex": "E8EC0E91010000000000150000000000",
+            "definition": {
+              "name": "Beyond.Gameplay.FSMTransition`1",
+              "typePointerVa": 6719798464,
+              "rawHex": "6B060000000000000000120000000000"
+            },
+            "classInstantiationIndex": 714,
+            "classArguments": [
+              {
+                "name": "VAR[71]",
+                "typePointerVa": 6718829248,
+                "rawHex": "47000000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 71,
+                  "parameterOffset": 53844840,
+                  "parameterRawHex": "3F000000784604002A00010000000000",
+                  "containerIndex": 63,
+                  "containerOffset": 54263916,
+                  "containerRawHex": "69060000010000000000000047000000",
+                  "typeIndex": 1641,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.Gameplay.FSMState`1"
+                }
+              }
+            ]
+          },
+          "typeName": "Beyond.Gameplay.FSMTransition`1<VAR[71]>"
+        },
+        {
+          "relativeSlot": 3,
+          "moduleEntryIndex": 250,
+          "entryVa": 6676664896,
+          "rawHex": "030000000000000044FC748F01000000",
+          "kind": 3,
+          "index": 154286,
+          "methodSpec": [
+            6930,
+            714,
+            -1
+          ],
+          "typeName": "Beyond.Gameplay.FSMTransition`1",
+          "methodName": ".ctor",
+          "classArguments": [
+            {
+              "name": "VAR[71]",
+              "typePointerVa": 6718829248,
+              "rawHex": "47000000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 71,
+                "parameterOffset": 53844840,
+                "parameterRawHex": "3F000000784604002A00010000000000",
+                "containerIndex": 63,
+                "containerOffset": 54263916,
+                "containerRawHex": "69060000010000000000000047000000",
+                "typeIndex": 1641,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.Gameplay.FSMState`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 4,
+          "moduleEntryIndex": 251,
+          "entryVa": 6676664912,
+          "rawHex": "03000000000000009CFC748F01000000",
+          "kind": 3,
+          "index": 228764,
+          "methodSpec": [
+            404119,
+            18687,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1",
+          "methodName": "Add",
+          "classArguments": [
+            {
+              "name": "Beyond.Gameplay.FSMTransition`1<VAR[71]>",
+              "typePointerVa": 6705064600,
+              "rawHex": "E8EC0E91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.FSMTransition`1",
+                "typePointerVa": 6719798464,
+                "rawHex": "6B060000000000000000120000000000"
+              },
+              "classInstantiationIndex": 714,
+              "classArguments": [
+                {
+                  "name": "VAR[71]",
+                  "typePointerVa": 6718829248,
+                  "rawHex": "47000000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 71,
+                    "parameterOffset": 53844840,
+                    "parameterRawHex": "3F000000784604002A00010000000000",
+                    "containerIndex": 63,
+                    "containerOffset": 54263916,
+                    "containerRawHex": "69060000010000000000000047000000",
+                    "typeIndex": 1641,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.FSMState`1"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        }
+      ],
+      "selectedSlots": [
+        0,
+        2,
+        3,
+        4
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Canonical compiled generic identities, complete selected machine/state AddTransition instruction schedules including cold branches, physical from/to/priority/checker writes and static context declarations.",
+      "Validated typed constructor request callee joins canonical machine AddTransition; physical writer offsets join validated executor/condition reader offsets."
+    ],
+    "conditional": [
+      "Dictionary Contains/GetItem/set_Item, allocator/type resolver, static-context initializers, collection insertion requests and barriers have opaque effects and normal Win64 return premises.",
+      "Runtime RGCTX values and helper results are explicit independent inputs; post-helper heap reads are not equated."
+    ],
+    "unresolved": [
+      "Runtime closed Center instance identity, allocator nominal type, initialized MethodInfo, dictionary/list implementation effects, callback selection, object lifetime and capture writer attribution."
+    ]
+  }
+}

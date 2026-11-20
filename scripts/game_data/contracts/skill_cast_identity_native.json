@@ -1,0 +1,506 @@
+{
+  "schema": "endfield.skill-cast-identity-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "conditional original normal-return field stores and local selected caller sites; normal ABI-preserved register premise, no global counter uniqueness/concurrency/lifetime/request-delivery proof",
+  "fields": [
+    {
+      "id": "ability",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_ability",
+      "valueType": "Beyond.Gameplay.Core.Ability",
+      "ordinaryKind": 18,
+      "offset": 48
+    },
+    {
+      "id": "source",
+      "type": "Beyond.Gameplay.Core.Ability",
+      "name": "<sourceSkill>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "offset": 80
+    },
+    {
+      "id": "id",
+      "type": "Beyond.Gameplay.Core.Ability",
+      "name": "skillCastId",
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "offset": 88
+    },
+    {
+      "id": "origin",
+      "type": "Beyond.Gameplay.Core.Ability",
+      "name": "castOriginSkill",
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "offset": 96
+    },
+    {
+      "id": "cost",
+      "type": "Beyond.Gameplay.Core.Ability",
+      "name": "nonReturnedAtbCost",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 104
+    },
+    {
+      "id": "inputId",
+      "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "name": "skillCastId",
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "offset": 16
+    },
+    {
+      "id": "inputOrigin",
+      "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "name": "originSkill",
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "offset": 24
+    },
+    {
+      "id": "inputCost",
+      "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "name": "nonReturnedAtbCost",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 32
+    }
+  ],
+  "methods": [
+    {
+      "id": "assign",
+      "identity": [
+        58615,
+        "Beyond.Gameplay.Core.Ability",
+        "AssignSkillCastInfo",
+        106747296
+      ]
+    },
+    {
+      "id": "skillInit",
+      "identity": [
+        58692,
+        "Beyond.Gameplay.Core.Skill",
+        "_Init",
+        90515456
+      ]
+    },
+    {
+      "id": "refresh",
+      "identity": [
+        58700,
+        "Beyond.Gameplay.Core.Skill",
+        "_DoRefreshRuntimeData",
+        90516112
+      ]
+    },
+    {
+      "id": "abilityInit",
+      "identity": [
+        58611,
+        "Beyond.Gameplay.Core.Ability",
+        "Init",
+        92943792
+      ]
+    },
+    {
+      "id": "before",
+      "identity": [
+        58617,
+        "Beyond.Gameplay.Core.Ability",
+        "BeforeCast",
+        97649744
+      ]
+    },
+    {
+      "id": "tryCast",
+      "identity": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ]
+    },
+    {
+      "id": "abilityCtor",
+      "identity": [
+        58610,
+        "Beyond.Gameplay.Core.Ability",
+        ".ctor",
+        90515056
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "assign",
+      "startRva": 106747296,
+      "endRva": 106747464,
+      "sha256": "c94e4f3315f9f0a0c71a7c59f140ea350cc87f7267a928dbb2a3dfd8256b24f2",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "assign",
+      "startRva": 124803804,
+      "endRva": 124803844,
+      "sha256": "8b47c6d07a32829220b737e85c2d2153331e1035b06531a95cec6693f413afe0",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "skillInit",
+      "startRva": 90515456,
+      "endRva": 90515492,
+      "sha256": "c73517ec9590865a5c15ddc28c6cf5828b3e29cef94d1f2dc7db04827b6c5b8f",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "skillInit",
+      "startRva": 90515492,
+      "endRva": 90515687,
+      "sha256": "228dc72a3f56476643eb7da31d2ba04a4964649594a453b195651b802a9cc1dc",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "skillInit",
+      "startRva": 90515687,
+      "endRva": 90515693,
+      "sha256": "b9b14c82b7a3be6a7a463d7b10fda89cb2e6710757bdb66397a72e9bbc372a97",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "skillInit",
+      "startRva": 90515693,
+      "endRva": 90516109,
+      "sha256": "d309a689436fb19d23489baedc95208e4a0c119dbb4570ab2f2ba113a8e64076",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "skillInit",
+      "startRva": 120675438,
+      "endRva": 120675475,
+      "sha256": "6a33950d7771aca70176459e6bb52af2b23418398467b0ef53b8252f12e3feaa",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 90516112,
+      "endRva": 90516148,
+      "sha256": "a3b36dbfb10c6f4057fd0568e6d707a88e25f761fa31e6319b5e7f50806db4a3",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 90516148,
+      "endRva": 90516319,
+      "sha256": "d9619d4e693d12bf410f3505e01816ebbcada16a658af1fe1216eb6c846d7b18",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 90516319,
+      "endRva": 90516325,
+      "sha256": "9667a65fa9fcd422997054c459d7dc5ef772caf643d2919ba96ded1b69752224",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 90516325,
+      "endRva": 90516331,
+      "sha256": "e1d93e790b99b8bea98f11f64b354ca4168965c172e48b40766ce1e866c82abf",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 122855300,
+      "endRva": 122855341,
+      "sha256": "ffc4cf769ea1a01ffbe720581b58bcc748b18d6e678030faf15b92dcd5a1e783",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 122855341,
+      "endRva": 122855745,
+      "sha256": "b1f4260303ae493411db12d5a58cbbe37101e2dc21e92458c7fcc3a317acca0b",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityInit",
+      "startRva": 92943792,
+      "endRva": 92943843,
+      "sha256": "cf16f9f50bac52a3bc6f96a623da38a5c6713d2e1a84d1ef097d8cdf47616d49",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityInit",
+      "startRva": 92943843,
+      "endRva": 92944159,
+      "sha256": "0cab0109809a1f04193306fdff211b67dafc4bbbba7e2f7d476218fe2aed0958",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityInit",
+      "startRva": 92944159,
+      "endRva": 92944175,
+      "sha256": "eaa62004cbdf81cf4114b29e32af00d947239085cd5188dc599215e5d93639df",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityInit",
+      "startRva": 92944175,
+      "endRva": 92944181,
+      "sha256": "2bd5960f874c6724988a4891b9a66a7cc79f2f1118d63e21a7cc6056c7cfaa0c",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityInit",
+      "startRva": 123244034,
+      "endRva": 123244090,
+      "sha256": "11994337489e1e1abe7de19e143c61336fbe08a39fcea5c1e5373347310653ca",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "before",
+      "startRva": 97649744,
+      "endRva": 97649901,
+      "sha256": "8736cc7d3cc0a250cb2368abea65df438382e5756314d9f9b30b08f09eddd28f",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "before",
+      "startRva": 123785902,
+      "endRva": 123785942,
+      "sha256": "2392a35be30d4fe78d17f2c9d74a4fdd72c3344627f9523a3f51d4a18f492c93",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97661296,
+      "endRva": 97661466,
+      "sha256": "91b3a5b8ec6a07b048af440ad8e87502e48e9abb63aed741ad4d1ef500f1337b",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97661466,
+      "endRva": 97667981,
+      "sha256": "6edac93db9505af0e4b1eff57ef2d8e0c16f40794b159f71762b6f54bc34b9c9",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97667981,
+      "endRva": 97668156,
+      "sha256": "32cdce0df19a6d6223db2abb2ee96d9dae17f9328559c06af6b6ee03d23ec22f",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "abilityCtor",
+      "startRva": 90515056,
+      "endRva": 90515316,
+      "sha256": "31c2fb307892ff6e800a0a06b49a871e024bc8aeaf72fe96412b50485a2b2567",
+      "boundary": "complete selected unwind family interval"
+    },
+    {
+      "owner": "barrier",
+      "startRva": 1065824,
+      "endRva": 1065890,
+      "sha256": "232e54365cd35e2e0d781c1472f6a506511875eaa5425f3a5687a54fca6ec5f8",
+      "boundary": "closed leaf helper through all conditional/retry paths to RET"
+    }
+  ],
+  "spans": [
+    {
+      "id": "assignCapture",
+      "owner": "assign",
+      "rva": 106747309,
+      "hex": "488bd94c8bd2488b48484885c90f851c851301"
+    },
+    {
+      "id": "assignGuard",
+      "owner": "assign",
+      "rva": 106747328,
+      "hex": "833a00754e"
+    },
+    {
+      "id": "zero",
+      "owner": "assign",
+      "rva": 106747333,
+      "hex": "488b052418090a83b8e0000000007462488b80b80000008b08894b58488b150818090a488b82b80000008b08ffc18908488d4b60488b435048894360e85a6db3f9c74368000000004883c4205bc3"
+    },
+    {
+      "id": "copy",
+      "owner": "assign",
+      "rva": 106747411,
+      "hex": "8b02488d4b60894358488b420848894360e8376db3f9458b4a1044894b684883c4205bc3"
+    },
+    {
+      "id": "zeroInit",
+      "owner": "assign",
+      "rva": 106747447,
+      "hex": "488bc8e8a18fa4f9488b05aa17090aeb8d"
+    },
+    {
+      "id": "skillAbilityStore",
+      "owner": "skillInit",
+      "rva": 90515507,
+      "hex": "488bf84885c00f843402000033d2488bc8e827feffff488d4b3048897b30e80a1babfa"
+    },
+    {
+      "id": "refreshReceiver",
+      "owner": "refresh",
+      "rva": 90516169,
+      "hex": "488b4318488b4b304885c00f848b0000004885c90f84820000004c8b8bc8000000488bd34c8b80c000000048c744242000000000e8ae0a2500"
+    },
+    {
+      "id": "abilitySourceStore",
+      "owner": "abilityInit",
+      "rva": 92943839,
+      "hex": "488d4b5048897c24504c895350e86f0d86fa"
+    },
+    {
+      "id": "beforeReceiver",
+      "owner": "tryCast",
+      "rva": 97665711,
+      "hex": "4885db0f84f20800004533c0488bd0488bcbe88ac1ffff"
+    },
+    {
+      "id": "abilityCapture",
+      "owner": "abilityInit",
+      "rva": 92943814,
+      "hex": "488bd9498bf1498be84c8bd2488b48484885c90f852358ce01488d4b5048897c24504c895350"
+    },
+    {
+      "id": "barrier",
+      "owner": "barrier",
+      "rva": 1065824,
+      "hex": "833dc9a06111004c8bc1743549c1e80c488d0da1d63b114181e0ffff1f00418bc048c1e8064183e03f488d14c10f0d0a488b02488bc84c0fabc1f0480fb10a75efc3"
+    },
+    {
+      "id": "assignReceiver",
+      "owner": "tryCast",
+      "rva": 97663067,
+      "hex": "488b4f304885c90f8425130000488b55684533c0e82c9d8a00"
+    }
+  ],
+  "inputHeaderBytes": 16,
+  "rules": {
+    "originalPathOnly": true,
+    "nonzeroInputIdCopiesIdOriginAndCostBits": true,
+    "zeroInputIdReadsCounterThenRequestsWrappingIncrement": true,
+    "zeroInputOriginUsesSourceSkill": true,
+    "zeroInputCostBits": 0,
+    "counterBits": 32,
+    "counterIndependentlyReloadedForIncrement": true,
+    "nominalCounterFieldProved": true,
+    "writeBarrierPreservesR10OnNormalReturn": true,
+    "counterAtomicIncrementProved": false,
+    "globalCastIdUniquenessProved": false,
+    "abilityPointerOrUidIsCastOccurrence": false,
+    "skillAbilityAndSourceSkillConditionalBacklink": false,
+    "abilityInitStoresSourceSkill": true,
+    "carrierContinuityRequired": [
+      "Skill RBX at allocation/store fragment",
+      "Skill RBX at fresh-refresh fragment",
+      "selected Skill RDI and preserved RBX between TryCast fragments"
+    ],
+    "freshRefreshPathOnly": true,
+    "beforeCastCallerIsSelectedTryCastSkill": true,
+    "requestDeliveryProved": false,
+    "unobservedCallerAboveTryCastSkillProved": false,
+    "objectLifetimeProved": false
+  },
+  "operands": {
+    "dispatchOffset": 72,
+    "assignReplacementRva": 124803804,
+    "nonzeroBranchDisp": 78,
+    "counterInfoCellRva": 275115504,
+    "classInitFlagOffset": 224,
+    "classInitBranchDisp": 98,
+    "staticFieldsOffset": 184,
+    "assignFrameBytes": 32,
+    "writeBarrierRva": 1065824,
+    "classInitRva": 91616,
+    "classInitReturnDisp": -115,
+    "skillNullThrowRva": 90516083,
+    "abilityCtorRva": 90515056,
+    "refreshNullThrowRva": 90516325,
+    "skillDataOffset": 24,
+    "skillBlackboardOffset": 200,
+    "actionGroupOffset": 192,
+    "methodInfoStackOffset": 32,
+    "abilityInitSpillOffset": 80,
+    "tryCastNullThrowRva": 97668010,
+    "tryCastEarlyNullThrowRva": 97667981,
+    "skillCastInfoStackDisp": 104,
+    "barrierFlagRva": 292676656,
+    "barrierTableRva": 290200088,
+    "barrierExitDisp": 53,
+    "barrierPageShift": 12,
+    "barrierMask": 2097151,
+    "barrierWordShift": 6,
+    "barrierBitMask": 63,
+    "barrierRetryDisp": -17,
+    "barrierLoopRva": 1065872
+  },
+  "beforeAbilityLoad": {
+    "rva": 97665576,
+    "hex": "488b5f30"
+  },
+  "callerBindings": [
+    {
+      "role": "abilityInit",
+      "returnRva": 90516226,
+      "ownerRole": "refresh",
+      "callSiteRva": 90516221,
+      "targetRole": "abilityInit"
+    },
+    {
+      "role": "beforeCast",
+      "returnRva": 97665734,
+      "ownerRole": "tryCast",
+      "callSiteRva": 97665729,
+      "targetRole": "before"
+    },
+    {
+      "role": "assignCastInfo",
+      "returnRva": 97663092,
+      "ownerRole": "tryCast",
+      "callSiteRva": 97663087,
+      "targetRole": "assign"
+    }
+  ],
+  "typedContexts": {
+    "counter": {
+      "instructionRva": 106747333,
+      "instructionHex": "488B052418090A",
+      "usageCellRva": 275115504,
+      "usageRawHex": "19DE022000000000",
+      "tag": 1,
+      "typeIndex": 93964,
+      "typeName": "Beyond.Gameplay.Core.Ability",
+      "typeRawHex": "C8240000000000000000120000000000"
+    },
+    "allocation": {
+      "instructionRva": 90515485,
+      "instructionHex": "488B0DCCC5000B",
+      "usageCellRva": 275115504,
+      "usageRawHex": "19DE022000000000",
+      "tag": 1,
+      "typeIndex": 93964,
+      "typeName": "Beyond.Gameplay.Core.Ability",
+      "typeRawHex": "C8240000000000000000120000000000"
+    }
+  },
+  "counterField": {
+    "type": "Beyond.Gameplay.Core.Ability",
+    "name": "s_skillCastId",
+    "valueType": "uint",
+    "offset": 0
+  }
+}

@@ -1,0 +1,679 @@
+{
+  "schema": "endfield.skill-action-timing-consumers-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": [
+    {
+      "identity": [
+        61536,
+        "Beyond.Gameplay.Core.HitStopAction",
+        "ExecuteInternal",
+        97384624
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "id": "HitStopAction.ExecuteInternal"
+    },
+    {
+      "identity": [
+        88547,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "StartHitStop",
+        97373008
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "useDirectCurve",
+          "type": "bool"
+        },
+        {
+          "name": "dirCurve",
+          "type": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "duration",
+          "type": "float"
+        },
+        {
+          "name": "attacker",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "targets",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilitySystem>"
+        },
+        {
+          "name": "affectType",
+          "type": "Beyond.Gameplay.Core.HitStopAction+AffectType"
+        },
+        {
+          "name": "priorityTag",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        }
+      ],
+      "id": "TimeDilationManager.StartHitStop"
+    },
+    {
+      "identity": [
+        60319,
+        "Beyond.Gameplay.Core.AllowNextSkillAction",
+        "ExecuteInternal",
+        105193184
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "id": "AllowNextSkillAction.ExecuteInternal"
+    },
+    {
+      "identity": [
+        60320,
+        "Beyond.Gameplay.Core.AllowNextSkillAction",
+        "OnEnd",
+        107180432
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "AllowNextSkillAction.OnEnd"
+    },
+    {
+      "identity": [
+        59608,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddAllowedNextSkillPack",
+        105193424
+      ],
+      "returnType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "parameters": [
+        {
+          "name": "skillList",
+          "type": "System.Collections.Generic.List`1<string>"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.AddAllowedNextSkillPack"
+    },
+    {
+      "identity": [
+        59609,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveAllowedNextSkillPack",
+        107180624
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "pack",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.RemoveAllowedNextSkillPack"
+    },
+    {
+      "identity": [
+        60885,
+        "Beyond.Gameplay.Core.ComboCacheAction",
+        "ExecuteInternal",
+        89505984
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "id": "ComboCacheAction.ExecuteInternal"
+    },
+    {
+      "identity": [
+        60886,
+        "Beyond.Gameplay.Core.ComboCacheAction",
+        "OnEnd",
+        89505744
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "ComboCacheAction.OnEnd"
+    },
+    {
+      "identity": [
+        59606,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddMappingModifier",
+        89507408
+      ],
+      "returnType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "parameters": [
+        {
+          "name": "commandType",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType"
+        },
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "priority",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+Priority"
+        },
+        {
+          "name": "clearSkillRequestOnRemove",
+          "type": "bool"
+        },
+        {
+          "name": "overrideCacheTime",
+          "type": "System.Nullable`1<float>"
+        },
+        {
+          "name": "clearOffsetTargetSkillIdOnRemove",
+          "type": "bool"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.AddMappingModifier"
+    },
+    {
+      "identity": [
+        59607,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveMappingModifier",
+        89508192
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType"
+        },
+        {
+          "name": "instId",
+          "type": "ulong"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.RemoveMappingModifier"
+    },
+    {
+      "identity": [
+        88543,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "StartEntityTimeDilation",
+        95500448
+      ],
+      "returnType": "Beyond.Gameplay.Core.TimeDilationHandle",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.Entity"
+        },
+        {
+          "name": "priority",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "duration",
+          "type": "float"
+        },
+        {
+          "name": "slot",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "scaleCurve",
+          "type": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "componentFilter",
+          "type": "System.Collections.Generic.List`1<System.Type>"
+        },
+        {
+          "name": "ignoreSlotCheck",
+          "type": "bool"
+        }
+      ],
+      "id": "TimeDilationManager.StartEntityTimeDilation"
+    }
+  ],
+  "fields": [
+    {
+      "id": "HitStopAction+Data::affectType",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "affectType",
+      "offset": 32,
+      "valueType": "Beyond.Gameplay.Core.HitStopAction+AffectType",
+      "ordinaryKind": 17
+    },
+    {
+      "id": "HitStopAction+Data::curveKey",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "curveKey",
+      "offset": 40,
+      "valueType": "string",
+      "ordinaryKind": 14
+    },
+    {
+      "id": "HitStopAction+Data::useDirectCurve",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "useDirectCurve",
+      "offset": 48,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "HitStopAction+Data::directCurve",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "directCurve",
+      "offset": 56,
+      "valueType": "UnityEngine.AnimationCurve",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "HitStopAction+Data::duration",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "duration",
+      "offset": 64,
+      "valueType": "float",
+      "ordinaryKind": 12
+    },
+    {
+      "id": "HitStopAction+Data::timeDilationPriority",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "timeDilationPriority",
+      "offset": 68,
+      "valueType": "Beyond.Gameplay.Core.GameplayTag",
+      "ordinaryKind": 17
+    },
+    {
+      "id": "HitStopAction+Data::attacker",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "attacker",
+      "offset": 72,
+      "valueType": "Beyond.Gameplay.Core.TargetSettings",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "HitStopAction+Data::target",
+      "type": "Beyond.Gameplay.Core.HitStopAction+Data",
+      "name": "target",
+      "offset": 80,
+      "valueType": "Beyond.Gameplay.Core.TargetSettings",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "AllowNextSkillAction+Data::allowedSkillIdList",
+      "type": "Beyond.Gameplay.Core.AllowNextSkillAction+Data",
+      "name": "allowedSkillIdList",
+      "offset": 32,
+      "valueType": "System.Collections.Generic.List`1<string>",
+      "ordinaryKind": 21
+    },
+    {
+      "id": "ComboCacheAction+Data::mappingDataList",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data",
+      "name": "mappingDataList",
+      "offset": 32,
+      "valueType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData>",
+      "ordinaryKind": 21
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::cmdType",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "cmdType",
+      "offset": 16,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+      "ordinaryKind": 17
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::skillId",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "skillId",
+      "offset": 24,
+      "valueType": "string",
+      "ordinaryKind": 14
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::cacheEndByAction",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "cacheEndByAction",
+      "offset": 32,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::clearOffsetTargetSkillIdOnEnd",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "clearOffsetTargetSkillIdOnEnd",
+      "offset": 33,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::overrideCacheTime",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "overrideCacheTime",
+      "offset": 34,
+      "valueType": "bool",
+      "ordinaryKind": 2
+    },
+    {
+      "id": "ComboCacheAction+Data+BattleCmdMappingModifierData::cacheTime",
+      "type": "Beyond.Gameplay.Core.ComboCacheAction+Data+BattleCmdMappingModifierData",
+      "name": "cacheTime",
+      "offset": 40,
+      "valueType": "Beyond.Blackboard+BlackboardDouble",
+      "ordinaryKind": 18
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "HitStopAction.ExecuteInternal",
+      "startRva": 97384624,
+      "endRva": 97385823,
+      "sha256": "768E8880EB44DBFDB452E0E21D46DE96D40A67126140C24A79BB284B6D8CB728",
+      "boundary": "Original successful non-null path and operand call block; exceptional cleanup and active iFix paths are not admitted."
+    },
+    {
+      "owner": "TimeDilationManager.StartHitStop",
+      "startRva": 97373008,
+      "endRva": 97373799,
+      "sha256": "737E1F97E716D5120B02018B2D40145C77E58715BC39091FB19586567E19AA99",
+      "boundary": "Original primary affect selection, key-curve lookup path, loop and exit; useDirectCurve=true cold path is not admitted."
+    },
+    {
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "startRva": 105193184,
+      "endRva": 105193344,
+      "sha256": "2E2BFE04FA438D5572E6DD43552E01688CB19E5962E607558017BFC5D1204758",
+      "boundary": "Original named AddAllowedNextSkillPack call; closed Data/list ownership remains unresolved."
+    },
+    {
+      "owner": "AllowNextSkillAction.OnEnd",
+      "startRva": 107180432,
+      "endRva": 107180551,
+      "sha256": "539D607A8A5C22C947DB43A37F8E54E3192FE9820D00F0F4E159FDB6E96E3FE2",
+      "boundary": "Original handle-valid guard and selected removal helper call; handle/source ownership remains unresolved."
+    },
+    {
+      "owner": "AllowNextSkillAction.OnEnd.removeHelper",
+      "startRva": 107180560,
+      "endRva": 107180619,
+      "sha256": "0E491B4DA67810835C539065E7F8076BEBAE0D688AB9DC98ED63A803B80AA60E",
+      "boundary": "Reviewed helper reaches named RemoveAllowedNextSkillPack; execution and handle ownership are separate."
+    },
+    {
+      "owner": "ComboCacheAction.ExecuteInternal",
+      "startRva": 89505984,
+      "endRva": 89506578,
+      "sha256": "87E14378E4DC305B4EDD06BEE02978E9D621CA1CF5C972B634A97CADBEE863D9",
+      "boundary": "Original selected ordinary loop body reaches AddMappingModifier; cache expression and loop selection remain separate."
+    },
+    {
+      "owner": "ComboCacheAction.OnEnd",
+      "startRva": 89505744,
+      "endRva": 89505973,
+      "sha256": "780DBF55E547F67E09955BD0665AB0826A1ADDBB3726BD0A6A761D28EF128508",
+      "boundary": "Original handle traversal reaches selected cleanup helper; not all cleanup conditions are inferred."
+    }
+  ],
+  "closedData": [
+    {
+      "owner": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.HitStopAction+Data>",
+      "field": "m_data",
+      "witness": "Beyond.Gameplay.Core.HitStopAction",
+      "concreteInstanceSuffix": false,
+      "expectedOffset": 32
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ComboCacheAction+Data>",
+      "field": "m_data",
+      "witness": "Beyond.Gameplay.Core.ComboCacheAction",
+      "concreteInstanceSuffix": true,
+      "expectedOffset": 32
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "curveKey",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385644,
+      "hex": "488b5028",
+      "field": "HitStopAction+Data::curveKey",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "useDirectCurve",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385648,
+      "hex": "440fb64030",
+      "field": "HitStopAction+Data::useDirectCurve",
+      "displacementOffset": 4,
+      "displacementSize": 1
+    },
+    {
+      "role": "directCurve",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385653,
+      "hex": "4c8b4838",
+      "field": "HitStopAction+Data::directCurve",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "duration",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385657,
+      "hex": "f30f104040",
+      "field": "HitStopAction+Data::duration",
+      "displacementOffset": 4,
+      "displacementSize": 1
+    },
+    {
+      "role": "affectType",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385662,
+      "hex": "448b5020",
+      "field": "HitStopAction+Data::affectType",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "priorityTag",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385666,
+      "hex": "8b4044",
+      "field": "HitStopAction+Data::timeDilationPriority",
+      "displacementOffset": 2,
+      "displacementSize": 1
+    }
+  ],
+  "flowSpans": [
+    {
+      "role": "ownedThisSave",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97384653,
+      "hex": "4c8bf1"
+    },
+    {
+      "role": "ownedDataLoad",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385631,
+      "hex": "498b4620"
+    },
+    {
+      "role": "requestArgumentBlock",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385631,
+      "hex": "498b46204885c00f84e5000000488b5028440fb640304c8b4838f30f104040448b50208b40444885c90f84be00000048c744244800000000894424404489542438488b44246048894424304c89642428f30f11442420e856ceffff"
+    },
+    {
+      "role": "durationOutgoingStack",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385711,
+      "hex": "f30f11442420"
+    },
+    {
+      "role": "sinkDurationIncoming",
+      "owner": "TimeDilationManager.StartHitStop",
+      "rva": 97373472,
+      "hex": "f30f109c24c0000000"
+    },
+    {
+      "role": "entityRequestBlock",
+      "owner": "TimeDilationManager.StartHitStop",
+      "rva": 97373472,
+      "hex": "f30f109c24c000000033c9448b8424e0000000488b555048894c2440884c243848894c2430498bcd4889442428895c2420e84a6be3ff"
+    },
+    {
+      "role": "calleePrologue",
+      "owner": "TimeDilationManager.StartHitStop",
+      "rva": 97373008,
+      "hex": "4c894c24204889542410415441554881ec88000000"
+    }
+  ],
+  "directCalls": [
+    {
+      "role": "hitStopRequest",
+      "owner": "HitStopAction.ExecuteInternal",
+      "rva": 97385717,
+      "hex": "e856ceffff",
+      "target": [
+        88547,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "StartHitStop",
+        97373008
+      ],
+      "opcode": "call"
+    },
+    {
+      "role": "entityTimeDilationRequest",
+      "owner": "TimeDilationManager.StartHitStop",
+      "rva": 97373521,
+      "hex": "e84a6be3ff",
+      "target": [
+        88543,
+        "Beyond.Gameplay.Core.TimeDilationManager",
+        "StartEntityTimeDilation",
+        95500448
+      ],
+      "opcode": "call"
+    },
+    {
+      "role": "allowPackAdd",
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "rva": 105193309,
+      "hex": "e86e000000",
+      "target": [
+        59608,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddAllowedNextSkillPack",
+        105193424
+      ],
+      "opcode": "call"
+    },
+    {
+      "role": "allowPackRemove",
+      "owner": "AllowNextSkillAction.OnEnd.removeHelper",
+      "rva": 107180603,
+      "hex": "e910000000",
+      "target": [
+        59609,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveAllowedNextSkillPack",
+        107180624
+      ],
+      "opcode": "jmp"
+    },
+    {
+      "role": "mappingAdd",
+      "owner": "ComboCacheAction.ExecuteInternal",
+      "rva": 89506363,
+      "hex": "e810040000",
+      "target": [
+        59606,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddMappingModifier",
+        89507408
+      ],
+      "opcode": "call"
+    }
+  ],
+  "affectEnum": {
+    "type": "Beyond.Gameplay.Core.HitStopAction+AffectType",
+    "members": [
+      {
+        "id": 0,
+        "name": "OnlyAttacker"
+      },
+      {
+        "id": 1,
+        "name": "OnlyTarget"
+      },
+      {
+        "id": 2,
+        "name": "Both"
+      }
+    ]
+  },
+  "durationForwarding": {
+    "sourceField": "HitStopAction+Data::duration",
+    "requestMethod": "TimeDilationManager.StartHitStop",
+    "requestParameter": "duration",
+    "requestParameterIndex": 3,
+    "callerOutgoingStackOffset": 32,
+    "calleeEntryStackOffset": 40,
+    "calleePrologueStackBytes": 152,
+    "calleeDurationLoadOffset": 192,
+    "entityMethod": "TimeDilationManager.StartEntityTimeDilation",
+    "entityParameter": "duration",
+    "entityParameterIndex": 2,
+    "entityRegister": "xmm3",
+    "originalPathOnly": true,
+    "calleeKeyCurvePathOnly": true,
+    "actualFrozenDurationProved": false,
+    "intermediateCalleeStackPreservationProved": false,
+    "requiresUnchangedIncomingDurationStack": true,
+    "originalIfixSelectionObserved": false
+  },
+  "rules": {
+    "hitStopDuration": "The original selected HitStopAction call block passes Data.duration Single unchanged to StartHitStop.duration. Its later incoming-stack reload reaches StartEntityTimeDilation.duration conditionally: the incoming duration slot must remain unchanged through intermediate original paths and iFix interception must remain inactive; key-curve lookup must succeed.",
+    "affectSelection": "Only selected AffectType enum identities and forwarded request argument are admitted. The ordinary attacker/target/both selector is a bounded reviewed lead; typed temporary-list additions and complete target/loop ownership are not yet an executable selection rule.",
+    "allowNextSkill": "Original compiled AddAllowedNextSkillPack sink and guarded OnEnd removal helper only; Data/list/handle ownership and effective command acceptance remain unresolved.",
+    "comboCache": "Original selected loop calls AddMappingModifier; complete operand/handle cleanup/cache-expression semantics remain unresolved.",
+    "originalPathOnly": true,
+    "completeControlRecoveryProved": false,
+    "effectiveCacheDurationProved": false,
+    "simultaneousBothFreezeProved": false,
+    "affectSelectionCompiledProved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Selected pair, named signatures/field identities, reviewed bounded original windows, typed closed HitStop and ComboCache Data slots, duration/source operands and selected direct sinks.",
+    "direct": "HitStopAction Data.duration to the named StartHitStop duration argument on the reviewed original call block; not actual clock progression or final pause duration.",
+    "conditional": "The StartHitStop incoming duration stack slot must remain unchanged through intervening paths before its later reload/StartEntityTimeDilation call; preservation and original iFix selection are not observed. Key-curve lookup success is required. Attacker/target resolution, normalization and selection remain conditions. Named cache/allow sinks alone do not prove stored operands or input acceptance.",
+    "unresolved": "Direct-curve cold path, full target/loop ownership, time dilation merge/slot/component rules, active iFix, actual both-side freezing, effective command cache/cancel/recovery windows."
+  },
+  "localEdges": [
+    {
+      "role": "allowOnEndToRemovalHelper",
+      "owner": "AllowNextSkillAction.OnEnd",
+      "rva": 107180529,
+      "hex": "e81a000000",
+      "targetOwner": "AllowNextSkillAction.OnEnd.removeHelper"
+    }
+  ]
+}

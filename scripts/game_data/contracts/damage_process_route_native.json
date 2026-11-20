@@ -1,0 +1,292 @@
+{
+  "schema": "endfield.damage-process-route-native-contract.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "methods": [
+    {
+      "key": "process",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "rva": "0x55f4f70",
+      "return": "bool",
+      "static": false,
+      "parameters": [
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "Beyond.Gameplay.Core.TargetHandleView",
+        "Beyond.Gameplay.Core.BattleTargetWrapper",
+        "bool",
+        "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+        "Beyond.Gameplay.Core.CalcResult"
+      ]
+    },
+    {
+      "key": "pack",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "GetFinalAttackValue",
+      "rva": "0x5354f50",
+      "return": "double",
+      "static": false,
+      "parameters": []
+    },
+    {
+      "key": "usesRaw",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "UsesRawDamageValue",
+      "rva": "0x295d380",
+      "return": "bool",
+      "static": true,
+      "parameters": [
+        "Beyond.GEnums.DamageType"
+      ]
+    },
+    {
+      "key": "healthGetter",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_healthType",
+      "rva": "0x53556f0",
+      "return": "Beyond.Gameplay.Core.HealthType",
+      "static": false,
+      "parameters": []
+    },
+    {
+      "key": "defHelper",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "_GetDefResistanceValue",
+      "rva": "0x5354e80",
+      "return": "double",
+      "static": true,
+      "parameters": [
+        "Beyond.Gameplay.Core.DamagePackData"
+      ]
+    },
+    {
+      "key": "efficiency",
+      "type": "Beyond.Cfg.Tables+BattleConst",
+      "method": "get_efficiencyOfDEF",
+      "rva": "0x53552a0",
+      "return": "float",
+      "static": false,
+      "parameters": []
+    }
+  ],
+  "windows": [
+    {
+      "name": "packCall",
+      "rva": "0x55f646b",
+      "byteCount": 15,
+      "sha256": "3dfd22039f336fd30b738d9b8931141684b94e95316e0a5985b1348c4b2f6bfc"
+    },
+    {
+      "name": "processBranches",
+      "rva": "0x55f647a",
+      "byteCount": 104,
+      "sha256": "67b148f8ab360e0d8f750bc87abc484ba77aaafa372846d3a43257ae93f1190a"
+    },
+    {
+      "name": "usesRaw",
+      "rva": "0x295d380",
+      "byteCount": 58,
+      "sha256": "b791df462be32f2ee8af78adb57352f4088e306a9ce3425ece6d0c247322b944"
+    },
+    {
+      "name": "healthPredicate",
+      "rva": "0x53556a0",
+      "byteCount": 69,
+      "sha256": "f760f9bf125d460e18c000b7a5c65a45218464f0ba2cccf58ca5e1c9217b6d09"
+    },
+    {
+      "name": "healthPredicateCold",
+      "rva": "0x74a93ce",
+      "byteCount": 37,
+      "sha256": "611311ca93da2c1057e235b3bf1e878a236ca884d1943fbadec051f1c83aec9c"
+    },
+    {
+      "name": "healthGetter",
+      "rva": "0x53556f0",
+      "byteCount": 53,
+      "sha256": "8b1bfb52d7148a22ba942df2a3d308db58575999576167eecb06d98511c5ae4a"
+    },
+    {
+      "name": "healthGetterCold",
+      "rva": "0x74a93f4",
+      "byteCount": 37,
+      "sha256": "59345a92d8794e892b4739d77acda0b7c2b7aa8cd3f3e4e635e6727a657e773e"
+    },
+    {
+      "name": "processDefCall",
+      "rva": "0x55f655b",
+      "byteCount": 15,
+      "sha256": "cfd1c7a13d7d036c1af0c96f31e9fa255ac4e69f9e2ded1e236c09a7204514d9"
+    },
+    {
+      "name": "defEfficiencyCall",
+      "rva": "0x5354efa",
+      "byteCount": 10,
+      "sha256": "fa89022a9d086e93703c93cd9bf18f8b412293b603d6be21817535f3a37180fc"
+    },
+    {
+      "name": "postDefToSelector",
+      "rva": "0x55f656a",
+      "byteCount": 166,
+      "sha256": "5af48d7ea2ca6b780bf1ac6e6427ac8a5c99bd3bfe6c18940f385d36d56ddf1a"
+    },
+    {
+      "name": "alternativeResultMerge",
+      "rva": "0x55f68e9",
+      "byteCount": 201,
+      "sha256": "8517d40f77b92b3bb5d414818a4e69173be724e59f0cf0dc8d58216f352aa64f"
+    },
+    {
+      "name": "factorSelectorRootAndTable",
+      "rva": "0x55f6610",
+      "byteCount": 28,
+      "sha256": "0b335d3598ba8eee005c8be44420c4f83fe0ad13ca4b40103d46ef499c3fa433"
+    }
+  ],
+  "literals": [],
+  "fields": [
+    {
+      "field": "Beyond.Gameplay.Core.DamagePackData::defender",
+      "type": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "offset": 40
+    },
+    {
+      "field": "Beyond.Gameplay.Core.DamagePackData::damageType",
+      "type": "Beyond.GEnums.DamageType",
+      "offset": 72
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::<data>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystemData",
+      "offset": 576
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystemData::healthType",
+      "type": "Beyond.Gameplay.Core.HealthType",
+      "offset": 216
+    }
+  ],
+  "enums": [
+    {
+      "type": "Beyond.Gameplay.Core.HealthType",
+      "members": {
+        "Normal": 0,
+        "Independent": 1
+      }
+    },
+    {
+      "type": "Beyond.GEnums.DamageType",
+      "members": {
+        "Physical": 0,
+        "Real": 1,
+        "Fire": 2,
+        "Pulse": 3,
+        "Cryst": 4,
+        "LifeDrain": 5,
+        "Natural": 6,
+        "Ether": 7,
+        "Fixed": 8
+      }
+    }
+  ],
+  "calls": [
+    {
+      "name": "processPack",
+      "rva": "0x55f6475",
+      "returnRva": "0x55f647a",
+      "target": "pack"
+    },
+    {
+      "name": "processUsesRaw",
+      "rva": "0x55f64d5",
+      "returnRva": "0x55f64da",
+      "target": "usesRaw"
+    },
+    {
+      "name": "processDef",
+      "rva": "0x55f6565",
+      "returnRva": "0x55f656a",
+      "target": "defHelper"
+    },
+    {
+      "name": "defEfficiency",
+      "rva": "0x5354eff",
+      "returnRva": "0x5354f04",
+      "target": "efficiency"
+    }
+  ],
+  "joins": {
+    "framePackOffset": 832,
+    "boxedHeaderBytes": 16,
+    "packArgumentLeaRva": "0x55f646d",
+    "defenderArgumentLeaRva": "0x55f6497",
+    "damageTypeLoadRva": "0x55f64ce",
+    "specialCallRva": "0x55f64bf",
+    "specialPredicateRva": "0x53556a0",
+    "specialDefaultDataLoadOffset": 29,
+    "specialDefaultHealthLoadOffset": 41,
+    "specialIndependentCompareOffset": 47,
+    "specialRootLoadOffset": 9,
+    "specialTableLoadOffset": 16,
+    "specialColdRva": "0x74a93ce",
+    "healthGetterRootLoadOffset": 4,
+    "healthGetterTableLoadOffset": 11,
+    "healthGetterColdRva": "0x74a93f4",
+    "healthTableOffset": 72,
+    "healthFunctionOffset": 20656,
+    "usesRawRootLoadOffset": 0,
+    "usesRawTableOffset": 80,
+    "usesRawFunctionOffset": 2032,
+    "usesRawDefaultOffset": 43,
+    "usesRawTrueCodes": [
+      5,
+      8
+    ],
+    "skipBranches": [
+      {
+        "name": "independentHealth",
+        "rva": "0x55f64c6",
+        "targetRva": "0x55f6989"
+      },
+      {
+        "name": "rawDamage",
+        "rva": "0x55f64dc",
+        "targetRva": "0x55f68e9"
+      }
+    ],
+    "healthGetterDefaultDataLoadOffset": 24,
+    "healthGetterDefaultHealthLoadOffset": 36,
+    "healthGetterRestoreOffset": 42,
+    "factorSelectorRva": "0x55f6610",
+    "factorTableOffset": 80,
+    "alternativeMerge": {
+      "mergeRva": "0x55f69b2",
+      "rawJumpRva": "0x55f6987",
+      "specialLastLoadRva": "0x55f69a8",
+      "specialLastLoadBytes": "f2440f10842470030000"
+    }
+  },
+  "facts": {
+    "packMarker": "A retained normal Pack pair whose actual return address equals processPack.returnRva witnesses that original Process call fragment, under unchanged selected native code and normal Win64 call/return; it does not establish entry-guard selection for every earlier instruction.",
+    "defaultRawPredicate": "Only the selected original UsesRawDamageValue path returns damageType in usesRawTrueCodes. A replacement tail-call can return another Bool.",
+    "defaultSpecialPredicate": "The outlined predicate uses the same root/table/function selection as named AbilitySystem.get_healthType, then compares the resulting HealthType with Independent. The original getter reads defender.data.healthType; its replacement may supply another enum value.",
+    "availableInputs": [
+      "Captured Pack.damageType at its own entry/return boundaries; equality there does not prove unchanged later local Pack storage.",
+      "Observed Pack direct caller/return and later efficiency-getter/helper-internal caller plus post-merge Modifier observations."
+    ],
+    "missingInputs": [
+      "Actual defender.data reference and live healthType at the predicate, or actual getter result. A stored Rodin data-row value needs a separate binding to that live defender.data.",
+      "Runtime UsesRaw and health getter replacement selection/results. Factor table snapshots cover only their own boundaries; health uses another table family.",
+      "The efficiency-getter caller identifies its Def helper body, not the incoming Process callsite of that helper; provider/replacement re-entry remains possible."
+    ],
+    "selectorDominatedByObservedPackMarker": false,
+    "whyNotDominated": "The authenticated branch destinations and raw-result jump/special-result fallthrough support a bounded reading of alternatives merging after the selector. This is not an exhaustive CFG/dominance theorem or a dynamic branch admission; later Modifier production does not identify the earlier branch.",
+    "writerContinuity": "No native setter ownership, writer completeness, reader lock or noninterference theorem is proved here. Boundary-null equality does not rule out publication/restoration between snapshots.",
+    "boundary": "Authenticated reviewed raw windows, metadata fields/enums, argument joins and branch destinations only; no full Process CFG, live branch selection, historical patch state or selector value is asserted.",
+    "selectorFamilies": "UsesRaw and factor selectors load the same runtime root and table family; the health getter/predicate load the same root with a distinct table family. Boundary snapshots of the factor family do not observe health-family replacement selection."
+  }
+}

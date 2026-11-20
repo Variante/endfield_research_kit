@@ -1,0 +1,647 @@
+{
+  "schema": "endfield.skill-pending-storage-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "dependencies": {
+    "pending": "skill_pending_cast_native.json",
+    "player": "skill_player_command_native.json"
+  },
+  "completeFieldSets": [
+    {
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "parent": "Beyond.Gameplay.AIClassPool",
+      "fields": [
+        {
+          "name": "castType",
+          "valueType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData+CastType",
+          "ordinaryKind": 17
+        },
+        {
+          "name": "entity",
+          "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.Entity>",
+          "ordinaryKind": 21
+        },
+        {
+          "name": "inputData",
+          "valueType": "Beyond.Gameplay.Core.SkillCastInputData",
+          "ordinaryKind": 17
+        },
+        {
+          "name": "casting",
+          "valueType": "bool",
+          "ordinaryKind": 2
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.AIClassPool",
+      "parent": "object",
+      "fields": [
+        {
+          "name": "<poolDestroyTime>k__BackingField",
+          "valueType": "float",
+          "ordinaryKind": 12
+        },
+        {
+          "name": "<inPool>k__BackingField",
+          "valueType": "bool",
+          "ordinaryKind": 2
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "parent": "",
+      "fields": []
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "parent": "System.ValueType",
+      "fields": [
+        {
+          "name": "skillId",
+          "valueType": "string",
+          "ordinaryKind": 14
+        },
+        {
+          "name": "targetHandle",
+          "valueType": "Beyond.Gameplay.Core.TargetHandle",
+          "ordinaryKind": 18
+        },
+        {
+          "name": "skillEndCallback",
+          "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+          "ordinaryKind": 21
+        },
+        {
+          "name": "afterCastStartCallback",
+          "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+          "ordinaryKind": 21
+        },
+        {
+          "name": "onExclusiveTimeCallback",
+          "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+          "ordinaryKind": 21
+        },
+        {
+          "name": "skillCastInfo",
+          "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+          "ordinaryKind": 17
+        },
+        {
+          "name": "skipApplyCost",
+          "valueType": "bool",
+          "ordinaryKind": 2
+        },
+        {
+          "name": "castSkillOptionsOverride",
+          "valueType": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+          "ordinaryKind": 21
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "parent": "System.ValueType",
+      "fields": [
+        {
+          "name": "skillCastId",
+          "valueType": "uint",
+          "ordinaryKind": 9
+        },
+        {
+          "name": "originSkill",
+          "valueType": "Beyond.Gameplay.Core.Skill",
+          "ordinaryKind": 18
+        },
+        {
+          "name": "nonReturnedAtbCost",
+          "valueType": "float",
+          "ordinaryKind": 12
+        }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "id": "list",
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem",
+      "name": "m_pendingComboSkills",
+      "valueType": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.CharacterSkillSystem+SkillData>",
+      "ordinaryKind": 21,
+      "offset": 32
+    },
+    {
+      "id": "castType",
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "castType",
+      "valueType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData+CastType",
+      "ordinaryKind": 17,
+      "offset": 24
+    },
+    {
+      "id": "entity",
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "entity",
+      "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.Entity>",
+      "ordinaryKind": 21,
+      "offset": 32
+    },
+    {
+      "id": "input",
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "inputData",
+      "valueType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "ordinaryKind": 17,
+      "offset": 48
+    },
+    {
+      "id": "casting",
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "casting",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 136
+    },
+    {
+      "id": "target",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "targetHandle",
+      "valueType": "Beyond.Gameplay.Core.TargetHandle",
+      "ordinaryKind": 18,
+      "offset": 24
+    }
+  ],
+  "methods": [
+    {
+      "id": "cast",
+      "identity": [
+        49770,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "CastComboSkill",
+        162052208
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        },
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        }
+      ]
+    },
+    {
+      "id": "get",
+      "identity": [
+        49773,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "GetComboSkillData",
+        162053612
+      ],
+      "returnType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ]
+    },
+    {
+      "id": "clear",
+      "identity": [
+        49790,
+        "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+        "ClearAll",
+        162075196
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "dispose",
+      "identity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "release",
+      "identity": [
+        49777,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "OnRelease",
+        162054208
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "exit",
+      "identity": [
+        49779,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "OnExitSystem",
+        162053852
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ]
+    },
+    {
+      "id": "getList",
+      "identity": [
+        49768,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "get_pendingComboSkills",
+        162055356
+      ],
+      "returnType": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.CharacterSkillSystem+SkillData>",
+      "parameters": []
+    },
+    {
+      "id": "plunge",
+      "identity": [
+        49772,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "CastPlungingAttack",
+        162053012
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "cast",
+      "startRva": 162052208,
+      "endRva": 162053010,
+      "sha256": "6efcc0934c039ba39e5cd14e4ef7541393d86ec3b04c7e57be21936818958ab7",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "get",
+      "startRva": 162053612,
+      "endRva": 162053798,
+      "sha256": "e6a63d5f0e2a6175f17e62eaaceeff6c39f04862f9668d504d912e4b81c487ef",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "clear",
+      "startRva": 162075196,
+      "endRva": 162075365,
+      "sha256": "7c93e8aa6fb3411b6b93fd7ee60a216e892cf4fbc3663afbfcfee540f5e64346",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "dispose",
+      "startRva": 98088288,
+      "endRva": 98088363,
+      "sha256": "2b27291feee4d4b99d36d4aa6e82af8a8228e3c23cc78feae8f538503c5cfce9",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "dispose",
+      "startRva": 123839008,
+      "endRva": 123839045,
+      "sha256": "acb421647679d68565e7bac9f222ce7b42753b5526367a0d3fb8c2fe0763441d",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "release",
+      "startRva": 162054208,
+      "endRva": 162054432,
+      "sha256": "cc7fa1f022f68d6653a0a9fb14a20aa7e853f4879742ef3ad9fbeaff883e16ce",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "exit",
+      "startRva": 162053852,
+      "endRva": 162054205,
+      "sha256": "323f33f06efab4f4f9654ac4c39915ad7a1b5e0747df0f7a21cb74eee8e38e6c",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "getList",
+      "startRva": 162055356,
+      "endRva": 162055417,
+      "sha256": "99f6c52adecad9402912101419212c0dc4b7144965e46ce7bb342e294437f56a",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    },
+    {
+      "owner": "plunge",
+      "startRva": 162053012,
+      "endRva": 162053610,
+      "sha256": "78c3aed82ab08b7c5040583dfa9b0cceccf11988e19734411d9716ac3d650286",
+      "boundary": "selected method unwind family interval; leaf getter is exact bounded load+RET"
+    }
+  ],
+  "spans": [
+    {
+      "id": "writeStart",
+      "owner": "cast",
+      "rva": 162052493,
+      "hex": "488b462033db4885c00f84f0010000448b70184585f67e65"
+    },
+    {
+      "id": "writeIteration",
+      "owner": "cast",
+      "rva": 162052517,
+      "hex": "488b4e204885c90f84da0100004c8b05af08bc068bd3e8904551fb4885c00f84c3010000"
+    },
+    {
+      "id": "writeCompare",
+      "owner": "cast",
+      "rva": 162052553,
+      "hex": "488b15607ac706488d4820e8c76957fb483bc77409ffc3413bde7cc0eb23"
+    },
+    {
+      "id": "writeRefetch",
+      "owner": "cast",
+      "rva": 162052583,
+      "hex": "488b4e204885c90f84980100004c8b056d08bc068bd3e84e4551fb488bd84885c07552"
+    },
+    {
+      "id": "readStart",
+      "owner": "get",
+      "rva": 162053695,
+      "hex": "488b5f204885db74588b5b18eb31"
+    },
+    {
+      "id": "readIteration",
+      "owner": "get",
+      "rva": 162053709,
+      "hex": "488b4f204885c9744a4c8b050b04bc068bd3e8ec4051fb4885c07437"
+    },
+    {
+      "id": "readCompare",
+      "owner": "get",
+      "rva": 162053737,
+      "hex": "488b15c075c706488d4820e8276557fb483bc67409"
+    },
+    {
+      "id": "readStep",
+      "owner": "get",
+      "rva": 162053758,
+      "hex": "83eb0179ca33c0eba8"
+    },
+    {
+      "id": "readRefetch",
+      "owner": "get",
+      "rva": 162053767,
+      "hex": "488b4f204885c974104c8b05d103bc068bd3e8b24051fbeb8f"
+    },
+    {
+      "id": "disposeBody",
+      "owner": "dispose",
+      "rva": 98088317,
+      "hex": "488b4b084885c9751c488d4b0848c74308000000004883c4205be9c48d37fa4883c4205bc333d2e8073b6affebdb"
+    },
+    {
+      "id": "disposePrefix",
+      "owner": "dispose",
+      "rva": 98088288,
+      "hex": "40534883ec20488b05e33c990b488bd9488b48484885c90f85a3ec8801"
+    },
+    {
+      "id": "disposeClear",
+      "owner": "dispose",
+      "rva": 98088326,
+      "hex": "488d4b0848c74308000000004883c4205be9c48d37fa"
+    },
+    {
+      "id": "clearAll",
+      "owner": "clear",
+      "rva": 162075285,
+      "hex": "33d2c7431800000000488d4c2420e8c042c5f6488d4b200f1000f30f7f4320e8a73067f6488d4b3033d2e89ca22ffc33d2488d4b30448d4258e82da1c2f6c6838800000000"
+    },
+    {
+      "id": "getList",
+      "owner": "getList",
+      "rva": 162055408,
+      "hex": "498b41204883c428c3"
+    },
+    {
+      "id": "getListCapture",
+      "owner": "getList",
+      "rva": 162055356,
+      "hex": "4883ec28488b05892dc9074c8bc9488b48384885c9741d"
+    }
+  ],
+  "typedContexts": [
+    {
+      "rva": 162052530,
+      "callSiteRva": 162052539,
+      "result": {
+        "instructionRva": 162052530,
+        "instructionHex": "4C8B05AF08BC06",
+        "usageCellRva": 275038824,
+        "usageRawHex": "7F5C12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 601663,
+        "methodSpec": [
+          404114,
+          19732,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "rva": 162052596,
+      "callSiteRva": 162052605,
+      "result": {
+        "instructionRva": 162052596,
+        "instructionHex": "4C8B056D08BC06",
+        "usageCellRva": 275038824,
+        "usageRawHex": "7F5C12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 601663,
+        "methodSpec": [
+          404114,
+          19732,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "rva": 162053718,
+      "callSiteRva": 162053727,
+      "result": {
+        "instructionRva": 162053718,
+        "instructionHex": "4C8B050B04BC06",
+        "usageCellRva": 275038824,
+        "usageRawHex": "7F5C12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 601663,
+        "methodSpec": [
+          404114,
+          19732,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "rva": 162053776,
+      "callSiteRva": 162053785,
+      "result": {
+        "instructionRva": 162053776,
+        "instructionHex": "4C8B05D103BC06",
+        "usageCellRva": 275038824,
+        "usageRawHex": "7F5C12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 601663,
+        "methodSpec": [
+          404114,
+          19732,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData"
+        ],
+        "methodArguments": []
+      }
+    }
+  ],
+  "inputDataPayloadBytes": 88,
+  "boxedHeaderBytes": 16,
+  "rules": {
+    "originalPathOnly": true,
+    "coherentCollectionRequired": true,
+    "localCarrierPremises": [
+      "CastComboSkill RSI is selected system and RDI is entity",
+      "GetComboSkillData RDI is selected system and RSI is entity",
+      "ClearAll RBX is selected request record"
+    ],
+    "inputDataPayloadBytes": 88,
+    "recordDirectSkillFieldPresent": false,
+    "nestedOriginSkillReferencePresent": true,
+    "writeSelection": "forward-first-resolved-entity-match",
+    "readSelection": "reverse-last-resolved-entity-match",
+    "selectionFiltersCasting": false,
+    "selectionFiltersCastType": false,
+    "reachedNullEntryNormalMissProved": false,
+    "nullListNormalMissProved": false,
+    "exceptionalNullExitRequired": true,
+    "writerRefetchNullRequestsPool": true,
+    "readRefetchNullReturnsNull": true,
+    "readMissReturnsNull": true,
+    "selectedIndexRefetched": true,
+    "collectionEffectsProved": false,
+    "poolEffectsProved": false,
+    "completeWriterSetProved": false,
+    "mutablePendingListReferenceExposed": true,
+    "disposeDirectlyClearsTargetOnly": true,
+    "disposeOtherDirectStoresProvedAbsent": true,
+    "disposeIndirectSideEffectsProved": false,
+    "clearAllRequestsWholeInputZero": true,
+    "zeroHelperEffectsProved": false,
+    "behaviorStoresRequestRecordReference": true,
+    "consumerPrechecksByCurrentRecordSkillId": true,
+    "consumerCallsTryCastByReloadedRecordSkillId": true,
+    "precheckSkillPointerPassedToTryCast": false,
+    "recordReloadedAfterTryCast": true,
+    "stableRecordIdentityRequired": true,
+    "upstreamSkillInstanceContinuityProved": false,
+    "currentSessionPendingExecutionProved": false
+  },
+  "writerInventory": [
+    {
+      "role": "cast",
+      "coverage": "selected method only, not a complete writer inventory"
+    },
+    {
+      "role": "plunge",
+      "coverage": "selected method only, not a complete writer inventory"
+    },
+    {
+      "role": "clear",
+      "coverage": "selected method only, not a complete writer inventory"
+    },
+    {
+      "role": "release",
+      "coverage": "selected method only, not a complete writer inventory"
+    },
+    {
+      "role": "exit",
+      "coverage": "selected method only, not a complete writer inventory"
+    }
+  ],
+  "boundaries": [
+    "Conditional original normal-return collection and object-pool helper outcomes; no collection implementation or all-writer proof.",
+    "Record direct fields and complete inherited field sets do not erase nested inputData.skillCastInfo.originSkill.",
+    "Direct Dispose store is target-only; its helper indirect effects are not proved. ClearAll requests an 88-byte zero helper, whose full effects remain conditional.",
+    "Both selector matches re-fetch selected index; record stability and final get_Item result are separate explicit inputs.",
+    "The selected static pending/behavior chain is not evidence that this session executed Pending hooks."
+  ],
+  "operands": {
+    "objectPtrContextCell": 275788848,
+    "objectPtrResolveRva": 83895200,
+    "writeLoopRva": 162052517,
+    "writeNewRva": 162052618,
+    "writeStoreRva": 162052700,
+    "writeNullRva": 162053004,
+    "listCountOffset": 24,
+    "listItemContextCell": 275038824,
+    "listGetRva": 83492688,
+    "readLoopRva": 162053709,
+    "readReturnRva": 162053679,
+    "readNullRva": 162053792,
+    "inputTargetPayloadOffset": 8,
+    "disposeFrameBytes": 32,
+    "writeBarrierRva": 1065824,
+    "clearEntityTemp": 32,
+    "objectPtrFromEntityRva": 7230824,
+    "inputBytes": 88,
+    "zeroInputRva": 7058432,
+    "disposeReleaseRva": 98088354,
+    "targetReleaseRva": 88273072,
+    "disposeTypeInfoCell": 292680272,
+    "dispatchOffset": 72,
+    "disposeReplacementRva": 123839008,
+    "getListFrame": 40,
+    "getListTypeInfoCell": 292680272,
+    "getListDispatchOffset": 56,
+    "nullExitHelperRva": 911680
+  },
+  "inputSize": {
+    "hex": "68000000ffffffff0000000000000000"
+  }
+}

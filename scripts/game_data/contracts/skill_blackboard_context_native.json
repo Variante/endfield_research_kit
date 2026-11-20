@@ -1,0 +1,621 @@
+{
+  "schema": "endfield.skill-blackboard-context-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "getterDependency": "skill_blackboard_getter_native.json",
+  "writerDependency": "skill_input_blackboard_native.json",
+  "canonical": {
+    "getter": [
+      {
+        "tableIndex": 377787,
+        "tableRowRva": 256555696,
+        "rawHex": "3c27060032c20500d5230100ffffffff",
+        "methodSpecIndex": 403260,
+        "methodSpec": [
+          6903,
+          5237,
+          -1
+        ],
+        "methodDefinition": [
+          6903,
+          "Beyond.Gameplay.StateMachine`2",
+          "get_stateBlackboard"
+        ],
+        "classArguments": [
+          {
+            "name": "System.Int32Enum",
+            "typePointerVa": 6718794240,
+            "rawHex": "A7080100000000000000118000000000"
+          },
+          {
+            "name": "object",
+            "typePointerVa": 6718844272,
+            "rawHex": "B90801000000000000001C0000000000"
+          }
+        ],
+        "methodArguments": [],
+        "indices": [
+          377394,
+          74709,
+          -1
+        ],
+        "pointerSlotRva": 249297696,
+        "pointerRva": 98785584
+      }
+    ],
+    "constructor": [
+      {
+        "tableIndex": 377771,
+        "tableRowRva": 256555440,
+        "rawHex": "2c27060022c2050074f00000ffffffff",
+        "methodSpecIndex": 403244,
+        "methodSpec": [
+          6905,
+          5237,
+          -1
+        ],
+        "methodDefinition": [
+          6905,
+          "Beyond.Gameplay.StateMachine`2",
+          ".ctor"
+        ],
+        "classArguments": [
+          {
+            "name": "System.Int32Enum",
+            "typePointerVa": 6718794240,
+            "rawHex": "A7080100000000000000118000000000"
+          },
+          {
+            "name": "object",
+            "typePointerVa": 6718844272,
+            "rawHex": "B90801000000000000001C0000000000"
+          }
+        ],
+        "methodArguments": [],
+        "indices": [
+          377378,
+          61556,
+          -1
+        ],
+        "pointerSlotRva": 249297568,
+        "pointerRva": 108499328
+      }
+    ]
+  },
+  "selectedTypes": {
+    "state": {
+      "name": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+      "typeDefinition": 8382,
+      "parent": "System.Enum",
+      "isValueType": true,
+      "underlyingType": "int",
+      "argument": {
+        "name": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+        "typePointerVa": 6719771520,
+        "rawHex": "BE200000000000000000118000000000"
+      }
+    },
+    "blackboard": {
+      "name": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "typeDefinition": 8381,
+      "parent": "Beyond.Gameplay.BlackboardBase",
+      "isValueType": false,
+      "argument": {
+        "name": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+        "typePointerVa": 6720055312,
+        "rawHex": "BD200000000000000000120000000000"
+      }
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "registrationLiteral",
+      "startRva": 217609,
+      "endRva": 217623,
+      "sha256": "DF387509204BA409417BEE93F749958872CEB853B0D1D69AC6ECAFE761AD40EE",
+      "hex": "488d0510bca20d488905f1da6f11",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "parameterFixup",
+      "startRva": 6739376,
+      "endRva": 6739424,
+      "sha256": "0464D26FC9826AE4A9D7F864BEB62AFFF24A3BD98D77C60F4753FFDCBBCCE829",
+      "hex": "4863114c8bc183faff750848c70100000000c3488b052e1a0b1148c1e2044863486848030d171a0b114803d1498910c3",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "definitionFixup",
+      "startRva": 6739424,
+      "endRva": 6739475,
+      "sha256": "62A00469642EB10285FFAF72C3E88FFA157C1C5BA1BE627C71BD5E51BB5A1264",
+      "hex": "4863114c8bc183faff750848c70100000000c3488b05fe190b11486bd25c486388a000000048030de4190b114803d1498910c3",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "fixupLoop",
+      "startRva": 6739488,
+      "endRva": 6739624,
+      "sha256": "B3A3076A325769795F23EAE1D47CE10AF4B75D2C2F7FDB4ED3F0ED4903EEF948",
+      "hex": "40534883ec204c8b05db560c1133db413958307e6d4889742430488d35bf2999ff48897c24388bfb0f1f840000000000498b4038488b0c070fbe410affc883f81d772948980fb68406b4d666008b9486a8d666004803d6ffe2e862ffffffeb05e82bffffff4c8b057c560c11ffc34883c708413b58307cb8488b7c2438488b7424304883c4205bc3",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "varDispatch",
+      "startRva": 39760,
+      "endRva": 39843,
+      "sha256": "4A5FA61473A5DCB04C937C066CA667269D82F880691994F417F59C2F428C498B",
+      "hex": "48895c24084889742410574883ec200fbe410a488bf983c0f183f80f0f87e8010000488d0d8764ffff4898448b8c81709d00004c03c941ffe1488b12488bcf488b5c2430488b7424384883c4205fe94d576500",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "varFastSelect",
+      "startRva": 6681328,
+      "endRva": 6681394,
+      "sha256": "41152E5439FF575DB6112C9A240CA6E53DBCDAB3C5FEF524B9563F2744CA071C",
+      "hex": "48895c2408574883ec20488b01488bf9440fb7400c488b42084a8b1cc08b53083351086685d2751a8b4b08334f080fbae11d720e488bc3488b5c24304883c4205fc3",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "classInit",
+      "startRva": 267936,
+      "endRva": 267972,
+      "sha256": "C00FB4A91FF1F3F0407CF681F7CDBAE0CEE276838BA839C369E82372B56A92B4",
+      "hex": "40534883ec20488bd9e8b23afcff83bbd8000000000f85353d6800488bc34883c4205bc3",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "classInitFailure",
+      "startRva": 7099376,
+      "endRva": 7099398,
+      "sha256": "0EAFAF02892F9F53762F0942F6998C4C7F7AC24F4B46A7527A683136217E6F48",
+      "hex": "8b8bd8000000e8f56f94ff488bc833d2e83bd295ffcc",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "referenceTest",
+      "startRva": 6668985,
+      "endRva": 6668995,
+      "sha256": "5E50A8C15805ED934E4971CDAA790764B9D862957FC55FCD2D315EE9A3C70F32",
+      "hex": "80790a120f8436010000",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "referenceResult",
+      "startRva": 6669305,
+      "endRva": 6669316,
+      "sha256": "EDAC62333219D908A10CE7CB7A510A0A2953F433C135A231A6ADB96E0CA15979",
+      "hex": "488b1d90200c114883c320",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "enumSwitch",
+      "startRva": 6669141,
+      "endRva": 6669174,
+      "sha256": "E484032896B572285F226F1FBA38888FAA2D03596EF8926828C97CE3AD5EEBCD",
+      "hex": "e836cb9cff0fbe480a83c1fc83f907775a4863c1418b8c873cc465004903cfffe1",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "enumEligibility",
+      "startRva": 6669059,
+      "endRva": 6669107,
+      "sha256": "7FB1C79CE0D7512D1AC2BF71876036E9207C0EF621A4248B5F62B6E73EA8DE0D",
+      "hex": "488b05d6690d118038000f84ad000000807b0a11751a4885db750433c0eb08488b0be806dc9efff6803801000004751f",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "normalizerImageBase",
+      "startRva": 6668929,
+      "endRva": 6668936,
+      "sha256": "ACDCC1537AFB0032E1ECCE0C38DD43E5CBBC9E394BC56E2CDFC6145D3E4D6425",
+      "hex": "4c8d3d783d9aff",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "enumInt32Result",
+      "startRva": 6669192,
+      "endRva": 6669201,
+      "sha256": "D3CC696BBD4277C80D4FDB41803D52C177AA687580E536838A70D122E7827CC9",
+      "hex": "488b1db1230c11eb2b",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "enumCommonResult",
+      "startRva": 6669244,
+      "endRva": 6669254,
+      "sha256": "D3C4484924235A56FACE999A987A6AC683B6F7B0C279CEB3BC4B7EBF01F99254",
+      "hex": "4883c320807b0a15753e",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "objectDefault",
+      "startRva": 217909,
+      "endRva": 217935,
+      "sha256": "F35620344A78B87359C02907594ECE6E62B426AAC44D77E774D47D9A3FCB5152",
+      "hex": "4c8d054cbfa50d488d153d7a9c0de878ed030048890541916e11",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "enumDefault",
+      "startRva": 220468,
+      "endRva": 220501,
+      "sha256": "5AEF5EF735B5FE4AB9A8AC67DD60AE78BFCE6EB80453E57D30BA55CE5AB0A3A6",
+      "hex": "4c8d05edb6a50d488d153e709c0d488b0d37876e11e872e30300488905eb896e11",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "kind2InflateClass",
+      "startRva": 388677,
+      "endRva": 388721,
+      "sha256": "F2A0DE7102BAE43BDF718A86E4C008D213F6724A8907E61FAD93021099FABE85",
+      "hex": "488bd1488b05b93e6d11488b4838488b0cd141b001488bd7e8eeacfaff488bc8b201e82483faffe9f9010000",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "rgctxContextSource",
+      "startRva": 387780,
+      "endRva": 387792,
+      "sha256": "EC2DFBACB47951133504468A9FAAB72519DECB2A668AA121B745FB245F9A9C34",
+      "hex": "488b47604883c00848894597",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "rgctxContextRestore",
+      "startRva": 388167,
+      "endRva": 388171,
+      "sha256": "20E5863BD1E95F1D91AF46054FEF96E5948242D3C2D108E58E4163778BD8C607",
+      "hex": "488b7d97",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "slotStoreAdvance",
+      "startRva": 389226,
+      "endRva": 389252,
+      "sha256": "632F73F4F5ABA273AD8DE47DD0238C8489913D0ABC9333754880BF6FE7920E36",
+      "hex": "4989074983c5104983c7084c897d7748836d7f010f85ccfbffff",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "contextArrayStore",
+      "startRva": 389252,
+      "endRva": 389272,
+      "sha256": "22789F30394CCB977C21AA6C78D5460CFC0531BEFE78BCFEE32C71C9F1D0504D",
+      "hex": "488b7d67488b45afeb03498bc7488987c0000000",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "methodInfoClassStore",
+      "startRva": 35634,
+      "endRva": 35642,
+      "sha256": "7352E53BC05EFF0564B5742B2A2078ADA457E0AB411D366DA8BF85671D5C4282",
+      "hex": "488b7d5048895f20",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "methodInfoOriginalContext",
+      "startRva": 35868,
+      "endRva": 35872,
+      "sha256": "2AE74D999809AC4F6FCE7B2FFCA82361948398D0A2596E5FAA4630711B1584C1",
+      "hex": "4c897f40",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "methodInfoCodeSelection",
+      "startRva": 35913,
+      "endRva": 35959,
+      "sha256": "5609C9A4F10111762EF63AFBBEE4487310AA10AB69AD8723D3A9D79CF57C0407",
+      "hex": "4d8d4708498bd5488d4de0e8e71600000f10080f1050100f1155c0f30f7e400866480fd6470866480f7ec8488907",
+      "boundary": "Reviewed exact local instruction relation; no unreviewed whole-cache/initialization CFG claim."
+    },
+    {
+      "role": "kind2Dispatch",
+      "startRva": 388176,
+      "endRva": 388207,
+      "hex": "418b4df883f9030f845602000083e9010f840b02000083e9010f84c4010000",
+      "sha256": "FCE9E000E4BDFFB8F1ABBEAEB4DCE3F1A1FA3ADEB7E7BAE159AF1AF101076008",
+      "boundary": "Selected local kind dispatch and type index read."
+    },
+    {
+      "role": "kind2Index",
+      "startRva": 388659,
+      "endRva": 388677,
+      "hex": "498b450048630883f9ff750633c08bc8eb12",
+      "sha256": "0E9DB34EE818509679003830077716D2B830C872AF9FF1081BC1C37462F3D409",
+      "boundary": "Selected local kind dispatch and type index read."
+    },
+    {
+      "role": "selectorContextInput",
+      "startRva": 41839,
+      "endRva": 41865,
+      "hex": "4d8be04d8b30488bd94d8b7808f30f7f40a04c8970a04c8978a8",
+      "sha256": "62707DAAE1BA0880EA1F64A61BE25271F347BAE417988867ACB772F9E9240BB2",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorNormalize",
+      "startRva": 42070,
+      "endRva": 42094,
+      "hex": "498b0c24e8c11d6500498b4c24084889442428e8b21d6500",
+      "sha256": "30B839066151007B12D09DF3D742131C993BCE152B7764EA235C8EC7A59F9EC8",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorOriginalKey",
+      "startRva": 42243,
+      "endRva": 42306,
+      "hex": "498b4cc308483b110f85e8feffff4c3b71080f85810200004c3b79100f8577020000b00184c00f84cafeffff4983f9ff0f84fcfeffff4b8d0449e9f7feffff",
+      "sha256": "1D85A9DA8045DC7415F03A62AB1A45052E9FA18CDCFA07C88BB7EB68F10A09F7",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorNormalizedKey",
+      "startRva": 42588,
+      "endRva": 42651,
+      "hex": "498b4cc3084c3b390f8591feffff483b51080f852f0100004c3b71100f8525010000b00184c00f8473feffff4983f9ff0f84e8feffff4b8d0449e9e3feffff",
+      "sha256": "93C770C4CEC3EDF737058B2A63D25291B7CFDD93E59EA0D335BB4471EFD3B32B",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorOriginalFalse",
+      "startRva": 42908,
+      "endRva": 42915,
+      "hex": "32c0e984fdffff",
+      "sha256": "ED876A5FDC1FEB6D9B143ECD06C444479C64A622063217299216EA90EE4E1756",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorNormalizedFalse",
+      "startRva": 42915,
+      "endRva": 42922,
+      "hex": "32c0e9d6feffff",
+      "sha256": "1F16ABB4FB98D8F3C41165BC2D9E51B81CB3DCC50ED511319A6DD2EA3B98A2F9",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorOriginalReturn",
+      "startRva": 42703,
+      "endRva": 42723,
+      "hex": "488b52104533c0488bcbe8c2246500488bc3ebd4",
+      "sha256": "B05B2A27FFAADF3D4C7E3DA44FCB4422DBD062BDB95CBFC09B11F4143381D1BF",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorNormalizedReturn",
+      "startRva": 42651,
+      "endRva": 42703,
+      "hex": "4533c0488b5210488b8c2490000000e8f1246500488b842490000000488b9c24a00000004883c450415f415e415d415c5f5e5dc3",
+      "sha256": "F35A654B6A660010C4368F8D685AA70A02E644A3F2E2EBC9E5EF6AFFC8A898D8",
+      "boundary": "Exact selected key-equality and ordinary cache hit relation; full exceptional/probe paths excluded."
+    },
+    {
+      "role": "selectorPointerRecord",
+      "startRva": 6671264,
+      "endRva": 6671395,
+      "hex": "48895c24084c8b1d3c610d11410fb6d84c8bd1418b43103902734f418b43283942047346837a08ff4c630a498b43184e8b04c8740e48634a08498b43204c8b0cc8eb034d8bc8498b433048634a044d89024d894a0841885a18488b0cc8498bc249894a10488b5c2408c3488b5c240833c04889014889410848894110884118498bc2c3",
+      "sha256": "CD3F3853130EF2B3D2E89DDD9DCB9369CE431200B1A0682DF055A1B34D8B66FE",
+      "boundary": "Complete index bounds and code registration pointer projection helper."
+    },
+    {
+      "role": "typeComparerPrefix",
+      "startRva": 6697792,
+      "endRva": 6697898,
+      "hex": "4883ec284c8bda48895c2430488d15adcc99ff4c8bd166660f1f840000000000410fb6430a4138420a0f85b2010000418b4308418b4a08c1e81dc1e91d83e00183e1013bc80f8580010000410fbe420a83c0f183f80f0f876301000048988b8c82383566004803caffe1",
+      "sha256": "3CAA5FAF9B53D2CA87D73498E6DA83AA89749283D27282651A8F37599CE95852",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    },
+    {
+      "role": "typeComparerDefinitionEqual",
+      "startRva": 6697959,
+      "endRva": 6697981,
+      "hex": "498b03493902750e33db8bc3488b5c24304883c428c3",
+      "sha256": "7257E365134960DA84EE4E801214B2B6CC8949F653FA4A9F51B7113840CE12B8",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    },
+    {
+      "role": "typeComparerPrimitiveEqual",
+      "startRva": 6698239,
+      "endRva": 6698251,
+      "hex": "33c0488b5c24304883c428c3",
+      "sha256": "751575958D220E4B633A4EE03AD9796770ABE3555626311A3335DA3033F8A2F8",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    },
+    {
+      "role": "internArgumentsEqual",
+      "startRva": 40751,
+      "endRva": 40818,
+      "hex": "498b4cc5083b19755433f64d85e4742d488b5c24284c8b71084c2bf30f1f440000498b141e488b0be8e493650085c0752c48ffc64883c308493bf472e44883ffff7539",
+      "sha256": "79071345FBA382695AB47DC00D1F070A04DD3B636C76F19B0EB5606FDD303CF1",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    },
+    {
+      "role": "internExistingReturn",
+      "startRva": 40896,
+      "endRva": 40931,
+      "hex": "49c1e2044d03d5493bfa7417488b5f08488b0db9877211ff1593229f0d90e940010000",
+      "sha256": "C8C5DD795FEBF9693954E7504A6AA12B2FF5398409AEA5D9BD0FE3C57765753A",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    },
+    {
+      "role": "internReturn",
+      "startRva": 41251,
+      "endRva": 41271,
+      "hex": "488bc34883c458415f415e415d415c5f5e5d5bc3",
+      "sha256": "6A5BCEE3128BEF35D08C28DE89A78059E881C72B6625B2C7B71C47B98D8794CA",
+      "boundary": "Selected structural argument equality and existing-hit return, excluding lock and insertion implementation."
+    }
+  ],
+  "operands": {
+    "metadataRegistrationRva": 228986400,
+    "registrationCellRva": 292760840,
+    "metadataHeaderCellRva": 292679672,
+    "metadataBaseCellRva": 292679664,
+    "parameterHeaderOffset": 104,
+    "definitionHeaderOffset": 160,
+    "parameterStride": 16,
+    "definitionStride": 92,
+    "typesCountOffset": 48,
+    "typesPointerOffset": 56,
+    "paramOrdinalOffset": 12,
+    "genericInstArgvOffset": 8,
+    "attributesOffset": 8,
+    "byrefBit": 29,
+    "copyFrameBytes": 32,
+    "classErrorOffset": 216,
+    "classContextOffset": 192,
+    "genericClassContextOffset": 8,
+    "objectDefaultCell": 292676752,
+    "enumInt32DefaultCell": 292677440,
+    "defaultByvalArgOffset": 32,
+    "sharedTypeKindClass": 18,
+    "sharedTypeKindInt32": 8,
+    "nativeTypeKindOffset": 10,
+    "fixupMaxKindMinusOne": 29,
+    "varKindBase": 15,
+    "varMaxKindIndex": 15,
+    "saveRbxStack": 8,
+    "saveRsiStack": 16,
+    "varFrameBytes": 32,
+    "enumSharingFlagPointerCell": 292760800,
+    "enumRuntimeFlagOffset": 312,
+    "enumRuntimeFlagMask": 4,
+    "enumUnderlyingTypeKindBase": 4,
+    "enumUnderlyingMaxIndex": 7,
+    "contextLocalRbp": -105,
+    "sourceClassLocalRbp": 103,
+    "contextArrayLocalRbp": -81,
+    "recordStride": 16,
+    "slotStride": 8,
+    "underlyingKindOffset": 10
+  },
+  "branches": {
+    "parameterNonNull": 6739395,
+    "definitionNonNull": 6739443,
+    "fixupLoopHead": 6739536,
+    "fixupLoopReload": 6739589,
+    "fixupLoopNext": 6739596,
+    "fixupLoopReturn": 6739618,
+    "varKindTarget": 39817,
+    "varMismatchTarget": 6681394,
+    "varDefault": 40282,
+    "enumFallback": 6669248,
+    "enumEligibilityReject": 6669107,
+    "enumNormalize": 6669138,
+    "slotStore": 389226,
+    "slotLoop": 388176,
+    "contextArrayStore": 389265,
+    "classInitError": 7099376,
+    "referenceResult": 6669305,
+    "normalizerStore": 6669316,
+    "enumCommon": 6669244,
+    "kind3": 388787,
+    "kind1": 388721
+  },
+  "targets": {
+    "classInitRequest": 20832,
+    "slotInflation": 39760,
+    "varSelect": 6681328,
+    "classFromType": 29072,
+    "classNameLookup": 475328,
+    "pointerSelector": 41792,
+    "opaqueErrorDecode": 50160,
+    "opaqueErrorRaise": 140864,
+    "enumUnderlyingType": 167568,
+    "enumTypeDefinitionClass": 302896,
+    "normalizeInstantiation": 6668832,
+    "copyPointerRecord": 6671264,
+    "typeComparer": 6697792
+  },
+  "nameRequests": [
+    {
+      "instructionRva": 217909,
+      "rva": 229184136,
+      "text": "Object"
+    },
+    {
+      "instructionRva": 217916,
+      "rva": 228576640,
+      "text": "System"
+    },
+    {
+      "instructionRva": 220468,
+      "rva": 229184552,
+      "text": "Int32Enum"
+    },
+    {
+      "instructionRva": 220475,
+      "rva": 228576640,
+      "text": "System"
+    }
+  ],
+  "tables": {
+    "fixupIndexRva": 6739636,
+    "fixupIndexHex": "000000000000000000000000000002020000010202000200000202000201",
+    "fixupTargetsRva": 6739624,
+    "fixupTargetsHex": "79d6660080d666008cd66600",
+    "varTargetsRva": 40304,
+    "varTargetsHex": "4a9c00005a9d00005a9d00005a9d0000899b0000c99b0000bd9c00005a9d00005a9d00005a9d00005a9d00005a9d00005a9d00005a9d00004a9c0000a39b0000",
+    "enumTargetsRva": 6669372,
+    "enumTargetsHex": "76c365009ac365007fc36500a3c3650088c36500acc3650091c36500b5c36500"
+  },
+  "evidenceBoundary": "Canonical shared declarations; exact selected fixup, VAR selection, default-name requests, enum normalization under the runtime enable/class flag conditions, kind-2 inflation and slot-store relations; ordinary selector original/normalized key equality, selected structural type comparison and existing interning-hit return, and complete pointer-record projection. Full hash/probe/exception paths, interning insertion/locking, attribute-mismatch copying, complete class initialization, registration execution and actual runtime object/type identities remain unproved.",
+  "nativeMetadataSections": {
+    "genericParameters": {
+      "offset": 53843704,
+      "size": 403360
+    },
+    "typeDefinitions": {
+      "offset": 60401676,
+      "size": 8415976
+    }
+  },
+  "canonicalNormalizationKinds": [
+    "System.Int32Enum",
+    "object"
+  ],
+  "selector": {
+    "contextMethodOffset": 8,
+    "contextClassKeyOffset": 8,
+    "contextMethodKeyOffset": 16,
+    "entryValueOffset": 16,
+    "originalProbeNext": 41977,
+    "originalFalse": 42908,
+    "originalMiss": 42037,
+    "originalHit": 42041,
+    "normalizedProbeNext": 42235,
+    "normalizedFalse": 42915,
+    "normalizedMiss": 42362,
+    "normalizedHit": 42366,
+    "originalFalseResume": 42279,
+    "normalizedFalseResume": 42624,
+    "returnEpilogue": 42679
+  },
+  "pointerRecord": {
+    "codeRegistrationCell": 292760808,
+    "methodCountOffset": 16,
+    "invokerCountOffset": 40,
+    "methodPointersOffset": 24,
+    "adjustorPointersOffset": 32,
+    "invokerPointersOffset": 48,
+    "invalid": 6671370,
+    "noAdjustor": 6671331,
+    "store": 6671334
+  },
+  "interning": {
+    "kindMismatch": 6698273,
+    "byrefMismatch": 6698251,
+    "typeTargetsRva": 6698296,
+    "typeTargetsHex": "aa336600ff346600e7336600e7336600d0346600b233660019346600ff346600ff346600ff346600ff346600ff346600ff346600ff346600aa336600d0346600",
+    "definitionMismatch": 6697981,
+    "probeNext": 40844,
+    "allEqual": 40812,
+    "compareLoop": 40784,
+    "foundEntry": 40875,
+    "createEntry": 40931,
+    "lockCell": 292759440,
+    "unlockImportCell": 228573808
+  }
+}

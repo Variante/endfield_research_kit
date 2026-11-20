@@ -11,6 +11,7 @@ from typing import Any, Callable, Iterable
 from scripts.game_data import mission_trace_inspect as trace
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.mission_trace_invocations import Invocations, PAIRED_ABI
+from scripts.game_data.mission_trace_capture_prepare import read_recipe
 from scripts.game_data.mission_trace_replay import fingerprint
 from scripts.repo_paths import REPO_ROOT
 
@@ -174,18 +175,25 @@ def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool
         trace.require(inventory.get("inventorySha256") == inspected["inventory"].get("inventorySha256"),
                       "damage admission inventory changed after inspection")
         profile, summary, hooks = trace.bindings(artifacts, limits)
-        recipe = trace.read_object(CONTRACTS_DIR / RECIPES[recipe_name], limits.json_bytes)
+        recipe = read_recipe(CONTRACTS_DIR / RECIPES[recipe_name])
         expected = {h["name"] for h in recipe["hooks"]}
-        trace.require(len(hooks) == len(expected) and {h["name"] for h in hooks} == expected,
-                      "damage admission requires exactly the reviewed " + recipe_name + " hook selection")
+        actual = {h["name"] for h in hooks}
+        trace.require(len(hooks) == len(expected) and actual == expected,
+                      f"damage admission reviewed {recipe_name} hook selection differs: "
+                      f"expectedCount={len(expected)} actualCount={len(hooks)} "
+                      f"missing={sorted(expected-actual)} unexpected={sorted(actual-expected)}")
         for hook in hooks:
             spec = next(item for item in recipe["hooks"] if item["name"] == hook["name"])
             abi = PAIRED_ABI.fullmatch(hook.get("abiId", ""))
             expected_return = spec["returnType"]
             if expected_return not in {"void", "bool", "float", "double", "int", "pointer"}:
-                trace.require(hook.get("pairedAbiProof", {}).get("enumReturn", {}).get("type") == expected_return,
-                              "damage admission missing selected enum return proof: " + hook["name"])
-                expected_return = "int"
+                if hook["name"] == "damage.Source.Lock":
+                    trace.validate_damage_pointer_return(hook, profile)
+                    expected_return = "pointer"
+                else:
+                    trace.require(hook.get("pairedAbiProof", {}).get("enumReturn", {}).get("type") == expected_return,
+                                  "damage admission missing selected enum return proof: " + hook["name"])
+                    expected_return = "int"
             trace.require(hook.get("returnType") == spec["returnType"] and bool(abi) and abi[1] == expected_return,
                           "damage admission return ABI differs: " + hook["name"])
             trace.require({field["label"] for field in hook.get("fields", [])} ==

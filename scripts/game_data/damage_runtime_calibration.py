@@ -24,6 +24,60 @@ def ref(row):
     return {k: row.get(k) for k in ('sequence', 'threadId', 'invocationId', 'parentInvocationId', 'callerGameAssemblyRva')}
 
 
+def process_ancestor(row, entries, returns):
+    """Retain a recorded ProcessDamage ancestor; never infer it from an index."""
+    parent = row['parentInvocationId']
+    seen = {row['invocationId']}
+    while parent in entries:
+        if parent in seen:
+            raise ValueError('cyclic invocation ancestry in damage calibration')
+        seen.add(parent)
+        entered = entries[parent]
+        if entered['threadId'] != row['threadId']:
+            raise ValueError('cross-thread invocation ancestry in damage calibration')
+        if entered['hook'] == 'damage.Action.ProcessDamage':
+            returned = returns.get(parent)
+            if not returned or returned.get('invocationReceipt', {}).get('returnedNormally') is not True:
+                raise ValueError('recorded ProcessDamage ancestor did not return normally')
+            before = fields(entered)
+            part_returns, callback_returns = [], []
+            for child in returns.values():
+                if (child.get('parentInvocationId') != parent
+                        or child.get('threadId') != row['threadId']):
+                    continue
+                if child.get('hook') in ('damage.CallbackCandidate.8835', 'damage.CallbackCandidate.8837'):
+                    callback_returns.append({'hook': child['hook'], 'return': ref(child),
+                        'rawReturnValue': child.get('returnValue'),
+                        'decodedReturnValue': child.get('decodedReturnValue'),
+                        'returnValueFinite': child.get('returnValueFinite'),
+                        'returnedNormally': child.get('invocationReceipt', {}).get('returnedNormally') is True,
+                        'boundary': 'Scoped physical callback return in this ProcessDamage invocation; not automatically assigned to one Pack if multiple Pack calls exist.'})
+                    continue
+                if child.get('hook') != 'damage.Source.Lock':
+                    continue
+                snapshot = fields(child).get('returnedEnemyPart')
+                part_returns.append({'return': ref(child), 'rawReturnValue': child.get('returnValue'),
+                    'returnedNormally': child.get('invocationReceipt', {}).get('returnedNormally') is True,
+                    'snapshot': dict(snapshot) if snapshot else None,
+                    'boundary': 'Original Lock return snapshot only; not the later arithmetic field read or a lifetime proof.'})
+            return {'entry': ref(entered), 'return': ref(returned),
+                    'association': 'explicit-same-thread-invocation-ancestor',
+                    'isExtraTarget': compact(before.get('isExtraTarget')),
+                    'targetWrapperType': compact(before.get('targetWrapperType')),
+                    'effectSource': {label: compact(before.get(label)) for label in (
+                        'effectSourceServerId', 'effectSourceEntityName',
+                        'effectSourceAttributesIdentity', 'effectSourceAttributesInstanceUid')},
+                    'returnedPartObservations': part_returns,
+                    'defenderPoiseSelectorSnapshots': {
+                        'entry': before.get('defenderPoiseFactorSelector'),
+                        'return': fields(returned).get('defenderPoiseFactorSelector')},
+                    'defenderPoiseCallbackReturns': callback_returns,
+                    'actualDefenderPoiseFactor': None,
+                    'boundary': 'Entry fields, boundary selector snapshots and scoped normal returns remain separate observations; no target ownership, continuous selector stability or per-Pack factor inferred.'}
+        parent = entered['parentInvocationId']
+    return None
+
+
 def prepare(report):
     if report.get('schema') != 'endfield.damage-runtime-inspection.v1' or report.get('status') != 'observed':
         raise ValueError('requires observed maintained damage inspection')
@@ -63,6 +117,7 @@ def prepare(report):
             returned = returns.get(iid)
             fs = fields(enter)
             samples.append({'id': len(samples), 'action': {'threadId': aid[0], 'invocationId': aid[1]},
+                'process': process_ancestor(enter, entries, returns),
                 'pack': {'entry': ref(enter), 'return': ref(returned) if returned else None,
                     'pointer': enter.get('receiverIdentity', {}).get('rawPointer'),
                     'baseValue': compact(fs.get('packBaseValue')), 'damageType': compact(fs.get('damageType')),

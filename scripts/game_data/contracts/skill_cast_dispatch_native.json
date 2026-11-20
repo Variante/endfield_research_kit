@@ -1,0 +1,3217 @@
+{
+  "schema": "endfield.skill-cast-dispatch-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "evidenceBoundary": {
+    "exact": "selected native methods, complete unwind families, typed fields, contiguous opcode blocks and named direct call entries",
+    "conditional": "original implementations with inactive replacement callbacks; collection operations retain normal behavior and coherent state conditions; ordinary cast branch may throw or invoke callbacks",
+    "unresolved": "outer caller consuming nextSkillId/inputView and dispatching a cached request is not joined; native state writes do not prove a live player cast or wall-clock duration"
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "tickDispatchesSkill": false,
+    "requestToDispatchCallerJoinProved": false,
+    "firstAttackUsesRequest": false,
+    "doCastReturnType": "void",
+    "tryCastTrueIncludesSwitchToBuff": true,
+    "expiryComparison": "subtractFloat32ThenKeepOnlyIfOrderedGreaterThanSelectedThreshold",
+    "tickDeltaParameter": "allScaledTime",
+    "changeHandleDeltaParameter": "timeManagerDeltaTime",
+    "clearOrder": [
+      "disposeRetainedInputTarget",
+      "zeroWholeNullableRequest"
+    ],
+    "requestExposure": "hasValueAndStoredAllowBit",
+    "ordinaryTransition": [
+      "isCastingSkillStartTrue",
+      "interruptPriorSkillUnlessAlreadyForced",
+      "storeSelectedCurSkill",
+      "saveTarget",
+      "beforeCastStart",
+      "castStateInitialization",
+      "isCastingSkillStartFalse",
+      "returnTrue"
+    ]
+  },
+  "methods": {
+    "tick": {
+      "identity": [
+        59599,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "Tick",
+        87417968
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "allScaledTime",
+          "type": "float"
+        },
+        {
+          "name": "timeManagerDeltaTime",
+          "type": "float"
+        },
+        {
+          "name": "unscaledDeltaTime",
+          "type": "float"
+        }
+      ]
+    },
+    "allow": {
+      "identity": [
+        59614,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_AllowNextSkill",
+        97668480
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        }
+      ]
+    },
+    "normalAttack": {
+      "identity": [
+        59216,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastNormalAttack",
+        149130976
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ]
+    },
+    "doCast": {
+      "identity": [
+        58701,
+        "Beyond.Gameplay.Core.Skill",
+        "DoCast",
+        97654048
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "onCastEndCallback",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "onExclusiveCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "options",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        }
+      ]
+    },
+    "tryCast": {
+      "identity": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "onCastEnd",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "options",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        },
+        {
+          "name": "onExclusiveTimeCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "afterCastStartCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "skillCastInfo",
+          "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        }
+      ]
+    },
+    "nextId": {
+      "identity": [
+        59590,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "get_nextSkillId",
+        89510720
+      ],
+      "returnType": "string",
+      "parameters": []
+    },
+    "hasRequest": {
+      "identity": [
+        59591,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "get_hasNextSkillRequest",
+        89284000
+      ],
+      "returnType": "bool",
+      "parameters": []
+    },
+    "firstAttack": {
+      "identity": [
+        59156,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_firstAttack",
+        149145916
+      ],
+      "returnType": "Beyond.Gameplay.Core.Skill",
+      "parameters": []
+    }
+  },
+  "codeWindows": [
+    {
+      "owner": "tick",
+      "startRva": 87417968,
+      "endRva": 87418084,
+      "sha256": "BB19304C2D97E10B0F1BB99C14A658DBDFC70295521B6022C029791C367CD3A7",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tick",
+      "startRva": 87418084,
+      "endRva": 87420320,
+      "sha256": "084E69804CE8BD033426CA0C81B67A857384F01FEB4E8A51C570887C3AC1C02B",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tick",
+      "startRva": 87420320,
+      "endRva": 87420347,
+      "sha256": "D70B7D468C553FF2DDC4C887E68D1564C67F3E8700C81864B3CFC8F0E2F8D5EB",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tick",
+      "startRva": 87420347,
+      "endRva": 87420369,
+      "sha256": "2E6A4724DE1749E19D81576FDEBEEE68A9BC3F9DD4D7C540F0F8ED6DEBF04EBC",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "allow",
+      "startRva": 97668480,
+      "endRva": 97668650,
+      "sha256": "B0CB56F73D68A84C7C36BCBC16172A87E9ADD8685F0C7C869B28DEBF4F5D5904",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "allow",
+      "startRva": 123786228,
+      "endRva": 123786308,
+      "sha256": "D904F045E63DCDBF83A0AE97F45F900A7E6501A9E0CFC27C8A1EA44D0661C986",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "normalAttack",
+      "startRva": 149130976,
+      "endRva": 149131211,
+      "sha256": "9CC8514F8E14673FC955B52AF0D8BEC228462EE31DFFC759BB73AA52DC919AC4",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "doCast",
+      "startRva": 97654048,
+      "endRva": 97654195,
+      "sha256": "35D51113DED66722A4EE935788D900294171E5D599A500B67E4AD4032900B2F1",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "doCast",
+      "startRva": 97654195,
+      "endRva": 97657942,
+      "sha256": "88859CBC36E11B0C0E17193DB3BE802C63068D185BA8414D0091E4BD7E320094",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "doCast",
+      "startRva": 97657942,
+      "endRva": 97657958,
+      "sha256": "EB5203370B5A12BAFFA3A2BC270AB821D9F96C21146D97FD0287551024EBDEFF",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "doCast",
+      "startRva": 97657958,
+      "endRva": 97661068,
+      "sha256": "C576B072F7FB95EA212084EC81FF1A3025CAFAA9C79C1091944A662A28607764",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97661296,
+      "endRva": 97661466,
+      "sha256": "91B3A5B8EC6A07B048AF440AD8E87502E48E9ABB63AED741AD4D1EF500F1337B",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97661466,
+      "endRva": 97667981,
+      "sha256": "6EDAC93DB9505AF0E4B1EFF57EF2D8E0C16F40794B159F71762B6F54BC34B9C9",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "tryCast",
+      "startRva": 97667981,
+      "endRva": 97668156,
+      "sha256": "32CDCE0DF19A6D6223DB2ABB2EE96D9DAE17F9328559C06AF6B6EE03D23EC22F",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "nextId",
+      "startRva": 89510720,
+      "endRva": 89510907,
+      "sha256": "CDDCE31664FA095534ED1FC1E62EAB0A7BCEE42E2174B1A2D584AEF1AAB5D014",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "nextId",
+      "startRva": 120647644,
+      "endRva": 120647681,
+      "sha256": "2492E55AD46967EF2F028D8A17279DA8E129F61B17BF2BE542AB61014E00D242",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "hasRequest",
+      "startRva": 89284000,
+      "endRva": 89284053,
+      "sha256": "1DA0F8745FA8C9C8417073567E7A8195A6A6F1CEEE5DEE88A7474B0C5A48F649",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "hasRequest",
+      "startRva": 122617322,
+      "endRva": 122617359,
+      "sha256": "BC787F4D5EB28CF5C23A3634C7908FD125CD64D9310E949937CD319FD1A92E15",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    },
+    {
+      "owner": "firstAttack",
+      "startRva": 149145916,
+      "endRva": 149146119,
+      "sha256": "30DBAD94196A5B5786A52D1C03FF2EC097F3C35E15B28638023D0CB27EDFE52A",
+      "boundary": "complete selected unwind-family range; original paths conditional on inactive replacement callbacks"
+    }
+  ],
+  "blocks": {
+    "tickRegisters": {
+      "owner": "tick",
+      "startRva": 87417990,
+      "endRva": 87418018,
+      "instructions": [
+        {
+          "rva": 87417990,
+          "hex": "440f2940c8",
+          "review": "movaps xmmword ptr [rax - 0x38], xmm8"
+        },
+        {
+          "rva": 87417995,
+          "hex": "488bf9",
+          "review": "mov rdi, rcx"
+        },
+        {
+          "rva": 87417998,
+          "hex": "440f2948b8",
+          "review": "movaps xmmword ptr [rax - 0x48], xmm9"
+        },
+        {
+          "rva": 87418003,
+          "hex": "440f28c1",
+          "review": "movaps xmm8, xmm1"
+        },
+        {
+          "rva": 87418007,
+          "hex": "488b05b20d3c0c",
+          "review": "mov rax, qword ptr [rip + 0xc3c0db2]"
+        },
+        {
+          "rva": 87418014,
+          "hex": "440f28ca",
+          "review": "movaps xmm9, xmm2"
+        }
+      ]
+    },
+    "tickZero": {
+      "owner": "tick",
+      "startRva": 87418128,
+      "endRva": 87418136,
+      "instructions": [
+        {
+          "rva": 87418128,
+          "hex": "f30f103dc86f7308",
+          "review": "movss xmm7, dword ptr [rip + 0x8736fc8]"
+        }
+      ]
+    },
+    "tickAllow": {
+      "owner": "tick",
+      "startRva": 87418260,
+      "endRva": 87418361,
+      "instructions": [
+        {
+          "rva": 87418260,
+          "hex": "0f104740",
+          "review": "movups xmm0, xmmword ptr [rdi + 0x40]"
+        },
+        {
+          "rva": 87418264,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 87418267,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 87418270,
+          "hex": "0f104f50",
+          "review": "movups xmm1, xmmword ptr [rdi + 0x50]"
+        },
+        {
+          "rva": 87418274,
+          "hex": "0f11442440",
+          "review": "movups xmmword ptr [rsp + 0x40], xmm0"
+        },
+        {
+          "rva": 87418279,
+          "hex": "488b5c2440",
+          "review": "mov rbx, qword ptr [rsp + 0x40]"
+        },
+        {
+          "rva": 87418284,
+          "hex": "0f104760",
+          "review": "movups xmm0, xmmword ptr [rdi + 0x60]"
+        },
+        {
+          "rva": 87418288,
+          "hex": "488bd3",
+          "review": "mov rdx, rbx"
+        },
+        {
+          "rva": 87418291,
+          "hex": "0f114c2450",
+          "review": "movups xmmword ptr [rsp + 0x50], xmm1"
+        },
+        {
+          "rva": 87418296,
+          "hex": "0f104f70",
+          "review": "movups xmm1, xmmword ptr [rdi + 0x70]"
+        },
+        {
+          "rva": 87418300,
+          "hex": "0f11442460",
+          "review": "movups xmmword ptr [rsp + 0x60], xmm0"
+        },
+        {
+          "rva": 87418305,
+          "hex": "0f108780000000",
+          "review": "movups xmm0, xmmword ptr [rdi + 0x80]"
+        },
+        {
+          "rva": 87418312,
+          "hex": "0f114c2470",
+          "review": "movups xmmword ptr [rsp + 0x70], xmm1"
+        },
+        {
+          "rva": 87418317,
+          "hex": "0f108f90000000",
+          "review": "movups xmm1, xmmword ptr [rdi + 0x90]"
+        },
+        {
+          "rva": 87418324,
+          "hex": "0f114580",
+          "review": "movups xmmword ptr [rbp - 0x80], xmm0"
+        },
+        {
+          "rva": 87418328,
+          "hex": "0f1087a0000000",
+          "review": "movups xmm0, xmmword ptr [rdi + 0xa0]"
+        },
+        {
+          "rva": 87418335,
+          "hex": "0f114d90",
+          "review": "movups xmmword ptr [rbp - 0x70], xmm1"
+        },
+        {
+          "rva": 87418339,
+          "hex": "f20f108fb0000000",
+          "review": "movsd xmm1, qword ptr [rdi + 0xb0]"
+        },
+        {
+          "rva": 87418347,
+          "hex": "0f1145a0",
+          "review": "movups xmmword ptr [rbp - 0x60], xmm0"
+        },
+        {
+          "rva": 87418351,
+          "hex": "f20f114db0",
+          "review": "movsd qword ptr [rbp - 0x50], xmm1"
+        },
+        {
+          "rva": 87418356,
+          "hex": "e887679c00",
+          "review": "call 0x185d24d80"
+        }
+      ]
+    },
+    "changeHandleTick": {
+      "owner": "tick",
+      "startRva": 87420202,
+      "endRva": 87420222,
+      "instructions": [
+        {
+          "rva": 87420202,
+          "hex": "0f2ff7",
+          "review": "comiss xmm6, xmm7"
+        },
+        {
+          "rva": 87420205,
+          "hex": "7648",
+          "review": "jbe 0x18535ed77"
+        },
+        {
+          "rva": 87420207,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 87420210,
+          "hex": "410f28c9",
+          "review": "movaps xmm1, xmm9"
+        },
+        {
+          "rva": 87420214,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 87420217,
+          "hex": "e85a09af03",
+          "review": "call 0x188e4f698"
+        }
+      ]
+    },
+    "tickDelta": {
+      "owner": "tick",
+      "startRva": 87418475,
+      "endRva": 87418524,
+      "instructions": [
+        {
+          "rva": 87418475,
+          "hex": "833dbefd3b0c00",
+          "review": "cmp dword ptr [rip + 0xc3bfdbe], 0"
+        },
+        {
+          "rva": 87418482,
+          "hex": "f30f10442448",
+          "review": "movss xmm0, dword ptr [rsp + 0x48]"
+        },
+        {
+          "rva": 87418488,
+          "hex": "0f104c2468",
+          "review": "movups xmm1, xmmword ptr [rsp + 0x68]"
+        },
+        {
+          "rva": 87418493,
+          "hex": "488b442450",
+          "review": "mov rax, qword ptr [rsp + 0x50]"
+        },
+        {
+          "rva": 87418498,
+          "hex": "f3410f5cc0",
+          "review": "subss xmm0, xmm8"
+        },
+        {
+          "rva": 87418503,
+          "hex": "44884dcc",
+          "review": "mov byte ptr [rbp - 0x34], r9b"
+        },
+        {
+          "rva": 87418507,
+          "hex": "0f114de8",
+          "review": "movups xmmword ptr [rbp - 0x18], xmm1"
+        },
+        {
+          "rva": 87418511,
+          "hex": "488945d0",
+          "review": "mov qword ptr [rbp - 0x30], rax"
+        },
+        {
+          "rva": 87418515,
+          "hex": "0f104d88",
+          "review": "movups xmm1, xmmword ptr [rbp - 0x78]"
+        },
+        {
+          "rva": 87418519,
+          "hex": "f30f1145c8",
+          "review": "movss dword ptr [rbp - 0x38], xmm0"
+        }
+      ]
+    },
+    "tickExpiry": {
+      "owner": "tick",
+      "startRva": 87419095,
+      "endRva": 87419108,
+      "instructions": [
+        {
+          "rva": 87419095,
+          "hex": "0fc6f6aa",
+          "review": "shufps xmm6, xmm6, 0xaa"
+        },
+        {
+          "rva": 87419099,
+          "hex": "0f2ffe",
+          "review": "comiss xmm7, xmm6"
+        },
+        {
+          "rva": 87419102,
+          "hex": "0f8217010000",
+          "review": "jb 0x18535e9fb"
+        }
+      ]
+    },
+    "tickClear": {
+      "owner": "tick",
+      "startRva": 87419343,
+      "endRva": 87419387,
+      "instructions": [
+        {
+          "rva": 87419343,
+          "hex": "0f57c0",
+          "review": "xorps xmm0, xmm0"
+        },
+        {
+          "rva": 87419346,
+          "hex": "0f114738",
+          "review": "movups xmmword ptr [rdi + 0x38], xmm0"
+        },
+        {
+          "rva": 87419350,
+          "hex": "0f114748",
+          "review": "movups xmmword ptr [rdi + 0x48], xmm0"
+        },
+        {
+          "rva": 87419354,
+          "hex": "0f114758",
+          "review": "movups xmmword ptr [rdi + 0x58], xmm0"
+        },
+        {
+          "rva": 87419358,
+          "hex": "0f114768",
+          "review": "movups xmmword ptr [rdi + 0x68], xmm0"
+        },
+        {
+          "rva": 87419362,
+          "hex": "0f114778",
+          "review": "movups xmmword ptr [rdi + 0x78], xmm0"
+        },
+        {
+          "rva": 87419366,
+          "hex": "0f118788000000",
+          "review": "movups xmmword ptr [rdi + 0x88], xmm0"
+        },
+        {
+          "rva": 87419373,
+          "hex": "0f118798000000",
+          "review": "movups xmmword ptr [rdi + 0x98], xmm0"
+        },
+        {
+          "rva": 87419380,
+          "hex": "0f1187a8000000",
+          "review": "movups xmmword ptr [rdi + 0xa8], xmm0"
+        }
+      ]
+    },
+    "tickDispose": {
+      "owner": "tick",
+      "startRva": 87419298,
+      "endRva": 87419343,
+      "instructions": [
+        {
+          "rva": 87419298,
+          "hex": "660f73d808",
+          "review": "psrldq xmm0, 8"
+        },
+        {
+          "rva": 87419303,
+          "hex": "66480f7ec1",
+          "review": "movq rcx, xmm0"
+        },
+        {
+          "rva": 87419308,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 87419311,
+          "hex": "7407",
+          "review": "je 0x18535e9b8"
+        },
+        {
+          "rva": 87419313,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 87419315,
+          "hex": "e8f8060d00",
+          "review": "call 0x18542f0b0"
+        },
+        {
+          "rva": 87419320,
+          "hex": "488d8db8000000",
+          "review": "lea rcx, [rbp + 0xb8]"
+        },
+        {
+          "rva": 87419327,
+          "hex": "48c785b800000000000000",
+          "review": "mov qword ptr [rbp + 0xb8], 0"
+        },
+        {
+          "rva": 87419338,
+          "hex": "e89159dafa",
+          "review": "call 0x180104360"
+        }
+      ]
+    },
+    "normalDispatch": {
+      "owner": "normalAttack",
+      "startRva": 149131046,
+      "endRva": 149131194,
+      "instructions": [
+        {
+          "rva": 149131046,
+          "hex": "0f57c0",
+          "review": "xorps xmm0, xmm0"
+        },
+        {
+          "rva": 149131049,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 149131051,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 149131053,
+          "hex": "4889842480000000",
+          "review": "mov qword ptr [rsp + 0x80], rax"
+        },
+        {
+          "rva": 149131061,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 149131064,
+          "hex": "0f11442470",
+          "review": "movups xmmword ptr [rsp + 0x70], xmm0"
+        },
+        {
+          "rva": 149131069,
+          "hex": "e8fa390000",
+          "review": "call 0x188e3c93c"
+        },
+        {
+          "rva": 149131074,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 149131077,
+          "hex": "7502",
+          "review": "jne 0x188e38f49"
+        },
+        {
+          "rva": 149131079,
+          "hex": "eb71",
+          "review": "jmp 0x188e38fba"
+        },
+        {
+          "rva": 149131081,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 149131083,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 149131086,
+          "hex": "e8e9390000",
+          "review": "call 0x188e3c93c"
+        },
+        {
+          "rva": 149131091,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 149131094,
+          "hex": "7506",
+          "review": "jne 0x188e38f5e"
+        },
+        {
+          "rva": 149131096,
+          "hex": "e8e3592af7",
+          "review": "call 0x1800de940"
+        },
+        {
+          "rva": 149131101,
+          "hex": "cc",
+          "review": "int3 "
+        },
+        {
+          "rva": 149131102,
+          "hex": "488b90f0000000",
+          "review": "mov rdx, qword ptr [rax + 0xf0]"
+        },
+        {
+          "rva": 149131109,
+          "hex": "33c9",
+          "review": "xor ecx, ecx"
+        },
+        {
+          "rva": 149131111,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 149131113,
+          "hex": "894c2460",
+          "review": "mov dword ptr [rsp + 0x60], ecx"
+        },
+        {
+          "rva": 149131117,
+          "hex": "4889442448",
+          "review": "mov qword ptr [rsp + 0x48], rax"
+        },
+        {
+          "rva": 149131122,
+          "hex": "0f57c9",
+          "review": "xorps xmm1, xmm1"
+        },
+        {
+          "rva": 149131125,
+          "hex": "88442440",
+          "review": "mov byte ptr [rsp + 0x40], al"
+        },
+        {
+          "rva": 149131129,
+          "hex": "0f57c0",
+          "review": "xorps xmm0, xmm0"
+        },
+        {
+          "rva": 149131132,
+          "hex": "4889842480000000",
+          "review": "mov qword ptr [rsp + 0x80], rax"
+        },
+        {
+          "rva": 149131140,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 149131143,
+          "hex": "488d442470",
+          "review": "lea rax, [rsp + 0x70]"
+        },
+        {
+          "rva": 149131148,
+          "hex": "0f294c2450",
+          "review": "movaps xmmword ptr [rsp + 0x50], xmm1"
+        },
+        {
+          "rva": 149131153,
+          "hex": "4889442438",
+          "review": "mov qword ptr [rsp + 0x38], rax"
+        },
+        {
+          "rva": 149131158,
+          "hex": "4c8bc3",
+          "review": "mov r8, rbx"
+        },
+        {
+          "rva": 149131161,
+          "hex": "48894c2430",
+          "review": "mov qword ptr [rsp + 0x30], rcx"
+        },
+        {
+          "rva": 149131166,
+          "hex": "488d442450",
+          "review": "lea rax, [rsp + 0x50]"
+        },
+        {
+          "rva": 149131171,
+          "hex": "48894c2428",
+          "review": "mov qword ptr [rsp + 0x28], rcx"
+        },
+        {
+          "rva": 149131176,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 149131179,
+          "hex": "0f11442470",
+          "review": "movups xmmword ptr [rsp + 0x70], xmm0"
+        },
+        {
+          "rva": 149131184,
+          "hex": "4889442420",
+          "review": "mov qword ptr [rsp + 0x20], rax"
+        },
+        {
+          "rva": 149131189,
+          "hex": "e8b6a1eefc",
+          "review": "call 0x185d23170"
+        }
+      ]
+    },
+    "firstSelection": {
+      "owner": "firstAttack",
+      "startRva": 149146022,
+      "endRva": 149146097,
+      "instructions": [
+        {
+          "rva": 149146022,
+          "hex": "488b150ba38907",
+          "review": "mov rdx, qword ptr [rip + 0x789a30b]"
+        },
+        {
+          "rva": 149146029,
+          "hex": "33db",
+          "review": "xor ebx, ebx"
+        },
+        {
+          "rva": 149146031,
+          "hex": "488b8f88020000",
+          "review": "mov rcx, qword ptr [rdi + 0x288]"
+        },
+        {
+          "rva": 149146038,
+          "hex": "e8f5261cfc",
+          "review": "call 0x184fff0b0"
+        },
+        {
+          "rva": 149146043,
+          "hex": "8bf0",
+          "review": "mov esi, eax"
+        },
+        {
+          "rva": 149146045,
+          "hex": "85c0",
+          "review": "test eax, eax"
+        },
+        {
+          "rva": 149146047,
+          "hex": "7e2e",
+          "review": "jle 0x188e3c9ef"
+        },
+        {
+          "rva": 149146049,
+          "hex": "488b8f88020000",
+          "review": "mov rcx, qword ptr [rdi + 0x288]"
+        },
+        {
+          "rva": 149146056,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 149146059,
+          "hex": "7434",
+          "review": "je 0x188e3ca01"
+        },
+        {
+          "rva": 149146061,
+          "hex": "4c8b0504a38907",
+          "review": "mov r8, qword ptr [rip + 0x789a304]"
+        },
+        {
+          "rva": 149146068,
+          "hex": "8bd3",
+          "review": "mov edx, ebx"
+        },
+        {
+          "rva": 149146070,
+          "hex": "e8753516fc",
+          "review": "call 0x184f9ff50"
+        },
+        {
+          "rva": 149146075,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 149146078,
+          "hex": "7421",
+          "review": "je 0x188e3ca01"
+        },
+        {
+          "rva": 149146080,
+          "hex": "83b8d800000000",
+          "review": "cmp dword ptr [rax + 0xd8], 0"
+        },
+        {
+          "rva": 149146087,
+          "hex": "7408",
+          "review": "je 0x188e3c9f1"
+        },
+        {
+          "rva": 149146089,
+          "hex": "ffc3",
+          "review": "inc ebx"
+        },
+        {
+          "rva": 149146091,
+          "hex": "3bde",
+          "review": "cmp ebx, esi"
+        },
+        {
+          "rva": 149146093,
+          "hex": "7cd2",
+          "review": "jl 0x188e3c9c1"
+        },
+        {
+          "rva": 149146095,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        }
+      ]
+    },
+    "hasRequestRead": {
+      "owner": "hasRequest",
+      "startRva": 89284027,
+      "endRva": 89284053,
+      "instructions": [
+        {
+          "rva": 89284027,
+          "hex": "80793800",
+          "review": "cmp byte ptr [rcx + 0x38], 0"
+        },
+        {
+          "rva": 89284031,
+          "hex": "750a",
+          "review": "jne 0x185525dcb"
+        },
+        {
+          "rva": 89284033,
+          "hex": "32c0",
+          "review": "xor al, al"
+        },
+        {
+          "rva": 89284035,
+          "hex": "4881c4a8000000",
+          "review": "add rsp, 0xa8"
+        },
+        {
+          "rva": 89284042,
+          "hex": "c3",
+          "review": "ret "
+        },
+        {
+          "rva": 89284043,
+          "hex": "488b4148",
+          "review": "mov rax, qword ptr [rcx + 0x48]"
+        },
+        {
+          "rva": 89284047,
+          "hex": "48c1e820",
+          "review": "shr rax, 0x20"
+        },
+        {
+          "rva": 89284051,
+          "hex": "ebee",
+          "review": "jmp 0x185525dc3"
+        }
+      ]
+    },
+    "nextIdRead": {
+      "owner": "nextId",
+      "startRva": 89510747,
+      "endRva": 89510907,
+      "instructions": [
+        {
+          "rva": 89510747,
+          "hex": "80793800",
+          "review": "cmp byte ptr [rcx + 0x38], 0"
+        },
+        {
+          "rva": 89510751,
+          "hex": "745f",
+          "review": "je 0x18555d3c0"
+        },
+        {
+          "rva": 89510753,
+          "hex": "0f104150",
+          "review": "movups xmm0, xmmword ptr [rcx + 0x50]"
+        },
+        {
+          "rva": 89510757,
+          "hex": "488b4148",
+          "review": "mov rax, qword ptr [rcx + 0x48]"
+        },
+        {
+          "rva": 89510761,
+          "hex": "0f104960",
+          "review": "movups xmm1, xmmword ptr [rcx + 0x60]"
+        },
+        {
+          "rva": 89510765,
+          "hex": "48c1e820",
+          "review": "shr rax, 0x20"
+        },
+        {
+          "rva": 89510769,
+          "hex": "0f29442430",
+          "review": "movaps xmmword ptr [rsp + 0x30], xmm0"
+        },
+        {
+          "rva": 89510774,
+          "hex": "0f294c2440",
+          "review": "movaps xmmword ptr [rsp + 0x40], xmm1"
+        },
+        {
+          "rva": 89510779,
+          "hex": "0f104170",
+          "review": "movups xmm0, xmmword ptr [rcx + 0x70]"
+        },
+        {
+          "rva": 89510783,
+          "hex": "0f108980000000",
+          "review": "movups xmm1, xmmword ptr [rcx + 0x80]"
+        },
+        {
+          "rva": 89510790,
+          "hex": "0f29442450",
+          "review": "movaps xmmword ptr [rsp + 0x50], xmm0"
+        },
+        {
+          "rva": 89510795,
+          "hex": "0f294c2460",
+          "review": "movaps xmmword ptr [rsp + 0x60], xmm1"
+        },
+        {
+          "rva": 89510800,
+          "hex": "0f108190000000",
+          "review": "movups xmm0, xmmword ptr [rcx + 0x90]"
+        },
+        {
+          "rva": 89510807,
+          "hex": "0f1089a0000000",
+          "review": "movups xmm1, xmmword ptr [rcx + 0xa0]"
+        },
+        {
+          "rva": 89510814,
+          "hex": "0f29442470",
+          "review": "movaps xmmword ptr [rsp + 0x70], xmm0"
+        },
+        {
+          "rva": 89510819,
+          "hex": "f20f1081b0000000",
+          "review": "movsd xmm0, qword ptr [rcx + 0xb0]"
+        },
+        {
+          "rva": 89510827,
+          "hex": "f20f11842490000000",
+          "review": "movsd qword ptr [rsp + 0x90], xmm0"
+        },
+        {
+          "rva": 89510836,
+          "hex": "0f298c2480000000",
+          "review": "movaps xmmword ptr [rsp + 0x80], xmm1"
+        },
+        {
+          "rva": 89510844,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 89510846,
+          "hex": "7519",
+          "review": "jne 0x18555d3d9"
+        },
+        {
+          "rva": 89510848,
+          "hex": "488b05b972200b",
+          "review": "mov rax, qword ptr [rip + 0xb2072b9]"
+        },
+        {
+          "rva": 89510855,
+          "hex": "488b80b8000000",
+          "review": "mov rax, qword ptr [rax + 0xb8]"
+        },
+        {
+          "rva": 89510862,
+          "hex": "488b00",
+          "review": "mov rax, qword ptr [rax]"
+        },
+        {
+          "rva": 89510865,
+          "hex": "4881c4a8000000",
+          "review": "add rsp, 0xa8"
+        },
+        {
+          "rva": 89510872,
+          "hex": "c3",
+          "review": "ret "
+        },
+        {
+          "rva": 89510873,
+          "hex": "4c8b05a855180b",
+          "review": "mov r8, qword ptr [rip + 0xb1855a8]"
+        },
+        {
+          "rva": 89510880,
+          "hex": "488d5138",
+          "review": "lea rdx, [rcx + 0x38]"
+        },
+        {
+          "rva": 89510884,
+          "hex": "488d4c2420",
+          "review": "lea rcx, [rsp + 0x20]"
+        },
+        {
+          "rva": 89510889,
+          "hex": "e812b2c500",
+          "review": "call 0x1861b8600"
+        },
+        {
+          "rva": 89510894,
+          "hex": "488b442420",
+          "review": "mov rax, qword ptr [rsp + 0x20]"
+        },
+        {
+          "rva": 89510899,
+          "hex": "4881c4a8000000",
+          "review": "add rsp, 0xa8"
+        },
+        {
+          "rva": 89510906,
+          "hex": "c3",
+          "review": "ret "
+        }
+      ]
+    },
+    "allowOriginal": {
+      "owner": "allow",
+      "startRva": 97668512,
+      "endRva": 97668650,
+      "instructions": [
+        {
+          "rva": 97668512,
+          "hex": "488b4b10",
+          "review": "mov rcx, qword ptr [rbx + 0x10]"
+        },
+        {
+          "rva": 97668516,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97668519,
+          "hex": "7475",
+          "review": "je 0x185d24e1e"
+        },
+        {
+          "rva": 97668521,
+          "hex": "4c8b0540d79b0a",
+          "review": "mov r8, qword ptr [rip + 0xa9bd740]"
+        },
+        {
+          "rva": 97668528,
+          "hex": "488b8990020000",
+          "review": "mov rcx, qword ptr [rcx + 0x290]"
+        },
+        {
+          "rva": 97668535,
+          "hex": "e824f91900",
+          "review": "call 0x185ec46e0"
+        },
+        {
+          "rva": 97668540,
+          "hex": "488bd0",
+          "review": "mov rdx, rax"
+        },
+        {
+          "rva": 97668543,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 97668546,
+          "hex": "7464",
+          "review": "je 0x185d24e28"
+        },
+        {
+          "rva": 97668548,
+          "hex": "807b3800",
+          "review": "cmp byte ptr [rbx + 0x38], 0"
+        },
+        {
+          "rva": 97668552,
+          "hex": "741e",
+          "review": "je 0x185d24de8"
+        },
+        {
+          "rva": 97668554,
+          "hex": "807b5800",
+          "review": "cmp byte ptr [rbx + 0x58], 0"
+        },
+        {
+          "rva": 97668558,
+          "hex": "f20f1083b0000000",
+          "review": "movsd xmm0, qword ptr [rbx + 0xb0]"
+        },
+        {
+          "rva": 97668566,
+          "hex": "0f109ba0000000",
+          "review": "movups xmm3, xmmword ptr [rbx + 0xa0]"
+        },
+        {
+          "rva": 97668573,
+          "hex": "f20f11842490000000",
+          "review": "movsd qword ptr [rsp + 0x90], xmm0"
+        },
+        {
+          "rva": 97668582,
+          "hex": "7524",
+          "review": "jne 0x185d24e0c"
+        },
+        {
+          "rva": 97668584,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 97668586,
+          "hex": "66c1e808",
+          "review": "shr ax, 8"
+        },
+        {
+          "rva": 97668590,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97668592,
+          "hex": "7532",
+          "review": "jne 0x185d24e24"
+        },
+        {
+          "rva": 97668594,
+          "hex": "488b4b10",
+          "review": "mov rcx, qword ptr [rbx + 0x10]"
+        },
+        {
+          "rva": 97668598,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97668601,
+          "hex": "7423",
+          "review": "je 0x185d24e1e"
+        },
+        {
+          "rva": 97668603,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97668606,
+          "hex": "e82d000000",
+          "review": "call 0x185d24e30"
+        },
+        {
+          "rva": 97668611,
+          "hex": "4881c4a0000000",
+          "review": "add rsp, 0xa0"
+        },
+        {
+          "rva": 97668618,
+          "hex": "5b",
+          "review": "pop rbx"
+        },
+        {
+          "rva": 97668619,
+          "hex": "c3",
+          "review": "ret "
+        },
+        {
+          "rva": 97668620,
+          "hex": "660f73db04",
+          "review": "psrldq xmm3, 4"
+        },
+        {
+          "rva": 97668625,
+          "hex": "660f7ed8",
+          "review": "movd eax, xmm3"
+        },
+        {
+          "rva": 97668629,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97668631,
+          "hex": "74cf",
+          "review": "je 0x185d24de8"
+        },
+        {
+          "rva": 97668633,
+          "hex": "e9fe858e01",
+          "review": "jmp 0x18760d41c"
+        },
+        {
+          "rva": 97668638,
+          "hex": "e81d9b3bfa",
+          "review": "call 0x1800de940"
+        },
+        {
+          "rva": 97668643,
+          "hex": "cc",
+          "review": "int3 "
+        },
+        {
+          "rva": 97668644,
+          "hex": "b001",
+          "review": "mov al, 1"
+        },
+        {
+          "rva": 97668646,
+          "hex": "ebdb",
+          "review": "jmp 0x185d24e03"
+        },
+        {
+          "rva": 97668648,
+          "hex": "ebd9",
+          "review": "jmp 0x185d24e03"
+        }
+      ]
+    },
+    "allowOption": {
+      "owner": "allow",
+      "startRva": 123786268,
+      "endRva": 123786308,
+      "instructions": [
+        {
+          "rva": 123786268,
+          "hex": "488b842490000000",
+          "review": "mov rax, qword ptr [rsp + 0x90]"
+        },
+        {
+          "rva": 123786276,
+          "hex": "48c1e820",
+          "review": "shr rax, 0x20"
+        },
+        {
+          "rva": 123786280,
+          "hex": "888424c9000000",
+          "review": "mov byte ptr [rsp + 0xc9], al"
+        },
+        {
+          "rva": 123786287,
+          "hex": "c68424c800000001",
+          "review": "mov byte ptr [rsp + 0xc8], 1"
+        },
+        {
+          "rva": 123786295,
+          "hex": "0fb78424c8000000",
+          "review": "movzx eax, word ptr [rsp + 0xc8]"
+        },
+        {
+          "rva": 123786303,
+          "hex": "e9a67971fe",
+          "review": "jmp 0x185d24dea"
+        }
+      ]
+    },
+    "interruptAndTarget": {
+      "owner": "tryCast",
+      "startRva": 97662356,
+      "endRva": 97662488,
+      "instructions": [
+        {
+          "rva": 97662356,
+          "hex": "4c8b7d50",
+          "review": "mov r15, qword ptr [rbp + 0x50]"
+        },
+        {
+          "rva": 97662360,
+          "hex": "488bf8",
+          "review": "mov rdi, rax"
+        },
+        {
+          "rva": 97662363,
+          "hex": "413837",
+          "review": "cmp byte ptr [r15], sil"
+        },
+        {
+          "rva": 97662366,
+          "hex": "7411",
+          "review": "je 0x185d235b1"
+        },
+        {
+          "rva": 97662368,
+          "hex": "498b4f0c",
+          "review": "mov rcx, qword ptr [r15 + 0xc]"
+        },
+        {
+          "rva": 97662372,
+          "hex": "48c1e920",
+          "review": "shr rcx, 0x20"
+        },
+        {
+          "rva": 97662376,
+          "hex": "84c9",
+          "review": "test cl, cl"
+        },
+        {
+          "rva": 97662378,
+          "hex": "7405",
+          "review": "je 0x185d235b1"
+        },
+        {
+          "rva": 97662380,
+          "hex": "41b601",
+          "review": "mov r14b, 1"
+        },
+        {
+          "rva": 97662383,
+          "hex": "eb19",
+          "review": "jmp 0x185d235ca"
+        },
+        {
+          "rva": 97662385,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97662388,
+          "hex": "488bd7",
+          "review": "mov rdx, rdi"
+        },
+        {
+          "rva": 97662391,
+          "hex": "498bcd",
+          "review": "mov rcx, r13"
+        },
+        {
+          "rva": 97662394,
+          "hex": "4532f6",
+          "review": "xor r14b, r14b"
+        },
+        {
+          "rva": 97662397,
+          "hex": "e86e180000",
+          "review": "call 0x185d24e30"
+        },
+        {
+          "rva": 97662402,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97662404,
+          "hex": "0f848b150000",
+          "review": "je 0x185d24b55"
+        },
+        {
+          "rva": 97662410,
+          "hex": "413837",
+          "review": "cmp byte ptr [r15], sil"
+        },
+        {
+          "rva": 97662413,
+          "hex": "7409",
+          "review": "je 0x185d235d8"
+        },
+        {
+          "rva": 97662415,
+          "hex": "418b4704",
+          "review": "mov eax, dword ptr [r15 + 4]"
+        },
+        {
+          "rva": 97662419,
+          "hex": "0fb6d0",
+          "review": "movzx edx, al"
+        },
+        {
+          "rva": 97662422,
+          "hex": "eb02",
+          "review": "jmp 0x185d235da"
+        },
+        {
+          "rva": 97662424,
+          "hex": "8bd6",
+          "review": "mov edx, esi"
+        },
+        {
+          "rva": 97662426,
+          "hex": "740d",
+          "review": "je 0x185d235e9"
+        },
+        {
+          "rva": 97662428,
+          "hex": "498b4704",
+          "review": "mov rax, qword ptr [r15 + 4]"
+        },
+        {
+          "rva": 97662432,
+          "hex": "48c1e808",
+          "review": "shr rax, 8"
+        },
+        {
+          "rva": 97662436,
+          "hex": "0fb6c8",
+          "review": "movzx ecx, al"
+        },
+        {
+          "rva": 97662439,
+          "hex": "eb02",
+          "review": "jmp 0x185d235eb"
+        },
+        {
+          "rva": 97662441,
+          "hex": "8bce",
+          "review": "mov ecx, esi"
+        },
+        {
+          "rva": 97662443,
+          "hex": "4885ff",
+          "review": "test rdi, rdi"
+        },
+        {
+          "rva": 97662446,
+          "hex": "0f8499150000",
+          "review": "je 0x185d24b8d"
+        },
+        {
+          "rva": 97662452,
+          "hex": "85c9",
+          "review": "test ecx, ecx"
+        },
+        {
+          "rva": 97662454,
+          "hex": "4889742420",
+          "review": "mov qword ptr [rsp + 0x20], rsi"
+        },
+        {
+          "rva": 97662459,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 97662462,
+          "hex": "410f95c1",
+          "review": "setne r9b"
+        },
+        {
+          "rva": 97662466,
+          "hex": "85d2",
+          "review": "test edx, edx"
+        },
+        {
+          "rva": 97662468,
+          "hex": "488bd3",
+          "review": "mov rdx, rbx"
+        },
+        {
+          "rva": 97662471,
+          "hex": "410f95c0",
+          "review": "setne r8b"
+        },
+        {
+          "rva": 97662475,
+          "hex": "e8d0faffff",
+          "review": "call 0x185d230e0"
+        },
+        {
+          "rva": 97662480,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97662482,
+          "hex": "0f843d150000",
+          "review": "je 0x185d24b55"
+        }
+      ]
+    },
+    "switchAndCurrent": {
+      "owner": "tryCast",
+      "startRva": 97662788,
+      "endRva": 97663000,
+      "instructions": [
+        {
+          "rva": 97662788,
+          "hex": "488b4f38",
+          "review": "mov rcx, qword ptr [rdi + 0x38]"
+        },
+        {
+          "rva": 97662792,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97662795,
+          "hex": "0f843c140000",
+          "review": "je 0x185d24b8d"
+        },
+        {
+          "rva": 97662801,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97662804,
+          "hex": "488bd3",
+          "review": "mov rdx, rbx"
+        },
+        {
+          "rva": 97662807,
+          "hex": "e824ab7a00",
+          "review": "call 0x1864ce280"
+        },
+        {
+          "rva": 97662812,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97662814,
+          "hex": "0f85e1100000",
+          "review": "jne 0x185d24845"
+        },
+        {
+          "rva": 97662820,
+          "hex": "41c685a002000001",
+          "review": "mov byte ptr [r13 + 0x2a0], 1"
+        },
+        {
+          "rva": 97662828,
+          "hex": "4584f6",
+          "review": "test r14b, r14b"
+        },
+        {
+          "rva": 97662831,
+          "hex": "0f858f000000",
+          "review": "jne 0x185d23804"
+        },
+        {
+          "rva": 97662837,
+          "hex": "498b8dd8030000",
+          "review": "mov rcx, qword ptr [r13 + 0x3d8]"
+        },
+        {
+          "rva": 97662844,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97662847,
+          "hex": "0f847f000000",
+          "review": "je 0x185d23804"
+        },
+        {
+          "rva": 97662853,
+          "hex": "3935a5ac9f0b",
+          "review": "cmp dword ptr [rip + 0xb9faca5], esi"
+        },
+        {
+          "rva": 97662859,
+          "hex": "4889742470",
+          "review": "mov qword ptr [rsp + 0x70], rsi"
+        },
+        {
+          "rva": 97662864,
+          "hex": "0f11742478",
+          "review": "movups xmmword ptr [rsp + 0x78], xmm6"
+        },
+        {
+          "rva": 97662869,
+          "hex": "7444",
+          "review": "je 0x185d237db"
+        },
+        {
+          "rva": 97662871,
+          "hex": "4c8d5580",
+          "review": "lea r10, [rbp - 0x80]"
+        },
+        {
+          "rva": 97662875,
+          "hex": "49c1ea0c",
+          "review": "shr r10, 0xc"
+        },
+        {
+          "rva": 97662879,
+          "hex": "4181e2ffff1f00",
+          "review": "and r10d, 0x1fffff"
+        },
+        {
+          "rva": 97662886,
+          "hex": "458bca",
+          "review": "mov r9d, r10d"
+        },
+        {
+          "rva": 97662889,
+          "hex": "49c1e906",
+          "review": "shr r9, 6"
+        },
+        {
+          "rva": 97662893,
+          "hex": "4183e23f",
+          "review": "and r10d, 0x3f"
+        },
+        {
+          "rva": 97662897,
+          "hex": "430f0d8ccc181a4c11",
+          "review": "prefetchw byte ptr [r12 + r9*8 + 0x114c1a18]"
+        },
+        {
+          "rva": 97662906,
+          "hex": "660f1f440000",
+          "review": "nop word ptr [rax + rax]"
+        },
+        {
+          "rva": 97662912,
+          "hex": "4b8b84cc181a4c11",
+          "review": "mov rax, qword ptr [r12 + r9*8 + 0x114c1a18]"
+        },
+        {
+          "rva": 97662920,
+          "hex": "4c8bc0",
+          "review": "mov r8, rax"
+        },
+        {
+          "rva": 97662923,
+          "hex": "4d0fabd0",
+          "review": "bts r8, r10"
+        },
+        {
+          "rva": 97662927,
+          "hex": "f04f0fb184cc181a4c11",
+          "review": "lock cmpxchg qword ptr [r12 + r9*8 + 0x114c1a18], r8"
+        },
+        {
+          "rva": 97662937,
+          "hex": "75e5",
+          "review": "jne 0x185d237c0"
+        },
+        {
+          "rva": 97662939,
+          "hex": "f20f104d80",
+          "review": "movsd xmm1, qword ptr [rbp - 0x80]"
+        },
+        {
+          "rva": 97662944,
+          "hex": "4c8d45a0",
+          "review": "lea r8, [rbp - 0x60]"
+        },
+        {
+          "rva": 97662948,
+          "hex": "c644247001",
+          "review": "mov byte ptr [rsp + 0x70], 1"
+        },
+        {
+          "rva": 97662953,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 97662956,
+          "hex": "0f10442470",
+          "review": "movups xmm0, xmmword ptr [rsp + 0x70]"
+        },
+        {
+          "rva": 97662961,
+          "hex": "ba07000000",
+          "review": "mov edx, 7"
+        },
+        {
+          "rva": 97662966,
+          "hex": "f20f114db0",
+          "review": "movsd qword ptr [rbp - 0x50], xmm1"
+        },
+        {
+          "rva": 97662971,
+          "hex": "0f2945a0",
+          "review": "movaps xmmword ptr [rbp - 0x60], xmm0"
+        },
+        {
+          "rva": 97662975,
+          "hex": "e8fc56ccff",
+          "review": "call 0x1859e8f00"
+        },
+        {
+          "rva": 97662980,
+          "hex": "393526ac9f0b",
+          "review": "cmp dword ptr [rip + 0xb9fac26], esi"
+        },
+        {
+          "rva": 97662986,
+          "hex": "4c8d35efc72dfa",
+          "review": "lea r14, [rip - 0x5d23811]"
+        },
+        {
+          "rva": 97662993,
+          "hex": "4989bdd8030000",
+          "review": "mov qword ptr [r13 + 0x3d8], rdi"
+        }
+      ]
+    },
+    "prepareSelected": {
+      "owner": "tryCast",
+      "startRva": 97663067,
+      "endRva": 97663154,
+      "instructions": [
+        {
+          "rva": 97663067,
+          "hex": "488b4f30",
+          "review": "mov rcx, qword ptr [rdi + 0x30]"
+        },
+        {
+          "rva": 97663071,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97663074,
+          "hex": "0f8425130000",
+          "review": "je 0x185d24b8d"
+        },
+        {
+          "rva": 97663080,
+          "hex": "488b5568",
+          "review": "mov rdx, qword ptr [rbp + 0x68]"
+        },
+        {
+          "rva": 97663084,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97663087,
+          "hex": "e82c9d8a00",
+          "review": "call 0x1865cd5a0"
+        },
+        {
+          "rva": 97663092,
+          "hex": "410f1007",
+          "review": "movups xmm0, xmmword ptr [r15]"
+        },
+        {
+          "rva": 97663096,
+          "hex": "418b4710",
+          "review": "mov eax, dword ptr [r15 + 0x10]"
+        },
+        {
+          "rva": 97663100,
+          "hex": "4c8d442470",
+          "review": "lea r8, [rsp + 0x70]"
+        },
+        {
+          "rva": 97663105,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 97663108,
+          "hex": "894580",
+          "review": "mov dword ptr [rbp - 0x80], eax"
+        },
+        {
+          "rva": 97663111,
+          "hex": "488bd3",
+          "review": "mov rdx, rbx"
+        },
+        {
+          "rva": 97663114,
+          "hex": "0f29442470",
+          "review": "movaps xmmword ptr [rsp + 0x70], xmm0"
+        },
+        {
+          "rva": 97663119,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 97663122,
+          "hex": "e869b15200",
+          "review": "call 0x18624ea00"
+        },
+        {
+          "rva": 97663127,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 97663129,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 97663132,
+          "hex": "e80ff8ffff",
+          "review": "call 0x185d230b0"
+        },
+        {
+          "rva": 97663137,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 97663140,
+          "hex": "4c8bc0",
+          "review": "mov r8, rax"
+        },
+        {
+          "rva": 97663143,
+          "hex": "488bd7",
+          "review": "mov rdx, rdi"
+        },
+        {
+          "rva": 97663146,
+          "hex": "498bcd",
+          "review": "mov rcx, r13"
+        },
+        {
+          "rva": 97663149,
+          "hex": "e8fe43ccff",
+          "review": "call 0x1859e7cb0"
+        }
+      ]
+    },
+    "inlineReset": {
+      "owner": "tryCast",
+      "startRva": 97665223,
+      "endRva": 97665416,
+      "instructions": [
+        {
+          "rva": 97665223,
+          "hex": "ffd0",
+          "review": "call rax"
+        },
+        {
+          "rva": 97665225,
+          "hex": "488b4f50",
+          "review": "mov rcx, qword ptr [rdi + 0x50]"
+        },
+        {
+          "rva": 97665229,
+          "hex": "8987a8000000",
+          "review": "mov dword ptr [rdi + 0xa8], eax"
+        },
+        {
+          "rva": 97665235,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97665238,
+          "hex": "0f84ce0a0000",
+          "review": "je 0x185d24baa"
+        },
+        {
+          "rva": 97665244,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97665247,
+          "hex": "b201",
+          "review": "mov dl, 1"
+        },
+        {
+          "rva": 97665249,
+          "hex": "e85a15b8ff",
+          "review": "call 0x1858a5640"
+        },
+        {
+          "rva": 97665254,
+          "hex": "66410f7ef7",
+          "review": "movd r15d, xmm6"
+        },
+        {
+          "rva": 97665259,
+          "hex": "488bc6",
+          "review": "mov rax, rsi"
+        },
+        {
+          "rva": 97665262,
+          "hex": "4584ff",
+          "review": "test r15b, r15b"
+        },
+        {
+          "rva": 97665265,
+          "hex": "480f45442478",
+          "review": "cmovne rax, qword ptr [rsp + 0x78]"
+        },
+        {
+          "rva": 97665271,
+          "hex": "4c8b7748",
+          "review": "mov r14, qword ptr [rdi + 0x48]"
+        },
+        {
+          "rva": 97665275,
+          "hex": "48894590",
+          "review": "mov qword ptr [rbp - 0x70], rax"
+        },
+        {
+          "rva": 97665279,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 97665281,
+          "hex": "7407",
+          "review": "je 0x185d2410a"
+        },
+        {
+          "rva": 97665283,
+          "hex": "f30f104594",
+          "review": "movss xmm0, dword ptr [rbp - 0x6c]"
+        },
+        {
+          "rva": 97665288,
+          "hex": "eb0a",
+          "review": "jmp 0x185d24114"
+        },
+        {
+          "rva": 97665290,
+          "hex": "33d2",
+          "review": "xor edx, edx"
+        },
+        {
+          "rva": 97665292,
+          "hex": "488bcf",
+          "review": "mov rcx, rdi"
+        },
+        {
+          "rva": 97665295,
+          "hex": "e8ecf1b7ff",
+          "review": "call 0x1858a3300"
+        },
+        {
+          "rva": 97665300,
+          "hex": "4d85f6",
+          "review": "test r14, r14"
+        },
+        {
+          "rva": 97665303,
+          "hex": "0f848d0a0000",
+          "review": "je 0x185d24baa"
+        },
+        {
+          "rva": 97665309,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 97665312,
+          "hex": "41b001",
+          "review": "mov r8b, 1"
+        },
+        {
+          "rva": 97665315,
+          "hex": "0f28c8",
+          "review": "movaps xmm1, xmm0"
+        },
+        {
+          "rva": 97665318,
+          "hex": "498bce",
+          "review": "mov rcx, r14"
+        },
+        {
+          "rva": 97665321,
+          "hex": "e862bfffff",
+          "review": "call 0x185d20090"
+        },
+        {
+          "rva": 97665326,
+          "hex": "4584ff",
+          "review": "test r15b, r15b"
+        },
+        {
+          "rva": 97665329,
+          "hex": "7412",
+          "review": "je 0x185d24145"
+        },
+        {
+          "rva": 97665331,
+          "hex": "660f73de04",
+          "review": "psrldq xmm6, 4"
+        },
+        {
+          "rva": 97665336,
+          "hex": "660f7ef0",
+          "review": "movd eax, xmm6"
+        },
+        {
+          "rva": 97665340,
+          "hex": "48c1e818",
+          "review": "shr rax, 0x18"
+        },
+        {
+          "rva": 97665344,
+          "hex": "0fb6c8",
+          "review": "movzx ecx, al"
+        },
+        {
+          "rva": 97665347,
+          "hex": "eb02",
+          "review": "jmp 0x185d24147"
+        },
+        {
+          "rva": 97665349,
+          "hex": "8bce",
+          "review": "mov ecx, esi"
+        },
+        {
+          "rva": 97665351,
+          "hex": "85c9",
+          "review": "test ecx, ecx"
+        },
+        {
+          "rva": 97665353,
+          "hex": "4c8d3db0be2dfa",
+          "review": "lea r15, [rip - 0x5d24150]"
+        },
+        {
+          "rva": 97665360,
+          "hex": "8b0ddaa29f0b",
+          "review": "mov ecx, dword ptr [rip + 0xb9fa2da]"
+        },
+        {
+          "rva": 97665366,
+          "hex": "0f95c0",
+          "review": "setne al"
+        },
+        {
+          "rva": 97665369,
+          "hex": "8887b6000000",
+          "review": "mov byte ptr [rdi + 0xb6], al"
+        },
+        {
+          "rva": 97665375,
+          "hex": "0fb64570",
+          "review": "movzx eax, byte ptr [rbp + 0x70]"
+        },
+        {
+          "rva": 97665379,
+          "hex": "884760",
+          "review": "mov byte ptr [rdi + 0x60], al"
+        },
+        {
+          "rva": 97665382,
+          "hex": "89b7b0000000",
+          "review": "mov dword ptr [rdi + 0xb0], esi"
+        },
+        {
+          "rva": 97665388,
+          "hex": "6689b7b4000000",
+          "review": "mov word ptr [rdi + 0xb4], si"
+        },
+        {
+          "rva": 97665395,
+          "hex": "89b788000000",
+          "review": "mov dword ptr [rdi + 0x88], esi"
+        },
+        {
+          "rva": 97665401,
+          "hex": "6689b78c000000",
+          "review": "mov word ptr [rdi + 0x8c], si"
+        },
+        {
+          "rva": 97665408,
+          "hex": "40887761",
+          "review": "mov byte ptr [rdi + 0x61], sil"
+        },
+        {
+          "rva": 97665412,
+          "hex": "48895f58",
+          "review": "mov qword ptr [rdi + 0x58], rbx"
+        }
+      ]
+    },
+    "inlineCallbacks": {
+      "owner": "tryCast",
+      "startRva": 97665489,
+      "endRva": 97665497,
+      "instructions": [
+        {
+          "rva": 97665489,
+          "hex": "488b4558",
+          "review": "mov rax, qword ptr [rbp + 0x58]"
+        },
+        {
+          "rva": 97665493,
+          "hex": "48894768",
+          "review": "mov qword ptr [rdi + 0x68], rax"
+        }
+      ]
+    },
+    "trySuccess": {
+      "owner": "tryCast",
+      "startRva": 97667133,
+      "endRva": 97667148,
+      "instructions": [
+        {
+          "rva": 97667133,
+          "hex": "41c685a002000000",
+          "review": "mov byte ptr [r13 + 0x2a0], 0"
+        },
+        {
+          "rva": 97667141,
+          "hex": "b001",
+          "review": "mov al, 1"
+        },
+        {
+          "rva": 97667143,
+          "hex": "e90b030000",
+          "review": "jmp 0x185d24b57"
+        }
+      ]
+    },
+    "tryFailure": {
+      "owner": "tryCast",
+      "startRva": 97667925,
+      "endRva": 97667927,
+      "instructions": [
+        {
+          "rva": 97667925,
+          "hex": "32c0",
+          "review": "xor al, al"
+        }
+      ]
+    },
+    "doCastDurationReset": {
+      "owner": "doCast",
+      "startRva": 97654670,
+      "endRva": 97654679,
+      "instructions": [
+        {
+          "rva": 97654670,
+          "hex": "8b4110",
+          "review": "mov eax, dword ptr [rcx + 0x10]"
+        },
+        {
+          "rva": 97654673,
+          "hex": "894114",
+          "review": "mov dword ptr [rcx + 0x14], eax"
+        },
+        {
+          "rva": 97654676,
+          "hex": "897918",
+          "review": "mov dword ptr [rcx + 0x18], edi"
+        }
+      ]
+    },
+    "doCastReset": {
+      "owner": "doCast",
+      "startRva": 97654744,
+      "endRva": 97654849,
+      "instructions": [
+        {
+          "rva": 97654744,
+          "hex": "4533c9",
+          "review": "xor r9d, r9d"
+        },
+        {
+          "rva": 97654747,
+          "hex": "41b001",
+          "review": "mov r8b, 1"
+        },
+        {
+          "rva": 97654750,
+          "hex": "0f28c8",
+          "review": "movaps xmm1, xmm0"
+        },
+        {
+          "rva": 97654753,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 97654756,
+          "hex": "e8a7e8ffff",
+          "review": "call 0x185d20090"
+        },
+        {
+          "rva": 97654761,
+          "hex": "41383e",
+          "review": "cmp byte ptr [r14], dil"
+        },
+        {
+          "rva": 97654764,
+          "hex": "740d",
+          "review": "je 0x185d217fb"
+        },
+        {
+          "rva": 97654766,
+          "hex": "498b4604",
+          "review": "mov rax, qword ptr [r14 + 4]"
+        },
+        {
+          "rva": 97654770,
+          "hex": "48c1e818",
+          "review": "shr rax, 0x18"
+        },
+        {
+          "rva": 97654774,
+          "hex": "0fb6c8",
+          "review": "movzx ecx, al"
+        },
+        {
+          "rva": 97654777,
+          "hex": "eb02",
+          "review": "jmp 0x185d217fd"
+        },
+        {
+          "rva": 97654779,
+          "hex": "8bcf",
+          "review": "mov ecx, edi"
+        },
+        {
+          "rva": 97654781,
+          "hex": "85c9",
+          "review": "test ecx, ecx"
+        },
+        {
+          "rva": 97654783,
+          "hex": "4c8d2dfae72dfa",
+          "review": "lea r13, [rip - 0x5d21806]"
+        },
+        {
+          "rva": 97654790,
+          "hex": "0f95c0",
+          "review": "setne al"
+        },
+        {
+          "rva": 97654793,
+          "hex": "8886b6000000",
+          "review": "mov byte ptr [rsi + 0xb6], al"
+        },
+        {
+          "rva": 97654799,
+          "hex": "0fb685b0000000",
+          "review": "movzx eax, byte ptr [rbp + 0xb0]"
+        },
+        {
+          "rva": 97654806,
+          "hex": "884660",
+          "review": "mov byte ptr [rsi + 0x60], al"
+        },
+        {
+          "rva": 97654809,
+          "hex": "8b0511cc9f0b",
+          "review": "mov eax, dword ptr [rip + 0xb9fcc11]"
+        },
+        {
+          "rva": 97654815,
+          "hex": "89beb0000000",
+          "review": "mov dword ptr [rsi + 0xb0], edi"
+        },
+        {
+          "rva": 97654821,
+          "hex": "6689beb4000000",
+          "review": "mov word ptr [rsi + 0xb4], di"
+        },
+        {
+          "rva": 97654828,
+          "hex": "89be88000000",
+          "review": "mov dword ptr [rsi + 0x88], edi"
+        },
+        {
+          "rva": 97654834,
+          "hex": "6689be8c000000",
+          "review": "mov word ptr [rsi + 0x8c], di"
+        },
+        {
+          "rva": 97654841,
+          "hex": "40887e61",
+          "review": "mov byte ptr [rsi + 0x61], dil"
+        },
+        {
+          "rva": 97654845,
+          "hex": "4c897e58",
+          "review": "mov qword ptr [rsi + 0x58], r15"
+        }
+      ]
+    },
+    "doCastExclusiveCallback": {
+      "owner": "doCast",
+      "startRva": 97654929,
+      "endRva": 97654933,
+      "instructions": [
+        {
+          "rva": 97654929,
+          "hex": "4c896668",
+          "review": "mov qword ptr [rsi + 0x68], r12"
+        }
+      ]
+    },
+    "doCastTimelineStart": {
+      "owner": "doCast",
+      "startRva": 97655389,
+      "endRva": 97655422,
+      "instructions": [
+        {
+          "rva": 97655389,
+          "hex": "498b4c2410",
+          "review": "mov rcx, qword ptr [r12 + 0x10]"
+        },
+        {
+          "rva": 97655394,
+          "hex": "4189bc2488000000",
+          "review": "mov dword ptr [r12 + 0x88], edi"
+        },
+        {
+          "rva": 97655402,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 97655405,
+          "hex": "0f8473150000",
+          "review": "je 0x185d22fe6"
+        },
+        {
+          "rva": 97655411,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 97655414,
+          "hex": "488bd3",
+          "review": "mov rdx, rbx"
+        },
+        {
+          "rva": 97655417,
+          "hex": "e812e3ffff",
+          "review": "call 0x185d1fd90"
+        }
+      ]
+    }
+  },
+  "calls": [
+    {
+      "block": "tickAllow",
+      "siteRva": 87418356,
+      "target": [
+        59614,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_AllowNextSkill",
+        97668480
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "string"
+      ]
+    },
+    {
+      "block": "changeHandleTick",
+      "siteRva": 87420217,
+      "target": [
+        59646,
+        "Beyond.Gameplay.Core.AbilitySystem+ChangeSkillHandle",
+        "Tick",
+        149223064
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "float"
+      ]
+    },
+    {
+      "block": "tickDispose",
+      "siteRva": 87419315,
+      "target": [
+        64634,
+        "Beyond.Gameplay.Core.TargetHandle",
+        "Dispose",
+        88273072
+      ],
+      "returnType": "void",
+      "parameterTypes": []
+    },
+    {
+      "block": "normalDispatch",
+      "siteRva": 149131069,
+      "target": [
+        59156,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_firstAttack",
+        149145916
+      ],
+      "returnType": "Beyond.Gameplay.Core.Skill",
+      "parameterTypes": []
+    },
+    {
+      "block": "normalDispatch",
+      "siteRva": 149131086,
+      "target": [
+        59156,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_firstAttack",
+        149145916
+      ],
+      "returnType": "Beyond.Gameplay.Core.Skill",
+      "parameterTypes": []
+    },
+    {
+      "block": "normalDispatch",
+      "siteRva": 149131189,
+      "target": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "string",
+        "Beyond.Gameplay.Core.TargetHandleView",
+        "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+        "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>",
+        "System.Action`1<Beyond.Gameplay.Core.Skill>",
+        "System.Action`1<Beyond.Gameplay.Core.Skill>",
+        "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+        "bool"
+      ]
+    },
+    {
+      "block": "allowOriginal",
+      "siteRva": 97668606,
+      "target": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Skill"
+      ]
+    },
+    {
+      "block": "interruptAndTarget",
+      "siteRva": 97662397,
+      "target": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Skill"
+      ]
+    },
+    {
+      "block": "interruptAndTarget",
+      "siteRva": 97662475,
+      "target": [
+        58707,
+        "Beyond.Gameplay.Core.Skill",
+        "CanCastToTarget",
+        97661152
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.TargetHandleView",
+        "bool",
+        "bool"
+      ]
+    },
+    {
+      "block": "switchAndCurrent",
+      "siteRva": 97662807,
+      "target": [
+        58772,
+        "Beyond.Gameplay.Core.Skill+SwitchToAddBuffProcessor",
+        "TrySwitchToAddBuff",
+        105702016
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.TargetHandleView"
+      ]
+    },
+    {
+      "block": "switchAndCurrent",
+      "siteRva": 97662975,
+      "target": [
+        58706,
+        "Beyond.Gameplay.Core.Skill",
+        "Interrupt",
+        94277376
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Skill+InterruptReason",
+        "System.Nullable`1<Beyond.Gameplay.Core.Skill+InterruptContext>"
+      ]
+    },
+    {
+      "block": "prepareSelected",
+      "siteRva": 97663087,
+      "target": [
+        58615,
+        "Beyond.Gameplay.Core.Ability",
+        "AssignSkillCastInfo",
+        106747296
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+      ]
+    },
+    {
+      "block": "prepareSelected",
+      "siteRva": 97663122,
+      "target": [
+        58731,
+        "Beyond.Gameplay.Core.Skill",
+        "SaveTarget",
+        103082496
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.TargetHandleView",
+        "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+      ]
+    },
+    {
+      "block": "prepareSelected",
+      "siteRva": 97663132,
+      "target": [
+        58652,
+        "Beyond.Gameplay.Core.Skill",
+        "get_targetHandle",
+        97661104
+      ],
+      "returnType": "Beyond.Gameplay.Core.TargetHandleView",
+      "parameterTypes": []
+    },
+    {
+      "block": "prepareSelected",
+      "siteRva": 97663149,
+      "target": [
+        59200,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "BeforeCastStart",
+        94272688
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.Skill",
+        "Beyond.Gameplay.Core.TargetHandleView"
+      ]
+    },
+    {
+      "block": "inlineReset",
+      "siteRva": 97665249,
+      "target": [
+        6967,
+        "Beyond.Gameplay.PeriodicTimer",
+        "Reset",
+        92952128
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "bool"
+      ]
+    },
+    {
+      "block": "inlineReset",
+      "siteRva": 97665295,
+      "target": [
+        58669,
+        "Beyond.Gameplay.Core.Skill",
+        "get_cooldown",
+        92943104
+      ],
+      "returnType": "float",
+      "parameterTypes": []
+    },
+    {
+      "block": "inlineReset",
+      "siteRva": 97665321,
+      "target": [
+        6990,
+        "Beyond.Gameplay.MultiPeriodicTimer",
+        "ResetOne",
+        97648784
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "float",
+        "bool"
+      ]
+    },
+    {
+      "block": "doCastReset",
+      "siteRva": 97654756,
+      "target": [
+        6990,
+        "Beyond.Gameplay.MultiPeriodicTimer",
+        "ResetOne",
+        97648784
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "float",
+        "bool"
+      ]
+    },
+    {
+      "block": "doCastTimelineStart",
+      "siteRva": 97655417,
+      "target": [
+        58799,
+        "Beyond.Gameplay.Core.TimelineActionProcessor",
+        "CastStart",
+        97648016
+      ],
+      "returnType": "void",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.TargetHandleView"
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_timeManager",
+      "typeName": "Beyond.TimeManager",
+      "offset": 544
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_skills",
+      "typeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Skill>",
+      "offset": 648
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_activeSkillMap",
+      "typeName": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.Core.Skill>",
+      "offset": 656
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_isCastingSkillStart",
+      "typeName": "bool",
+      "offset": 672
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curSkill>k__BackingField",
+      "typeName": "Beyond.Gameplay.Core.Skill",
+      "offset": 984
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_nextSkillRequest",
+      "typeName": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+      "offset": 56
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_highlightConditionAction",
+      "typeName": "Beyond.Gameplay.Core.SequenceAction",
+      "offset": 16
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_data",
+      "typeName": "Beyond.Gameplay.Core.SkillData",
+      "offset": 24
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_owner",
+      "typeName": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "offset": 32
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_ability",
+      "typeName": "Beyond.Gameplay.Core.Ability",
+      "offset": 48
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_buffProcessor",
+      "typeName": "Beyond.Gameplay.Core.Skill+SwitchToAddBuffProcessor",
+      "offset": 56
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_inited",
+      "typeName": "bool",
+      "offset": 64
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_cooldownTimer",
+      "typeName": "Beyond.Gameplay.MultiPeriodicTimer",
+      "offset": 72
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_durationTimer",
+      "typeName": "Beyond.Gameplay.PeriodicTimer",
+      "offset": 80
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_onCastEndCallbackOnce",
+      "typeName": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "offset": 88
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_appliedCost",
+      "typeName": "bool",
+      "offset": 96
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_executedExclusiveCallback",
+      "typeName": "bool",
+      "offset": 97
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_refreshedOffsetSkillId",
+      "typeName": "bool",
+      "offset": 98
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_onExclusiveCallbackOnce",
+      "typeName": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "offset": 104
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_pauseTimer",
+      "typeName": "int",
+      "offset": 112
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_appliedTag",
+      "typeName": "bool",
+      "offset": 116
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_tagHandle",
+      "typeName": "Beyond.Gameplay.Core.MultiTagHandle",
+      "offset": 120
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_finishCode",
+      "typeName": "int",
+      "offset": 136
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_markCanInterrupt",
+      "typeName": "bool",
+      "offset": 140
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_markCanDash",
+      "typeName": "bool",
+      "offset": 141
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_buffsDuringSkill",
+      "typeName": "System.Collections.Generic.List`1<Beyond.ObjectPtr`1<Beyond.Gameplay.Core.Buff>>",
+      "offset": 144
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_breakingAttackStopRecoverHandle",
+      "typeName": "Beyond.Gameplay.Core.MultiTagHandle",
+      "offset": 152
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_castStartTime",
+      "typeName": "int",
+      "offset": 168
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_jumping",
+      "typeName": "bool",
+      "offset": 172
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_killedEntity",
+      "typeName": "int",
+      "offset": 176
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_hasOutputDamageBattle",
+      "typeName": "bool",
+      "offset": 180
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_hasOutputDamageAchievement",
+      "typeName": "bool",
+      "offset": 181
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<attackDummy>k__BackingField",
+      "typeName": "bool",
+      "offset": 182
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<instId>k__BackingField",
+      "typeName": "ulong",
+      "offset": 184
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_targetHandle",
+      "typeName": "Beyond.Gameplay.Core.TargetHandle",
+      "offset": 192
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<blackboard>k__BackingField",
+      "typeName": "Beyond.ActionBlackboard",
+      "offset": 200
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<onCreateBlackboard>k__BackingField",
+      "typeName": "Beyond.Blackboard",
+      "offset": 208
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<skillType>k__BackingField",
+      "typeName": "Beyond.Gameplay.SkillType",
+      "offset": 216
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<skillSource>k__BackingField",
+      "typeName": "Proto.BATTLE_SKILL_SOURCE",
+      "offset": 220
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<isEnabled>k__BackingField",
+      "typeName": "bool",
+      "offset": 224
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<isPaused>k__BackingField",
+      "typeName": "bool",
+      "offset": 225
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "<castOpData>k__BackingField",
+      "typeName": "Proto.BATTLE_SKILL_START_CAST_OP_DATA",
+      "offset": 232
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.Skill",
+      "name": "m_skillId",
+      "typeName": "string",
+      "offset": 240
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "nextSkillId",
+      "typeName": "string",
+      "offset": 16
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "remainingTime",
+      "typeName": "float",
+      "offset": 24
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "allowToCastNextSkill",
+      "typeName": "bool",
+      "offset": 28
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "modifierInstId",
+      "typeName": "ulong",
+      "offset": 32
+    },
+    {
+      "owner": "Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest",
+      "name": "skillCastInputData",
+      "typeName": "System.Nullable`1<Beyond.Gameplay.Core.SkillCastInputData>",
+      "offset": 40
+    }
+  ],
+  "typedRequests": [
+    {
+      "owner": "allow",
+      "instructionRva": 97668521,
+      "expected": {
+        "instructionRva": 97668521,
+        "instructionHex": "4C8B0540D79B0A",
+        "usageCellRva": 275653872,
+        "usageRawHex": "0DF512C000000000",
+        "tag": 6,
+        "methodSpecIndex": 621190,
+        "methodSpec": [
+          404220,
+          -1,
+          4022
+        ],
+        "typeName": "System.Collections.Generic.CollectionExtensions",
+        "methodName": "GetValueOrDefault",
+        "classArguments": [],
+        "methodArguments": [
+          "string",
+          "Beyond.Gameplay.Core.Skill"
+        ]
+      }
+    },
+    {
+      "owner": "firstAttack",
+      "instructionRva": 149146022,
+      "expected": {
+        "instructionRva": 149146022,
+        "instructionHex": "488B150BA38907",
+        "usageCellRva": 275606712,
+        "usageRawHex": "DBF312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 621037,
+        "methodSpec": [
+          354238,
+          -1,
+          905
+        ],
+        "typeName": "Beyond.CollectionExtensions",
+        "methodName": "SafeCount",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.Core.Skill"
+        ]
+      }
+    },
+    {
+      "owner": "firstAttack",
+      "instructionRva": 149146061,
+      "expected": {
+        "instructionRva": 149146061,
+        "instructionHex": "4C8B0504A38907",
+        "usageCellRva": 275606744,
+        "usageRawHex": "595212C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600364,
+        "methodSpec": [
+          404114,
+          905,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      }
+    }
+  ],
+  "facts": [
+    {
+      "id": "tickRefreshAndExpiry",
+      "evidence": "conditional",
+      "description": "Tick recomputes allow first; subtracts allScaledTime from remainingTime; keeps only an ordered result greater than the selected float32 threshold, and expires otherwise. Tick does not cast."
+    },
+    {
+      "id": "requestExposure",
+      "evidence": "conditional",
+      "description": "Stored allow bit gates hasNextSkillRequest and nextSkillId; these getters do not dequeue."
+    },
+    {
+      "id": "normalAttackSelection",
+      "evidence": "conditional",
+      "description": "firstAttack scans m_skills ascending for SkillType zero, independent of cached request. TryCastNormalAttack returns selected TryCastSkill bool."
+    },
+    {
+      "id": "ordinaryTryCastTransition",
+      "evidence": "conditional",
+      "description": "After interrupt and CanCastToTarget admission, buff switch may return true; ordinary path sets casting-start, writes curSkill and saves target before inline cast initialization, then clears casting-start and returns true if downstream calls return normally."
+    },
+    {
+      "id": "standaloneDoCastWrites",
+      "evidence": "conditional",
+      "description": "DoCast returns void, resets duration timer fields, resets one cooldown, initializes finish/cost/callback fields and reaches TimelineActionProcessor.CastStart; no Boolean acceptance is attributed to it."
+    }
+  ],
+  "tickExpiryThreshold": {
+    "loadBlock": "tickZero",
+    "bitsHex": "ACC52737",
+    "comparison": "orderedGreaterThan"
+  }
+}

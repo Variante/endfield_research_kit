@@ -1,0 +1,4609 @@
+{
+  "schema": "endfield.skill-normal-attack-delivery-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": {
+    "aiTarget": {
+      "identity": [
+        45815,
+        "Beyond.Gameplay.AI.CharacterAIComponent",
+        "TryCastNormalAttack",
+        89509824
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ]
+    },
+    "attackId": {
+      "identity": [
+        59352,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "GetNextAttackId",
+        89510496
+      ],
+      "returnType": "string",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        }
+      ]
+    },
+    "refresh": {
+      "identity": [
+        59358,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "RefreshNextSkillRequest",
+        89511312
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ]
+    },
+    "stateTry": {
+      "identity": [
+        49637,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterAttackState",
+        "_TryCastAttack",
+        102677808
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    "comboRefresh": {
+      "identity": [
+        59616,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RefreshNextSkillRequest",
+        89511376
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.PlayerCommandConfig+CmdType"
+        }
+      ]
+    },
+    "getter": {
+      "identity": [
+        59590,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "get_nextSkillId",
+        89510720
+      ],
+      "returnType": "string",
+      "parameters": []
+    },
+    "lookup": {
+      "identity": [
+        59489,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "_TryGetSkill",
+        97646288
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ]
+    },
+    "canCast": {
+      "identity": [
+        59179,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        97669504
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipInterruptCheck",
+          "type": "bool"
+        }
+      ]
+    },
+    "tryCast": {
+      "identity": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "onCastEnd",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "options",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        },
+        {
+          "name": "onExclusiveTimeCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "afterCastStartCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "skillCastInfo",
+          "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        }
+      ]
+    },
+    "clear": {
+      "identity": [
+        59364,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearSkillRequest",
+        98085312
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    "selfTarget": {
+      "identity": [
+        58941,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "get_selfTargetHandle",
+        88285344
+      ],
+      "returnType": "Beyond.Gameplay.Core.TargetHandleView",
+      "parameters": []
+    },
+    "inheritInfo": {
+      "identity": [
+        59207,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryGetInheritedSkillCastInfoForNormalAttack",
+        102678496
+      ],
+      "returnType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "parameters": []
+    }
+  },
+  "codeWindows": [
+    {
+      "owner": "aiTarget",
+      "startRva": 89509824,
+      "endRva": 89509875,
+      "sha256": "156BB431693B2F65F02E82E82C989F8151A76A292E7418E505DC5A9FFAD8E88D",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "aiTarget",
+      "startRva": 89509875,
+      "endRva": 89510463,
+      "sha256": "D379DF8094B03A49C816039C78A5159EED9DCC5B5D5BADC73BC1E20D805900AB",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "aiTarget",
+      "startRva": 89510463,
+      "endRva": 89510474,
+      "sha256": "A836C507C45A2EA80804A9F52DC1AC5D376007EEFA0AF3A97CE5CB74966C9B35",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "aiTarget",
+      "startRva": 89510474,
+      "endRva": 89510490,
+      "sha256": "2A801DBA8320BA227EC782D2C4ED3D36D2F22F897C797892E10DC2F37D7AD8DD",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "aiTarget",
+      "startRva": 122670294,
+      "endRva": 122670334,
+      "sha256": "E1B2DA4970870C2B3BFA616E35ABB7FAD995EE0F5BD0A8B079801DBC46037118",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "aiTarget",
+      "startRva": 122670334,
+      "endRva": 122670381,
+      "sha256": "2DEA640C6795F2DB42174908D998057805FA0ABE738ED3467F1876C8F1AE9A01",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 89510496,
+      "endRva": 89510541,
+      "sha256": "73D2A96EA07014AEA864C979E7497516760257F8B1D7F46177EB290D56158DC0",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 89510541,
+      "endRva": 89510676,
+      "sha256": "49EE2BE727DCB1A19C9E7CFEEF5AC9A55D1FCA57B59D6E605560C34FB7761E3D",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 89510676,
+      "endRva": 89510698,
+      "sha256": "2030D49F86D8733137A36796314D6AA2F0956EABCD4E49CE68AD155289AE4C2B",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 89510698,
+      "endRva": 89510704,
+      "sha256": "4EEABF8BCDC796D3A19EC782D70470E18A3A52DDFA5CFED7ABE03E359A03625D",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 89510704,
+      "endRva": 89510710,
+      "sha256": "E2CF6A6944BBB7BAAA8327B9C7A8C6D3CE0B416B11D76EB2DACED640FD89D60E",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 122670382,
+      "endRva": 122670422,
+      "sha256": "A6EE7286944DFB043D200314DDC922D31AEB1C763C171EF053D4912CDBD5AFFC",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "attackId",
+      "startRva": 122670422,
+      "endRva": 122670476,
+      "sha256": "4E142EE207C877A532B27CD14DBAAC1150E468AD1AE30F58F1B86994DF39547B",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 89511312,
+      "endRva": 89511371,
+      "sha256": "B334E467BDD70CE707E268C71FD88F96BFCCD988286BB9BC6A11A4B057AE4B2A",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "refresh",
+      "startRva": 122670920,
+      "endRva": 122670960,
+      "sha256": "69BE3F05A1B7CA37B05F8957C3A6EA07F0665EC1611DAAF1E4091B5F7E241828",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "stateTry",
+      "startRva": 102677808,
+      "endRva": 102677842,
+      "sha256": "475135A2694EC77349B498657D01FE556F1FE2D7D84093101F874AC3091C4301",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "stateTry",
+      "startRva": 102677842,
+      "endRva": 102678480,
+      "sha256": "8F230B0F7A786B6CD0A25CAA371EE88D7266DFF41084E92B0E0BD1F1622AC168",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "stateTry",
+      "startRva": 102678480,
+      "endRva": 102678489,
+      "sha256": "01082D0F590FFB8CFE871F88D8F7C25F582D39C42B361EF36BCB895CFA7CDE54",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "stateTry",
+      "startRva": 124371838,
+      "endRva": 124371875,
+      "sha256": "B1810DC3A9FBCBDF89A3FBFB95B23887D48012DF5D83291C6AC6A41CAC9EFD2E",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    },
+    {
+      "owner": "stateTry",
+      "startRva": 124371875,
+      "endRva": 124371931,
+      "sha256": "C72792AB8E15EDAAD14A9C10E3A092710011D4DE638D5C2B204F762322F1C035",
+      "boundary": "complete selected unwind-family interval; original normal-path fragments only"
+    }
+  ],
+  "programs": {
+    "aiTarget": [
+      {
+        "rva": 89509824,
+        "hex": "4055",
+        "review": "push rbp"
+      },
+      {
+        "rva": 89509826,
+        "hex": "53",
+        "review": "push rbx"
+      },
+      {
+        "rva": 89509827,
+        "hex": "56",
+        "review": "push rsi"
+      },
+      {
+        "rva": 89509828,
+        "hex": "488d6c24b9",
+        "review": "lea rbp, [rsp - 0x47]"
+      },
+      {
+        "rva": 89509833,
+        "hex": "4881ecd0000000",
+        "review": "sub rsp, 0xd0"
+      },
+      {
+        "rva": 89509840,
+        "hex": "488b0579221c0c",
+        "review": "mov rax, qword ptr [rip + 0xc1c2279]"
+      },
+      {
+        "rva": 89509847,
+        "hex": "488bf1",
+        "review": "mov rsi, rcx"
+      },
+      {
+        "rva": 89509850,
+        "hex": "488bda",
+        "review": "mov rbx, rdx"
+      },
+      {
+        "rva": 89509853,
+        "hex": "488b4838",
+        "review": "mov rcx, qword ptr [rax + 0x38]"
+      },
+      {
+        "rva": 89509857,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89509860,
+        "hex": "0f85ecfcf901",
+        "review": "jne 0x1874fccd6"
+      },
+      {
+        "rva": 89509866,
+        "hex": "488b8eb0010000",
+        "review": "mov rcx, qword ptr [rsi + 0x1b0]"
+      },
+      {
+        "rva": 89509873,
+        "hex": "33c0",
+        "review": "xor eax, eax"
+      },
+      {
+        "rva": 89509875,
+        "hex": "4889bc24f0000000",
+        "review": "mov qword ptr [rsp + 0xf0], rdi"
+      },
+      {
+        "rva": 89509883,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89509886,
+        "hex": "4c89a424f8000000",
+        "review": "mov qword ptr [rsp + 0xf8], r12"
+      },
+      {
+        "rva": 89509894,
+        "hex": "4c89b424c8000000",
+        "review": "mov qword ptr [rsp + 0xc8], r14"
+      },
+      {
+        "rva": 89509902,
+        "hex": "4c89bc24c0000000",
+        "review": "mov qword ptr [rsp + 0xc0], r15"
+      },
+      {
+        "rva": 89509910,
+        "hex": "48894527",
+        "review": "mov qword ptr [rbp + 0x27], rax"
+      },
+      {
+        "rva": 89509914,
+        "hex": "0f114517",
+        "review": "movups xmmword ptr [rbp + 0x17], xmm0"
+      },
+      {
+        "rva": 89509918,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89509921,
+        "hex": "0f8423020000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89509927,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 89509930,
+        "hex": "ba02000000",
+        "review": "mov edx, 2"
+      },
+      {
+        "rva": 89509935,
+        "hex": "e85c050000",
+        "review": "call 0x18555d590"
+      },
+      {
+        "rva": 89509940,
+        "hex": "488b8eb0010000",
+        "review": "mov rcx, qword ptr [rsi + 0x1b0]"
+      },
+      {
+        "rva": 89509947,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89509950,
+        "hex": "0f8406020000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89509956,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 89509959,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 89509961,
+        "hex": "e812020000",
+        "review": "call 0x18555d260"
+      },
+      {
+        "rva": 89509966,
+        "hex": "488bf8",
+        "review": "mov rdi, rax"
+      },
+      {
+        "rva": 89509969,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 89509972,
+        "hex": "0f84c3010000",
+        "review": "je 0x18555d21d"
+      },
+      {
+        "rva": 89509978,
+        "hex": "83781000",
+        "review": "cmp dword ptr [rax + 0x10], 0"
+      },
+      {
+        "rva": 89509982,
+        "hex": "0f86b9010000",
+        "review": "jbe 0x18555d21d"
+      },
+      {
+        "rva": 89509988,
+        "hex": "488b8eb0010000",
+        "review": "mov rcx, qword ptr [rsi + 0x1b0]"
+      },
+      {
+        "rva": 89509995,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89509998,
+        "hex": "0f84d6010000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89510004,
+        "hex": "4533e4",
+        "review": "xor r12d, r12d"
+      },
+      {
+        "rva": 89510007,
+        "hex": "41b101",
+        "review": "mov r9b, 1"
+      },
+      {
+        "rva": 89510010,
+        "hex": "4c89642430",
+        "review": "mov qword ptr [rsp + 0x30], r12"
+      },
+      {
+        "rva": 89510015,
+        "hex": "4c8bc3",
+        "review": "mov r8, rbx"
+      },
+      {
+        "rva": 89510018,
+        "hex": "4488642428",
+        "review": "mov byte ptr [rsp + 0x28], r12b"
+      },
+      {
+        "rva": 89510023,
+        "hex": "488bd0",
+        "review": "mov rdx, rax"
+      },
+      {
+        "rva": 89510026,
+        "hex": "c644242001",
+        "review": "mov byte ptr [rsp + 0x20], 1"
+      },
+      {
+        "rva": 89510031,
+        "hex": "e8ec807c00",
+        "review": "call 0x185d25180"
+      },
+      {
+        "rva": 89510036,
+        "hex": "84c0",
+        "review": "test al, al"
+      },
+      {
+        "rva": 89510038,
+        "hex": "0f8481010000",
+        "review": "je 0x18555d21d"
+      },
+      {
+        "rva": 89510044,
+        "hex": "488b8e08020000",
+        "review": "mov rcx, qword ptr [rsi + 0x208]"
+      },
+      {
+        "rva": 89510051,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89510054,
+        "hex": "0f849e010000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89510060,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 89510062,
+        "hex": "e89d86ddff",
+        "review": "call 0x185335750"
+      },
+      {
+        "rva": 89510067,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 89510070,
+        "hex": "0f84c9000000",
+        "review": "je 0x18555d185"
+      },
+      {
+        "rva": 89510076,
+        "hex": "4c39a028010000",
+        "review": "cmp qword ptr [rax + 0x128], r12"
+      },
+      {
+        "rva": 89510083,
+        "hex": "0f84bc000000",
+        "review": "je 0x18555d185"
+      },
+      {
+        "rva": 89510089,
+        "hex": "488b0d08a4150b",
+        "review": "mov rcx, qword ptr [rip + 0xb15a408]"
+      },
+      {
+        "rva": 89510096,
+        "hex": "4c8bbeb0010000",
+        "review": "mov r15, qword ptr [rsi + 0x1b0]"
+      },
+      {
+        "rva": 89510103,
+        "hex": "4c8bb028010000",
+        "review": "mov r14, qword ptr [rax + 0x128]"
+      },
+      {
+        "rva": 89510110,
+        "hex": "4439a1e0000000",
+        "review": "cmp dword ptr [rcx + 0xe0], r12d"
+      },
+      {
+        "rva": 89510117,
+        "hex": "0f8465010000",
+        "review": "je 0x18555d250"
+      },
+      {
+        "rva": 89510123,
+        "hex": "498bd6",
+        "review": "mov rdx, r14"
+      },
+      {
+        "rva": 89510126,
+        "hex": "488d4dd7",
+        "review": "lea rcx, [rbp - 0x29]"
+      },
+      {
+        "rva": 89510130,
+        "hex": "e86916faff",
+        "review": "call 0x1854fe760"
+      },
+      {
+        "rva": 89510135,
+        "hex": "488b4e50",
+        "review": "mov rcx, qword ptr [rsi + 0x50]"
+      },
+      {
+        "rva": 89510139,
+        "hex": "f20f1000",
+        "review": "movsd xmm0, qword ptr [rax]"
+      },
+      {
+        "rva": 89510143,
+        "hex": "448b7008",
+        "review": "mov r14d, dword ptr [rax + 8]"
+      },
+      {
+        "rva": 89510147,
+        "hex": "f20f11457f",
+        "review": "movsd qword ptr [rbp + 0x7f], xmm0"
+      },
+      {
+        "rva": 89510152,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89510155,
+        "hex": "0f8439010000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89510161,
+        "hex": "488b0538211c0c",
+        "review": "mov rax, qword ptr [rip + 0xc1c2138]"
+      },
+      {
+        "rva": 89510168,
+        "hex": "488b5068",
+        "review": "mov rdx, qword ptr [rax + 0x68]"
+      },
+      {
+        "rva": 89510172,
+        "hex": "4885d2",
+        "review": "test rdx, rdx"
+      },
+      {
+        "rva": 89510175,
+        "hex": "0f85d9fbf901",
+        "review": "jne 0x1874fccfe"
+      },
+      {
+        "rva": 89510181,
+        "hex": "488b81b0000000",
+        "review": "mov rax, qword ptr [rcx + 0xb0]"
+      },
+      {
+        "rva": 89510188,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 89510191,
+        "hex": "0f8415010000",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89510197,
+        "hex": "f20f108090000000",
+        "review": "movsd xmm0, qword ptr [rax + 0x90]"
+      },
+      {
+        "rva": 89510205,
+        "hex": "8b8898000000",
+        "review": "mov ecx, dword ptr [rax + 0x98]"
+      },
+      {
+        "rva": 89510211,
+        "hex": "f20f1145c7",
+        "review": "movsd qword ptr [rbp - 0x39], xmm0"
+      },
+      {
+        "rva": 89510216,
+        "hex": "4c8d45c7",
+        "review": "lea r8, [rbp - 0x39]"
+      },
+      {
+        "rva": 89510220,
+        "hex": "f20f10457f",
+        "review": "movsd xmm0, qword ptr [rbp + 0x7f]"
+      },
+      {
+        "rva": 89510225,
+        "hex": "488d55d7",
+        "review": "lea rdx, [rbp - 0x29]"
+      },
+      {
+        "rva": 89510229,
+        "hex": "894dcf",
+        "review": "mov dword ptr [rbp - 0x31], ecx"
+      },
+      {
+        "rva": 89510232,
+        "hex": "488d4df7",
+        "review": "lea rcx, [rbp - 9]"
+      },
+      {
+        "rva": 89510236,
+        "hex": "f20f1145d7",
+        "review": "movsd qword ptr [rbp - 0x29], xmm0"
+      },
+      {
+        "rva": 89510241,
+        "hex": "448975df",
+        "review": "mov dword ptr [rbp - 0x21], r14d"
+      },
+      {
+        "rva": 89510245,
+        "hex": "e8d68a0800",
+        "review": "call 0x1855e5c40"
+      },
+      {
+        "rva": 89510250,
+        "hex": "488d55d7",
+        "review": "lea rdx, [rbp - 0x29]"
+      },
+      {
+        "rva": 89510254,
+        "hex": "498bcf",
+        "review": "mov rcx, r15"
+      },
+      {
+        "rva": 89510257,
+        "hex": "f20f1018",
+        "review": "movsd xmm3, qword ptr [rax]"
+      },
+      {
+        "rva": 89510261,
+        "hex": "8b4008",
+        "review": "mov eax, dword ptr [rax + 8]"
+      },
+      {
+        "rva": 89510264,
+        "hex": "f20f115dd7",
+        "review": "movsd qword ptr [rbp - 0x29], xmm3"
+      },
+      {
+        "rva": 89510269,
+        "hex": "8945df",
+        "review": "mov dword ptr [rbp - 0x21], eax"
+      },
+      {
+        "rva": 89510272,
+        "hex": "e85b970200",
+        "review": "call 0x1855868e0"
+      },
+      {
+        "rva": 89510277,
+        "hex": "488b8eb0010000",
+        "review": "mov rcx, qword ptr [rsi + 0x1b0]"
+      },
+      {
+        "rva": 89510284,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89510287,
+        "hex": "0f1145f7",
+        "review": "movups xmmword ptr [rbp - 9], xmm0"
+      },
+      {
+        "rva": 89510291,
+        "hex": "66c745f70101",
+        "review": "mov word ptr [rbp - 9], 0x101"
+      },
+      {
+        "rva": 89510297,
+        "hex": "f20f1045f9",
+        "review": "movsd xmm0, qword ptr [rbp - 7]"
+      },
+      {
+        "rva": 89510302,
+        "hex": "488b45f7",
+        "review": "mov rax, qword ptr [rbp - 9]"
+      },
+      {
+        "rva": 89510306,
+        "hex": "48c1e808",
+        "review": "shr rax, 8"
+      },
+      {
+        "rva": 89510310,
+        "hex": "8845dc",
+        "review": "mov byte ptr [rbp - 0x24], al"
+      },
+      {
+        "rva": 89510313,
+        "hex": "8b4501",
+        "review": "mov eax, dword ptr [rbp + 1]"
+      },
+      {
+        "rva": 89510316,
+        "hex": "8945e5",
+        "review": "mov dword ptr [rbp - 0x1b], eax"
+      },
+      {
+        "rva": 89510319,
+        "hex": "0fb74505",
+        "review": "movzx eax, word ptr [rbp + 5]"
+      },
+      {
+        "rva": 89510323,
+        "hex": "668945e9",
+        "review": "mov word ptr [rbp - 0x17], ax"
+      },
+      {
+        "rva": 89510327,
+        "hex": "33c0",
+        "review": "xor eax, eax"
+      },
+      {
+        "rva": 89510329,
+        "hex": "f20f1145dd",
+        "review": "movsd qword ptr [rbp - 0x23], xmm0"
+      },
+      {
+        "rva": 89510334,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 89510337,
+        "hex": "c745d800000001",
+        "review": "mov dword ptr [rbp - 0x28], 0x1000000"
+      },
+      {
+        "rva": 89510344,
+        "hex": "c645d701",
+        "review": "mov byte ptr [rbp - 0x29], 1"
+      },
+      {
+        "rva": 89510348,
+        "hex": "48894527",
+        "review": "mov qword ptr [rbp + 0x27], rax"
+      },
+      {
+        "rva": 89510352,
+        "hex": "0f114517",
+        "review": "movups xmmword ptr [rbp + 0x17], xmm0"
+      },
+      {
+        "rva": 89510356,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89510359,
+        "hex": "7471",
+        "review": "je 0x18555d24a"
+      },
+      {
+        "rva": 89510361,
+        "hex": "8b45e7",
+        "review": "mov eax, dword ptr [rbp - 0x19]"
+      },
+      {
+        "rva": 89510364,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 89510367,
+        "hex": "0f1045d7",
+        "review": "movups xmm0, xmmword ptr [rbp - 0x29]"
+      },
+      {
+        "rva": 89510371,
+        "hex": "4c89642448",
+        "review": "mov qword ptr [rsp + 0x48], r12"
+      },
+      {
+        "rva": 89510376,
+        "hex": "4c8bc3",
+        "review": "mov r8, rbx"
+      },
+      {
+        "rva": 89510379,
+        "hex": "4488642440",
+        "review": "mov byte ptr [rsp + 0x40], r12b"
+      },
+      {
+        "rva": 89510384,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 89510387,
+        "hex": "894507",
+        "review": "mov dword ptr [rbp + 7], eax"
+      },
+      {
+        "rva": 89510390,
+        "hex": "488d4517",
+        "review": "lea rax, [rbp + 0x17]"
+      },
+      {
+        "rva": 89510394,
+        "hex": "4889442438",
+        "review": "mov qword ptr [rsp + 0x38], rax"
+      },
+      {
+        "rva": 89510399,
+        "hex": "488d45f7",
+        "review": "lea rax, [rbp - 9]"
+      },
+      {
+        "rva": 89510403,
+        "hex": "4c89642430",
+        "review": "mov qword ptr [rsp + 0x30], r12"
+      },
+      {
+        "rva": 89510408,
+        "hex": "4c89642428",
+        "review": "mov qword ptr [rsp + 0x28], r12"
+      },
+      {
+        "rva": 89510413,
+        "hex": "4889442420",
+        "review": "mov qword ptr [rsp + 0x20], rax"
+      },
+      {
+        "rva": 89510418,
+        "hex": "0f2945f7",
+        "review": "movaps xmmword ptr [rbp - 9], xmm0"
+      },
+      {
+        "rva": 89510422,
+        "hex": "e8555f7c00",
+        "review": "call 0x185d23170"
+      },
+      {
+        "rva": 89510427,
+        "hex": "eb02",
+        "review": "jmp 0x18555d21f"
+      },
+      {
+        "rva": 89510429,
+        "hex": "32c0",
+        "review": "xor al, al"
+      },
+      {
+        "rva": 89510431,
+        "hex": "4c8bb424c8000000",
+        "review": "mov r14, qword ptr [rsp + 0xc8]"
+      },
+      {
+        "rva": 89510439,
+        "hex": "4c8ba424f8000000",
+        "review": "mov r12, qword ptr [rsp + 0xf8]"
+      },
+      {
+        "rva": 89510447,
+        "hex": "488bbc24f0000000",
+        "review": "mov rdi, qword ptr [rsp + 0xf0]"
+      },
+      {
+        "rva": 89510455,
+        "hex": "4c8bbc24c0000000",
+        "review": "mov r15, qword ptr [rsp + 0xc0]"
+      },
+      {
+        "rva": 89510463,
+        "hex": "4881c4d0000000",
+        "review": "add rsp, 0xd0"
+      },
+      {
+        "rva": 89510470,
+        "hex": "5e",
+        "review": "pop rsi"
+      },
+      {
+        "rva": 89510471,
+        "hex": "5b",
+        "review": "pop rbx"
+      },
+      {
+        "rva": 89510472,
+        "hex": "5d",
+        "review": "pop rbp"
+      },
+      {
+        "rva": 89510473,
+        "hex": "c3",
+        "review": "ret "
+      },
+      {
+        "rva": 89510474,
+        "hex": "e8f116b8fa",
+        "review": "call 0x1800de940"
+      },
+      {
+        "rva": 89510479,
+        "hex": "cc",
+        "review": "int3 "
+      },
+      {
+        "rva": 89510480,
+        "hex": "e88b93abfa",
+        "review": "call 0x1800165e0"
+      },
+      {
+        "rva": 89510485,
+        "hex": "e991feffff",
+        "review": "jmp 0x18555d0eb"
+      },
+      {
+        "rva": 122670294,
+        "hex": "488b8130310000",
+        "review": "mov rax, qword ptr [rcx + 0x3130]"
+      },
+      {
+        "rva": 122670301,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 122670304,
+        "hex": "0f84040306fe",
+        "review": "je 0x18555cfea"
+      },
+      {
+        "rva": 122670310,
+        "hex": "488b8938310000",
+        "review": "mov rcx, qword ptr [rcx + 0x3138]"
+      },
+      {
+        "rva": 122670317,
+        "hex": "4d8bc8",
+        "review": "mov r9, r8"
+      },
+      {
+        "rva": 122670320,
+        "hex": "4c8bc3",
+        "review": "mov r8, rbx"
+      },
+      {
+        "rva": 122670323,
+        "hex": "488bd6",
+        "review": "mov rdx, rsi"
+      },
+      {
+        "rva": 122670326,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 122670328,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 122670329,
+        "hex": "e9410506fe",
+        "review": "jmp 0x18555d23f"
+      },
+      {
+        "rva": 122670334,
+        "hex": "488b82506d0000",
+        "review": "mov rax, qword ptr [rdx + 0x6d50]"
+      },
+      {
+        "rva": 122670341,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 122670344,
+        "hex": "0f84170406fe",
+        "review": "je 0x18555d125"
+      },
+      {
+        "rva": 122670350,
+        "hex": "488b92586d0000",
+        "review": "mov rdx, qword ptr [rdx + 0x6d58]"
+      },
+      {
+        "rva": 122670357,
+        "hex": "4c8bc1",
+        "review": "mov r8, rcx"
+      },
+      {
+        "rva": 122670360,
+        "hex": "488d4dd7",
+        "review": "lea rcx, [rbp - 0x29]"
+      },
+      {
+        "rva": 122670364,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 122670367,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 122670369,
+        "hex": "f20f1000",
+        "review": "movsd xmm0, qword ptr [rax]"
+      },
+      {
+        "rva": 122670373,
+        "hex": "8b4808",
+        "review": "mov ecx, dword ptr [rax + 8]"
+      },
+      {
+        "rva": 122670376,
+        "hex": "e9160406fe",
+        "review": "jmp 0x18555d143"
+      }
+    ],
+    "attackId": [
+      {
+        "rva": 89510496,
+        "hex": "4057",
+        "review": "push rdi"
+      },
+      {
+        "rva": 89510498,
+        "hex": "4883ec20",
+        "review": "sub rsp, 0x20"
+      },
+      {
+        "rva": 89510502,
+        "hex": "488b05e31f1c0c",
+        "review": "mov rax, qword ptr [rip + 0xc1c1fe3]"
+      },
+      {
+        "rva": 89510509,
+        "hex": "488bf9",
+        "review": "mov rdi, rcx"
+      },
+      {
+        "rva": 89510512,
+        "hex": "488b4848",
+        "review": "mov rcx, qword ptr [rax + 0x48]"
+      },
+      {
+        "rva": 89510516,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89510519,
+        "hex": "0f85b1faf901",
+        "review": "jne 0x1874fcd2e"
+      },
+      {
+        "rva": 89510525,
+        "hex": "488b057c42190b",
+        "review": "mov rax, qword ptr [rip + 0xb19427c]"
+      },
+      {
+        "rva": 89510532,
+        "hex": "48c744244800000000",
+        "review": "mov qword ptr [rsp + 0x48], 0"
+      },
+      {
+        "rva": 89510541,
+        "hex": "48895c2430",
+        "review": "mov qword ptr [rsp + 0x30], rbx"
+      },
+      {
+        "rva": 89510546,
+        "hex": "488b88b8000000",
+        "review": "mov rcx, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 89510553,
+        "hex": "4883791800",
+        "review": "cmp qword ptr [rcx + 0x18], 0"
+      },
+      {
+        "rva": 89510558,
+        "hex": "0f848c000000",
+        "review": "je 0x18555d330"
+      },
+      {
+        "rva": 89510564,
+        "hex": "4c8bc2",
+        "review": "mov r8, rdx"
+      },
+      {
+        "rva": 89510567,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 89510570,
+        "hex": "e851010000",
+        "review": "call 0x18555d400"
+      },
+      {
+        "rva": 89510575,
+        "hex": "84c0",
+        "review": "test al, al"
+      },
+      {
+        "rva": 89510577,
+        "hex": "0f85b1faf901",
+        "review": "jne 0x1874fcd68"
+      },
+      {
+        "rva": 89510583,
+        "hex": "488b8f60040000",
+        "review": "mov rcx, qword ptr [rdi + 0x460]"
+      },
+      {
+        "rva": 89510590,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89510593,
+        "hex": "746d",
+        "review": "je 0x18555d330"
+      },
+      {
+        "rva": 89510595,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 89510597,
+        "hex": "e876000000",
+        "review": "call 0x18555d340"
+      },
+      {
+        "rva": 89510602,
+        "hex": "488bd8",
+        "review": "mov rbx, rax"
+      },
+      {
+        "rva": 89510605,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 89510608,
+        "hex": "7442",
+        "review": "je 0x18555d314"
+      },
+      {
+        "rva": 89510610,
+        "hex": "83781000",
+        "review": "cmp dword ptr [rax + 0x10], 0"
+      },
+      {
+        "rva": 89510614,
+        "hex": "763c",
+        "review": "jbe 0x18555d314"
+      },
+      {
+        "rva": 89510616,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 89510619,
+        "hex": "4c8d442448",
+        "review": "lea r8, [rsp + 0x48]"
+      },
+      {
+        "rva": 89510624,
+        "hex": "488bd0",
+        "review": "mov rdx, rax"
+      },
+      {
+        "rva": 89510627,
+        "hex": "488bcf",
+        "review": "mov rcx, rdi"
+      },
+      {
+        "rva": 89510630,
+        "hex": "e8e5237c00",
+        "review": "call 0x185d1f6d0"
+      },
+      {
+        "rva": 89510635,
+        "hex": "84c0",
+        "review": "test al, al"
+      },
+      {
+        "rva": 89510637,
+        "hex": "7425",
+        "review": "je 0x18555d314"
+      },
+      {
+        "rva": 89510639,
+        "hex": "488b442448",
+        "review": "mov rax, qword ptr [rsp + 0x48]"
+      },
+      {
+        "rva": 89510644,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 89510647,
+        "hex": "7437",
+        "review": "je 0x18555d330"
+      },
+      {
+        "rva": 89510649,
+        "hex": "83b8d800000000",
+        "review": "cmp dword ptr [rax + 0xd8], 0"
+      },
+      {
+        "rva": 89510656,
+        "hex": "0f8550faf901",
+        "review": "jne 0x1874fcd56"
+      },
+      {
+        "rva": 89510662,
+        "hex": "488bc3",
+        "review": "mov rax, rbx"
+      },
+      {
+        "rva": 89510665,
+        "hex": "488b5c2430",
+        "review": "mov rbx, qword ptr [rsp + 0x30]"
+      },
+      {
+        "rva": 89510670,
+        "hex": "4883c420",
+        "review": "add rsp, 0x20"
+      },
+      {
+        "rva": 89510674,
+        "hex": "5f",
+        "review": "pop rdi"
+      },
+      {
+        "rva": 89510675,
+        "hex": "c3",
+        "review": "ret "
+      },
+      {
+        "rva": 89510676,
+        "hex": "488b056573200b",
+        "review": "mov rax, qword ptr [rip + 0xb207365]"
+      },
+      {
+        "rva": 89510683,
+        "hex": "488b80b8000000",
+        "review": "mov rax, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 89510690,
+        "hex": "488b00",
+        "review": "mov rax, qword ptr [rax]"
+      },
+      {
+        "rva": 89510693,
+        "hex": "488b5c2430",
+        "review": "mov rbx, qword ptr [rsp + 0x30]"
+      },
+      {
+        "rva": 89510698,
+        "hex": "4883c420",
+        "review": "add rsp, 0x20"
+      },
+      {
+        "rva": 89510702,
+        "hex": "5f",
+        "review": "pop rdi"
+      },
+      {
+        "rva": 89510703,
+        "hex": "c3",
+        "review": "ret "
+      },
+      {
+        "rva": 89510704,
+        "hex": "e80b16b8fa",
+        "review": "call 0x1800de940"
+      },
+      {
+        "rva": 89510709,
+        "hex": "cc",
+        "review": "int3 "
+      },
+      {
+        "rva": 122670382,
+        "hex": "488b8120640000",
+        "review": "mov rax, qword ptr [rcx + 0x6420]"
+      },
+      {
+        "rva": 122670389,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 122670392,
+        "hex": "0f843f0506fe",
+        "review": "je 0x18555d27d"
+      },
+      {
+        "rva": 122670398,
+        "hex": "488b8928640000",
+        "review": "mov rcx, qword ptr [rcx + 0x6428]"
+      },
+      {
+        "rva": 122670405,
+        "hex": "4d8bc8",
+        "review": "mov r9, r8"
+      },
+      {
+        "rva": 122670408,
+        "hex": "4c8bc2",
+        "review": "mov r8, rdx"
+      },
+      {
+        "rva": 122670411,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 122670414,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 122670416,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 122670417,
+        "hex": "e9d40506fe",
+        "review": "jmp 0x18555d32a"
+      },
+      {
+        "rva": 122670422,
+        "hex": "83b8d800000001",
+        "review": "cmp dword ptr [rax + 0xd8], 1"
+      },
+      {
+        "rva": 122670429,
+        "hex": "0f85b10506fe",
+        "review": "jne 0x18555d314"
+      },
+      {
+        "rva": 122670435,
+        "hex": "e99e0506fe",
+        "review": "jmp 0x18555d306"
+      },
+      {
+        "rva": 122670440,
+        "hex": "488b8ff0020000",
+        "review": "mov rcx, qword ptr [rdi + 0x2f0]"
+      },
+      {
+        "rva": 122670447,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 122670450,
+        "hex": "0f84b80506fe",
+        "review": "je 0x18555d330"
+      },
+      {
+        "rva": 122670456,
+        "hex": "4c8b0531762609",
+        "review": "mov r8, qword ptr [rip + 0x9267631]"
+      },
+      {
+        "rva": 122670463,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 122670465,
+        "hex": "e8ca31aafd",
+        "review": "call 0x184f9ff50"
+      },
+      {
+        "rva": 122670470,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 122670471,
+        "hex": "e9990506fe",
+        "review": "jmp 0x18555d325"
+      }
+    ],
+    "refresh": [
+      {
+        "rva": 89511312,
+        "hex": "4883ec28",
+        "review": "sub rsp, 0x28"
+      },
+      {
+        "rva": 89511316,
+        "hex": "488b05b51c1c0c",
+        "review": "mov rax, qword ptr [rip + 0xc1c1cb5]"
+      },
+      {
+        "rva": 89511323,
+        "hex": "4c8b5048",
+        "review": "mov r10, qword ptr [rax + 0x48]"
+      },
+      {
+        "rva": 89511327,
+        "hex": "4d85d2",
+        "review": "test r10, r10"
+      },
+      {
+        "rva": 89511330,
+        "hex": "0f85a0f9f901",
+        "review": "jne 0x1874fcf48"
+      },
+      {
+        "rva": 89511336,
+        "hex": "488b8960040000",
+        "review": "mov rcx, qword ptr [rcx + 0x460]"
+      },
+      {
+        "rva": 89511343,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 89511346,
+        "hex": "7411",
+        "review": "je 0x18555d5c5"
+      },
+      {
+        "rva": 89511348,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 89511351,
+        "hex": "4883c428",
+        "review": "add rsp, 0x28"
+      },
+      {
+        "rva": 89511355,
+        "hex": "e910000000",
+        "review": "jmp 0x18555d5d0"
+      },
+      {
+        "rva": 89511360,
+        "hex": "4883c428",
+        "review": "add rsp, 0x28"
+      },
+      {
+        "rva": 89511364,
+        "hex": "c3",
+        "review": "ret "
+      },
+      {
+        "rva": 89511365,
+        "hex": "e87613b8fa",
+        "review": "call 0x1800de940"
+      },
+      {
+        "rva": 89511370,
+        "hex": "cc",
+        "review": "int3 "
+      },
+      {
+        "rva": 122670920,
+        "hex": "498b8280640000",
+        "review": "mov rax, qword ptr [r10 + 0x6480]"
+      },
+      {
+        "rva": 122670927,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 122670930,
+        "hex": "0f84500606fe",
+        "review": "je 0x18555d5a8"
+      },
+      {
+        "rva": 122670936,
+        "hex": "4d8bc8",
+        "review": "mov r9, r8"
+      },
+      {
+        "rva": 122670939,
+        "hex": "448bc2",
+        "review": "mov r8d, edx"
+      },
+      {
+        "rva": 122670942,
+        "hex": "488bd1",
+        "review": "mov rdx, rcx"
+      },
+      {
+        "rva": 122670945,
+        "hex": "498b8a88640000",
+        "review": "mov rcx, qword ptr [r10 + 0x6488]"
+      },
+      {
+        "rva": 122670952,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 122670954,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 122670955,
+        "hex": "e9500606fe",
+        "review": "jmp 0x18555d5c0"
+      }
+    ],
+    "stateTry": [
+      {
+        "rva": 102677808,
+        "hex": "4053",
+        "review": "push rbx"
+      },
+      {
+        "rva": 102677810,
+        "hex": "4881eca0000000",
+        "review": "sub rsp, 0xa0"
+      },
+      {
+        "rva": 102677817,
+        "hex": "4c8b051035530b",
+        "review": "mov r8, qword ptr [rip + 0xb533510]"
+      },
+      {
+        "rva": 102677824,
+        "hex": "488bd9",
+        "review": "mov rbx, rcx"
+      },
+      {
+        "rva": 102677827,
+        "hex": "498b4838",
+        "review": "mov rcx, qword ptr [r8 + 0x38]"
+      },
+      {
+        "rva": 102677831,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102677834,
+        "hex": "0f852e064b01",
+        "review": "jne 0x18769c37e"
+      },
+      {
+        "rva": 102677840,
+        "hex": "33c0",
+        "review": "xor eax, eax"
+      },
+      {
+        "rva": 102677842,
+        "hex": "4889bc24c0000000",
+        "review": "mov qword ptr [rsp + 0xc0], rdi"
+      },
+      {
+        "rva": 102677850,
+        "hex": "4889842490000000",
+        "review": "mov qword ptr [rsp + 0x90], rax"
+      },
+      {
+        "rva": 102677858,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 102677861,
+        "hex": "488b059457500a",
+        "review": "mov rax, qword ptr [rip + 0xa505794]"
+      },
+      {
+        "rva": 102677868,
+        "hex": "0f11842480000000",
+        "review": "movups xmmword ptr [rsp + 0x80], xmm0"
+      },
+      {
+        "rva": 102677876,
+        "hex": "488b88b8000000",
+        "review": "mov rcx, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 102677883,
+        "hex": "488b8958010000",
+        "review": "mov rcx, qword ptr [rcx + 0x158]"
+      },
+      {
+        "rva": 102677890,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102677893,
+        "hex": "7416",
+        "review": "je 0x1861ebd9d"
+      },
+      {
+        "rva": 102677895,
+        "hex": "488b5348",
+        "review": "mov rdx, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102677899,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 102677902,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102677905,
+        "hex": "e82a965aff",
+        "review": "call 0x1857953c0"
+      },
+      {
+        "rva": 102677910,
+        "hex": "4c8b05b334530b",
+        "review": "mov r8, qword ptr [rip + 0xb5334b3]"
+      },
+      {
+        "rva": 102677917,
+        "hex": "488b7b48",
+        "review": "mov rdi, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102677921,
+        "hex": "4889ac24b0000000",
+        "review": "mov qword ptr [rsp + 0xb0], rbp"
+      },
+      {
+        "rva": 102677929,
+        "hex": "4889b424b8000000",
+        "review": "mov qword ptr [rsp + 0xb8], rsi"
+      },
+      {
+        "rva": 102677937,
+        "hex": "4885ff",
+        "review": "test rdi, rdi"
+      },
+      {
+        "rva": 102677940,
+        "hex": "7506",
+        "review": "jne 0x1861ebdbc"
+      },
+      {
+        "rva": 102677942,
+        "hex": "e8852beff9",
+        "review": "call 0x1800de940"
+      },
+      {
+        "rva": 102677947,
+        "hex": "cc",
+        "review": "int3 "
+      },
+      {
+        "rva": 102677948,
+        "hex": "488bbf60020000",
+        "review": "mov rdi, qword ptr [rdi + 0x260]"
+      },
+      {
+        "rva": 102677955,
+        "hex": "4885ff",
+        "review": "test rdi, rdi"
+      },
+      {
+        "rva": 102677958,
+        "hex": "743f",
+        "review": "je 0x1861ebe07"
+      },
+      {
+        "rva": 102677960,
+        "hex": "498b4840",
+        "review": "mov rcx, qword ptr [r8 + 0x40]"
+      },
+      {
+        "rva": 102677964,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102677967,
+        "hex": "0f85ce054b01",
+        "review": "jne 0x18769c3a3"
+      },
+      {
+        "rva": 102677973,
+        "hex": "83bf480f000000",
+        "review": "cmp dword ptr [rdi + 0xf48], 0"
+      },
+      {
+        "rva": 102677980,
+        "hex": "7429",
+        "review": "je 0x1861ebe07"
+      },
+      {
+        "rva": 102677982,
+        "hex": "488b8f380f0000",
+        "review": "mov rcx, qword ptr [rdi + 0xf38]"
+      },
+      {
+        "rva": 102677989,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102677992,
+        "hex": "740a",
+        "review": "je 0x1861ebdf4"
+      },
+      {
+        "rva": 102677994,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102677997,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 102677999,
+        "hex": "e8acd36f00",
+        "review": "call 0x1868e91a0"
+      },
+      {
+        "rva": 102678004,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 102678007,
+        "hex": "33c0",
+        "review": "xor eax, eax"
+      },
+      {
+        "rva": 102678009,
+        "hex": "0f1187380f0000",
+        "review": "movups xmmword ptr [rdi + 0xf38], xmm0"
+      },
+      {
+        "rva": 102678016,
+        "hex": "488987480f0000",
+        "review": "mov qword ptr [rdi + 0xf48], rax"
+      },
+      {
+        "rva": 102678023,
+        "hex": "488b15d27b510a",
+        "review": "mov rdx, qword ptr [rip + 0xa517bd2]"
+      },
+      {
+        "rva": 102678030,
+        "hex": "488d4b50",
+        "review": "lea rcx, [rbx + 0x50]"
+      },
+      {
+        "rva": 102678034,
+        "hex": "e88965e1fe",
+        "review": "call 0x1850023a0"
+      },
+      {
+        "rva": 102678039,
+        "hex": "488bf8",
+        "review": "mov rdi, rax"
+      },
+      {
+        "rva": 102678042,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 102678045,
+        "hex": "0f84a8054b01",
+        "review": "je 0x18769c3cb"
+      },
+      {
+        "rva": 102678051,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 102678053,
+        "hex": "488bcb",
+        "review": "mov rcx, rbx"
+      },
+      {
+        "rva": 102678056,
+        "hex": "e833020000",
+        "review": "call 0x1861ec060"
+      },
+      {
+        "rva": 102678061,
+        "hex": "84c0",
+        "review": "test al, al"
+      },
+      {
+        "rva": 102678063,
+        "hex": "0f8496054b01",
+        "review": "je 0x18769c3cb"
+      },
+      {
+        "rva": 102678069,
+        "hex": "488b4348",
+        "review": "mov rax, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102678073,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 102678076,
+        "hex": "0f8474ffffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678082,
+        "hex": "488b8828010000",
+        "review": "mov rcx, qword ptr [rax + 0x128]"
+      },
+      {
+        "rva": 102678089,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102678092,
+        "hex": "0f8464ffffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678098,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102678101,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 102678104,
+        "hex": "e8031437ff",
+        "review": "call 0x18555d260"
+      },
+      {
+        "rva": 102678109,
+        "hex": "488b4b48",
+        "review": "mov rcx, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102678113,
+        "hex": "488be8",
+        "review": "mov rbp, rax"
+      },
+      {
+        "rva": 102678116,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102678119,
+        "hex": "0f8449ffffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678125,
+        "hex": "488b9128010000",
+        "review": "mov rdx, qword ptr [rcx + 0x128]"
+      },
+      {
+        "rva": 102678132,
+        "hex": "4885d2",
+        "review": "test rdx, rdx"
+      },
+      {
+        "rva": 102678135,
+        "hex": "0f8439ffffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678141,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102678144,
+        "hex": "488d4c2460",
+        "review": "lea rcx, [rsp + 0x60]"
+      },
+      {
+        "rva": 102678149,
+        "hex": "e856010000",
+        "review": "call 0x1861ebfe0"
+      },
+      {
+        "rva": 102678154,
+        "hex": "0f1000",
+        "review": "movups xmm0, xmmword ptr [rax]"
+      },
+      {
+        "rva": 102678157,
+        "hex": "0f11842480000000",
+        "review": "movups xmmword ptr [rsp + 0x80], xmm0"
+      },
+      {
+        "rva": 102678165,
+        "hex": "f20f104810",
+        "review": "movsd xmm1, qword ptr [rax + 0x10]"
+      },
+      {
+        "rva": 102678170,
+        "hex": "488b4348",
+        "review": "mov rax, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102678174,
+        "hex": "f20f118c2490000000",
+        "review": "movsd qword ptr [rsp + 0x90], xmm1"
+      },
+      {
+        "rva": 102678183,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 102678186,
+        "hex": "0f8406ffffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678192,
+        "hex": "488bb028010000",
+        "review": "mov rsi, qword ptr [rax + 0x128]"
+      },
+      {
+        "rva": 102678199,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 102678201,
+        "hex": "488bcf",
+        "review": "mov rcx, rdi"
+      },
+      {
+        "rva": 102678204,
+        "hex": "e8df6124ff",
+        "review": "call 0x1854320a0"
+      },
+      {
+        "rva": 102678209,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 102678211,
+        "hex": "c644246001",
+        "review": "mov byte ptr [rsp + 0x60], 1"
+      },
+      {
+        "rva": 102678216,
+        "hex": "6689542461",
+        "review": "mov word ptr [rsp + 0x61], dx"
+      },
+      {
+        "rva": 102678221,
+        "hex": "0f57c0",
+        "review": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 102678224,
+        "hex": "88542463",
+        "review": "mov byte ptr [rsp + 0x63], dl"
+      },
+      {
+        "rva": 102678228,
+        "hex": "0f11442450",
+        "review": "movups xmmword ptr [rsp + 0x50], xmm0"
+      },
+      {
+        "rva": 102678233,
+        "hex": "66c74424500101",
+        "review": "mov word ptr [rsp + 0x50], 0x101"
+      },
+      {
+        "rva": 102678240,
+        "hex": "0f104c2450",
+        "review": "movups xmm1, xmmword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 102678245,
+        "hex": "0f114c2464",
+        "review": "movups xmmword ptr [rsp + 0x64], xmm1"
+      },
+      {
+        "rva": 102678250,
+        "hex": "4885f6",
+        "review": "test rsi, rsi"
+      },
+      {
+        "rva": 102678253,
+        "hex": "0f84c3feffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678259,
+        "hex": "0f10442460",
+        "review": "movups xmm0, xmmword ptr [rsp + 0x60]"
+      },
+      {
+        "rva": 102678264,
+        "hex": "4889542448",
+        "review": "mov qword ptr [rsp + 0x48], rdx"
+      },
+      {
+        "rva": 102678269,
+        "hex": "488d8c2480000000",
+        "review": "lea rcx, [rsp + 0x80]"
+      },
+      {
+        "rva": 102678277,
+        "hex": "88542440",
+        "review": "mov byte ptr [rsp + 0x40], dl"
+      },
+      {
+        "rva": 102678281,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 102678284,
+        "hex": "48894c2438",
+        "review": "mov qword ptr [rsp + 0x38], rcx"
+      },
+      {
+        "rva": 102678289,
+        "hex": "4c8bc0",
+        "review": "mov r8, rax"
+      },
+      {
+        "rva": 102678292,
+        "hex": "4889542430",
+        "review": "mov qword ptr [rsp + 0x30], rdx"
+      },
+      {
+        "rva": 102678297,
+        "hex": "488d4c2460",
+        "review": "lea rcx, [rsp + 0x60]"
+      },
+      {
+        "rva": 102678302,
+        "hex": "4889542428",
+        "review": "mov qword ptr [rsp + 0x28], rdx"
+      },
+      {
+        "rva": 102678307,
+        "hex": "488bd5",
+        "review": "mov rdx, rbp"
+      },
+      {
+        "rva": 102678310,
+        "hex": "48894c2420",
+        "review": "mov qword ptr [rsp + 0x20], rcx"
+      },
+      {
+        "rva": 102678315,
+        "hex": "488bce",
+        "review": "mov rcx, rsi"
+      },
+      {
+        "rva": 102678318,
+        "hex": "660f73d90c",
+        "review": "psrldq xmm1, 0xc"
+      },
+      {
+        "rva": 102678323,
+        "hex": "0f29442460",
+        "review": "movaps xmmword ptr [rsp + 0x60], xmm0"
+      },
+      {
+        "rva": 102678328,
+        "hex": "660f7e4c2470",
+        "review": "movd dword ptr [rsp + 0x70], xmm1"
+      },
+      {
+        "rva": 102678334,
+        "hex": "e82d72b3ff",
+        "review": "call 0x185d23170"
+      },
+      {
+        "rva": 102678339,
+        "hex": "488b05b655500a",
+        "review": "mov rax, qword ptr [rip + 0xa5055b6]"
+      },
+      {
+        "rva": 102678346,
+        "hex": "488b88b8000000",
+        "review": "mov rcx, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 102678353,
+        "hex": "488b4918",
+        "review": "mov rcx, qword ptr [rcx + 0x18]"
+      },
+      {
+        "rva": 102678357,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102678360,
+        "hex": "0f8458feffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678366,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102678369,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 102678372,
+        "hex": "e8b7080000",
+        "review": "call 0x1861ec820"
+      },
+      {
+        "rva": 102678377,
+        "hex": "488b059055500a",
+        "review": "mov rax, qword ptr [rip + 0xa505590]"
+      },
+      {
+        "rva": 102678384,
+        "hex": "488b88b8000000",
+        "review": "mov rcx, qword ptr [rax + 0xb8]"
+      },
+      {
+        "rva": 102678391,
+        "hex": "488b8958020000",
+        "review": "mov rcx, qword ptr [rcx + 0x258]"
+      },
+      {
+        "rva": 102678398,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102678401,
+        "hex": "0f842ffeffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678407,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 102678410,
+        "hex": "ba02000000",
+        "review": "mov edx, 2"
+      },
+      {
+        "rva": 102678415,
+        "hex": "e87c1434ff",
+        "review": "call 0x18552d410"
+      },
+      {
+        "rva": 102678420,
+        "hex": "488b4348",
+        "review": "mov rax, qword ptr [rbx + 0x48]"
+      },
+      {
+        "rva": 102678424,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 102678427,
+        "hex": "0f8415feffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678433,
+        "hex": "488b8828010000",
+        "review": "mov rcx, qword ptr [rax + 0x128]"
+      },
+      {
+        "rva": 102678440,
+        "hex": "4885c9",
+        "review": "test rcx, rcx"
+      },
+      {
+        "rva": 102678443,
+        "hex": "0f8405feffff",
+        "review": "je 0x1861ebdb6"
+      },
+      {
+        "rva": 102678449,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 102678451,
+        "hex": "e808eab9ff",
+        "review": "call 0x185d8a9c0"
+      },
+      {
+        "rva": 102678456,
+        "hex": "488bb424b8000000",
+        "review": "mov rsi, qword ptr [rsp + 0xb8]"
+      },
+      {
+        "rva": 102678464,
+        "hex": "488bac24b0000000",
+        "review": "mov rbp, qword ptr [rsp + 0xb0]"
+      },
+      {
+        "rva": 102678472,
+        "hex": "488bbc24c0000000",
+        "review": "mov rdi, qword ptr [rsp + 0xc0]"
+      },
+      {
+        "rva": 102678480,
+        "hex": "4881c4a0000000",
+        "review": "add rsp, 0xa0"
+      },
+      {
+        "rva": 102678487,
+        "hex": "5b",
+        "review": "pop rbx"
+      },
+      {
+        "rva": 102678488,
+        "hex": "c3",
+        "review": "ret "
+      },
+      {
+        "rva": 124371838,
+        "hex": "488b8120c20000",
+        "review": "mov rax, qword ptr [rcx + 0xc220]"
+      },
+      {
+        "rva": 124371845,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 124371848,
+        "hex": "0f84c2f9b4fe",
+        "review": "je 0x1861ebd50"
+      },
+      {
+        "rva": 124371854,
+        "hex": "488b8928c20000",
+        "review": "mov rcx, qword ptr [rcx + 0xc228]"
+      },
+      {
+        "rva": 124371861,
+        "hex": "4c8bc2",
+        "review": "mov r8, rdx"
+      },
+      {
+        "rva": 124371864,
+        "hex": "488bd3",
+        "review": "mov rdx, rbx"
+      },
+      {
+        "rva": 124371867,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 124371869,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 124371870,
+        "hex": "e92dfcb4fe",
+        "review": "jmp 0x1861ebfd0"
+      },
+      {
+        "rva": 124371875,
+        "hex": "488b8110ca0000",
+        "review": "mov rax, qword ptr [rcx + 0xca10]"
+      },
+      {
+        "rva": 124371882,
+        "hex": "4885c0",
+        "review": "test rax, rax"
+      },
+      {
+        "rva": 124371885,
+        "hex": "0f8422fab4fe",
+        "review": "je 0x1861ebdd5"
+      },
+      {
+        "rva": 124371891,
+        "hex": "488b8918ca0000",
+        "review": "mov rcx, qword ptr [rcx + 0xca18]"
+      },
+      {
+        "rva": 124371898,
+        "hex": "4533c9",
+        "review": "xor r9d, r9d"
+      },
+      {
+        "rva": 124371901,
+        "hex": "4533c0",
+        "review": "xor r8d, r8d"
+      },
+      {
+        "rva": 124371904,
+        "hex": "488bd7",
+        "review": "mov rdx, rdi"
+      },
+      {
+        "rva": 124371907,
+        "hex": "ffd0",
+        "review": "call rax"
+      },
+      {
+        "rva": 124371909,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 124371910,
+        "hex": "e93cfab4fe",
+        "review": "jmp 0x1861ebe07"
+      },
+      {
+        "rva": 124371915,
+        "hex": "33d2",
+        "review": "xor edx, edx"
+      },
+      {
+        "rva": 124371917,
+        "hex": "488bcb",
+        "review": "mov rcx, rbx"
+      },
+      {
+        "rva": 124371920,
+        "hex": "e8d78d3e02",
+        "review": "call 0x189a851ac"
+      },
+      {
+        "rva": 124371925,
+        "hex": "90",
+        "review": "nop "
+      },
+      {
+        "rva": 124371926,
+        "hex": "e9b9fbb4fe",
+        "review": "jmp 0x1861ebf94"
+      }
+    ]
+  },
+  "fields": [
+    {
+      "id": "componentAbility",
+      "type": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "name": "m_abilitySystem",
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "offset": 432,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "combo",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_comboController",
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "offset": 1120,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "skillType",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "<skillType>k__BackingField",
+      "valueType": "Beyond.Gameplay.SkillType",
+      "offset": 216,
+      "ordinaryKind": 17
+    },
+    {
+      "id": "stateEntity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "offset": 72,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "entityAbility",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<abilityCom>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "offset": 296,
+      "ordinaryKind": 18
+    }
+  ],
+  "markers": {
+    "aiEntrySave": 89509847,
+    "aiLoadRefresh": 89509866,
+    "aiRefreshCall": 89509935,
+    "aiAttackIdCall": 89509961,
+    "aiIdSave": 89509966,
+    "aiLoadCanCast": 89509988,
+    "aiCanCastCall": 89510031,
+    "aiCanCastBranch": 89510038,
+    "aiAfterCanCast": 89510044,
+    "aiReloadTryCast": 89510277,
+    "aiTrySetup": 89510356,
+    "aiTryCall": 89510422,
+    "aiFalse": 89510429,
+    "aiEpilogue": 89510431,
+    "aiReturn": 89510473,
+    "aiThrow": 89510474,
+    "attackCache": 89510583,
+    "attackLookup": 89510630,
+    "attackType": 89510649,
+    "attackReturnCached": 89510662,
+    "attackFallback": 89510676,
+    "attackThrow": 89510704,
+    "attackTypeOne": 122670422,
+    "refreshForward": 89511336,
+    "stateIdSetup": 102678069,
+    "stateIdCall": 102678104,
+    "stateIdSave": 102678113,
+    "stateReloadTry": 102678192,
+    "stateTrySetup": 102678259,
+    "stateTryCall": 102678334,
+    "stateDiscardResult": 102678339,
+    "stateClearSetup": 102678420,
+    "stateClearCall": 102678451,
+    "attackReceiverSave": 89510509
+  },
+  "reviewedStack": {
+    "lookupOut": 72,
+    "aiOptions": 247,
+    "aiInherited": 23,
+    "stateOptions": 96,
+    "stateInherited": 128,
+    "aiOptionsSource": 215,
+    "aiOptionsTailSource": 231,
+    "aiOptionsTail": 7
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "normalReturnedPathOnly": true,
+    "canCastReceiverReloaded": true,
+    "tryCastReceiverReloaded": true,
+    "sameAbilitySystemReceiverProved": false,
+    "sameIdAndTargetRegistersForwarded": true,
+    "canCastFalseSkipsTryCast": true,
+    "canCastTrueNormalReturnCallsTryCast": true,
+    "tryCastBoolForwarded": true,
+    "aiTargetCallsTryCastDirectly": true,
+    "stateTryCastReturnConsumed": false,
+    "runtimeRequestDeliveryProved": false,
+    "unrecordedCallerProved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Selected metadata declarations, complete unwind-family bytes, finite instruction/CFG framing and selected original register/typed-field/direct-call fragments.",
+    "conditional": "Original inactive replacement path, valid coherent live objects, normal returning intervening calls, ordinary Win64 nonvolatile-register preservation and declared finite stack grammar. CanCast and TryCast receivers are separate field reloads; equality requires explicit stability.",
+    "unresolved": "Actual asynchronous caller selection, complete upstream command delivery, transitive callbacks, pending/target lifetime, fallback override selection, globally unique cast identity and runtime causality."
+  },
+  "reviewedOperands": {
+    "stringLengthOffset": 16,
+    "refreshCommand": 2,
+    "cacheSkillTypes": [
+      0,
+      1
+    ]
+  },
+  "helperDelivery": {
+    "programs": {
+      "selectedHelper": {
+        "entryRva": 162025900,
+        "ownership": "unwind-family",
+        "windows": [
+          {
+            "startRva": 162025900,
+            "endRva": 162027705,
+            "sha256": "28983fb132ec2e4ae3c06158c99ac9573ece1d4907e0431e5488e46dc51bd920"
+          }
+        ],
+        "instructions": [
+          {
+            "rva": 162025900,
+            "hex": "488bc4"
+          },
+          {
+            "rva": 162025903,
+            "hex": "48895808"
+          },
+          {
+            "rva": 162025907,
+            "hex": "48897010"
+          },
+          {
+            "rva": 162025911,
+            "hex": "48897820"
+          },
+          {
+            "rva": 162025915,
+            "hex": "4156"
+          },
+          {
+            "rva": 162025917,
+            "hex": "4881ec30010000"
+          },
+          {
+            "rva": 162025924,
+            "hex": "0f2970e8"
+          },
+          {
+            "rva": 162025928,
+            "hex": "0f2978d8"
+          },
+          {
+            "rva": 162025932,
+            "hex": "440f2940c8"
+          },
+          {
+            "rva": 162025937,
+            "hex": "488bfa"
+          },
+          {
+            "rva": 162025940,
+            "hex": "488bd9"
+          },
+          {
+            "rva": 162025943,
+            "hex": "4533f6"
+          },
+          {
+            "rva": 162025946,
+            "hex": "4438352239ca07"
+          },
+          {
+            "rva": 162025953,
+            "hex": "755b"
+          },
+          {
+            "rva": 162025955,
+            "hex": "488d0dce91c906"
+          },
+          {
+            "rva": 162025962,
+            "hex": "e8b1c25bf6"
+          },
+          {
+            "rva": 162025967,
+            "hex": "488d0d0ac3c606"
+          },
+          {
+            "rva": 162025974,
+            "hex": "e8a5c25bf6"
+          },
+          {
+            "rva": 162025979,
+            "hex": "488d0dbeeecd06"
+          },
+          {
+            "rva": 162025986,
+            "hex": "e899c25bf6"
+          },
+          {
+            "rva": 162025991,
+            "hex": "488d0dd2eecd06"
+          },
+          {
+            "rva": 162025998,
+            "hex": "e88dc25bf6"
+          },
+          {
+            "rva": 162026003,
+            "hex": "488d0d1e1cc506"
+          },
+          {
+            "rva": 162026010,
+            "hex": "e881c25bf6"
+          },
+          {
+            "rva": 162026015,
+            "hex": "488d0deabcc706"
+          },
+          {
+            "rva": 162026022,
+            "hex": "e875c25bf6"
+          },
+          {
+            "rva": 162026027,
+            "hex": "488d0dce68bc06"
+          },
+          {
+            "rva": 162026034,
+            "hex": "e869c25bf6"
+          },
+          {
+            "rva": 162026039,
+            "hex": "c605c538ca0701"
+          },
+          {
+            "rva": 162026046,
+            "hex": "488b050ba0c907"
+          },
+          {
+            "rva": 162026053,
+            "hex": "488b4838"
+          },
+          {
+            "rva": 162026057,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026060,
+            "hex": "7444"
+          },
+          {
+            "rva": 162026062,
+            "hex": "488b8130c20000"
+          },
+          {
+            "rva": 162026069,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026072,
+            "hex": "7438"
+          },
+          {
+            "rva": 162026074,
+            "hex": "4c8bc7"
+          },
+          {
+            "rva": 162026077,
+            "hex": "488bd3"
+          },
+          {
+            "rva": 162026080,
+            "hex": "488b8938c20000"
+          },
+          {
+            "rva": 162026087,
+            "hex": "ffd0"
+          },
+          {
+            "rva": 162026089,
+            "hex": "4c8d9c2430010000"
+          },
+          {
+            "rva": 162026097,
+            "hex": "498b5b10"
+          },
+          {
+            "rva": 162026101,
+            "hex": "498b7318"
+          },
+          {
+            "rva": 162026105,
+            "hex": "498b7b28"
+          },
+          {
+            "rva": 162026109,
+            "hex": "410f2873f0"
+          },
+          {
+            "rva": 162026114,
+            "hex": "410f287be0"
+          },
+          {
+            "rva": 162026119,
+            "hex": "450f2843d0"
+          },
+          {
+            "rva": 162026124,
+            "hex": "498be3"
+          },
+          {
+            "rva": 162026127,
+            "hex": "415e"
+          },
+          {
+            "rva": 162026129,
+            "hex": "c3"
+          },
+          {
+            "rva": 162026130,
+            "hex": "4c89b42450010000"
+          },
+          {
+            "rva": 162026138,
+            "hex": "0f57c0"
+          },
+          {
+            "rva": 162026141,
+            "hex": "33c0"
+          },
+          {
+            "rva": 162026143,
+            "hex": "0f118424c0000000"
+          },
+          {
+            "rva": 162026151,
+            "hex": "48898424d0000000"
+          },
+          {
+            "rva": 162026159,
+            "hex": "48898424a0000000"
+          },
+          {
+            "rva": 162026167,
+            "hex": "898424a8000000"
+          },
+          {
+            "rva": 162026174,
+            "hex": "0f118424d8000000"
+          },
+          {
+            "rva": 162026182,
+            "hex": "48898424e8000000"
+          },
+          {
+            "rva": 162026190,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026192,
+            "hex": "488bcb"
+          },
+          {
+            "rva": 162026195,
+            "hex": "e81c060000"
+          },
+          {
+            "rva": 162026200,
+            "hex": "84c0"
+          },
+          {
+            "rva": 162026202,
+            "hex": "758d"
+          },
+          {
+            "rva": 162026204,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026208,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026211,
+            "hex": "0f8446050000"
+          },
+          {
+            "rva": 162026217,
+            "hex": "488b8828010000"
+          },
+          {
+            "rva": 162026224,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026227,
+            "hex": "0f8436050000"
+          },
+          {
+            "rva": 162026233,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162026236,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026238,
+            "hex": "e85d7fadfb"
+          },
+          {
+            "rva": 162026243,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026246,
+            "hex": "0f845dffffff"
+          },
+          {
+            "rva": 162026252,
+            "hex": "44397010"
+          },
+          {
+            "rva": 162026256,
+            "hex": "0f8653ffffff"
+          },
+          {
+            "rva": 162026262,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026266,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026269,
+            "hex": "0f840c050000"
+          },
+          {
+            "rva": 162026275,
+            "hex": "488b8828010000"
+          },
+          {
+            "rva": 162026282,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026285,
+            "hex": "0f84fc040000"
+          },
+          {
+            "rva": 162026291,
+            "hex": "488bb990020000"
+          },
+          {
+            "rva": 162026298,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162026301,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026303,
+            "hex": "e81c7fadfb"
+          },
+          {
+            "rva": 162026308,
+            "hex": "4885ff"
+          },
+          {
+            "rva": 162026311,
+            "hex": "0f84e2040000"
+          },
+          {
+            "rva": 162026317,
+            "hex": "4c8b056490c906"
+          },
+          {
+            "rva": 162026324,
+            "hex": "488bd0"
+          },
+          {
+            "rva": 162026327,
+            "hex": "488bcf"
+          },
+          {
+            "rva": 162026330,
+            "hex": "e8b18e5cfb"
+          },
+          {
+            "rva": 162026335,
+            "hex": "488bf8"
+          },
+          {
+            "rva": 162026338,
+            "hex": "e879ae9afb"
+          },
+          {
+            "rva": 162026343,
+            "hex": "4889842450010000"
+          },
+          {
+            "rva": 162026351,
+            "hex": "4c89b424b0000000"
+          },
+          {
+            "rva": 162026359,
+            "hex": "488d842450010000"
+          },
+          {
+            "rva": 162026367,
+            "hex": "48898424b8000000"
+          },
+          {
+            "rva": 162026375,
+            "hex": "4885ff"
+          },
+          {
+            "rva": 162026378,
+            "hex": "0f8422050000"
+          },
+          {
+            "rva": 162026384,
+            "hex": "488b4718"
+          },
+          {
+            "rva": 162026388,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026391,
+            "hex": "0f8410050000"
+          },
+          {
+            "rva": 162026397,
+            "hex": "83783401"
+          },
+          {
+            "rva": 162026401,
+            "hex": "0f8511020000"
+          },
+          {
+            "rva": 162026407,
+            "hex": "488b0552c1c606"
+          },
+          {
+            "rva": 162026414,
+            "hex": "488b88b8000000"
+          },
+          {
+            "rva": 162026421,
+            "hex": "488b4918"
+          },
+          {
+            "rva": 162026425,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026428,
+            "hex": "0f84aa040000"
+          },
+          {
+            "rva": 162026434,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026436,
+            "hex": "e8a7a49afb"
+          },
+          {
+            "rva": 162026441,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026444,
+            "hex": "0f84e6010000"
+          },
+          {
+            "rva": 162026450,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026454,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026457,
+            "hex": "0f8488040000"
+          },
+          {
+            "rva": 162026463,
+            "hex": "488b8828010000"
+          },
+          {
+            "rva": 162026470,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026473,
+            "hex": "0f8473040000"
+          },
+          {
+            "rva": 162026479,
+            "hex": "488b89f0020000"
+          },
+          {
+            "rva": 162026486,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026489,
+            "hex": "0f845e040000"
+          },
+          {
+            "rva": 162026495,
+            "hex": "4c8b05daeccd06"
+          },
+          {
+            "rva": 162026502,
+            "hex": "488b97f0000000"
+          },
+          {
+            "rva": 162026509,
+            "hex": "e89eaf53fb"
+          },
+          {
+            "rva": 162026514,
+            "hex": "84c0"
+          },
+          {
+            "rva": 162026516,
+            "hex": "0f859e010000"
+          },
+          {
+            "rva": 162026522,
+            "hex": "488bb42450010000"
+          },
+          {
+            "rva": 162026530,
+            "hex": "488b05d7c0c606"
+          },
+          {
+            "rva": 162026537,
+            "hex": "488b88b8000000"
+          },
+          {
+            "rva": 162026544,
+            "hex": "488b4918"
+          },
+          {
+            "rva": 162026548,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026551,
+            "hex": "0f841b040000"
+          },
+          {
+            "rva": 162026557,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026559,
+            "hex": "e82ca49afb"
+          },
+          {
+            "rva": 162026564,
+            "hex": "4c8b05c5bac706"
+          },
+          {
+            "rva": 162026571,
+            "hex": "488bd0"
+          },
+          {
+            "rva": 162026574,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162026579,
+            "hex": "e888700efc"
+          },
+          {
+            "rva": 162026584,
+            "hex": "4885f6"
+          },
+          {
+            "rva": 162026587,
+            "hex": "0f84f2030000"
+          },
+          {
+            "rva": 162026593,
+            "hex": "0f28442450"
+          },
+          {
+            "rva": 162026598,
+            "hex": "660f7f442450"
+          },
+          {
+            "rva": 162026604,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162026607,
+            "hex": "488d542450"
+          },
+          {
+            "rva": 162026612,
+            "hex": "488bce"
+          },
+          {
+            "rva": 162026615,
+            "hex": "e8549b99fb"
+          },
+          {
+            "rva": 162026620,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026624,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026627,
+            "hex": "0f84c5030000"
+          },
+          {
+            "rva": 162026633,
+            "hex": "488b9028010000"
+          },
+          {
+            "rva": 162026640,
+            "hex": "4885d2"
+          },
+          {
+            "rva": 162026643,
+            "hex": "0f84b0030000"
+          },
+          {
+            "rva": 162026649,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162026652,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162026657,
+            "hex": "e83a6b76fc"
+          },
+          {
+            "rva": 162026662,
+            "hex": "0f1000"
+          },
+          {
+            "rva": 162026665,
+            "hex": "0f118424c0000000"
+          },
+          {
+            "rva": 162026673,
+            "hex": "f20f104810"
+          },
+          {
+            "rva": 162026678,
+            "hex": "f20f118c24d0000000"
+          },
+          {
+            "rva": 162026687,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026691,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026694,
+            "hex": "0f8478030000"
+          },
+          {
+            "rva": 162026700,
+            "hex": "4c8b9028010000"
+          },
+          {
+            "rva": 162026707,
+            "hex": "4c8b9ff0000000"
+          },
+          {
+            "rva": 162026714,
+            "hex": "488b8c2450010000"
+          },
+          {
+            "rva": 162026722,
+            "hex": "e8f9cb9afb"
+          },
+          {
+            "rva": 162026727,
+            "hex": "0f57c0"
+          },
+          {
+            "rva": 162026730,
+            "hex": "0f11442450"
+          },
+          {
+            "rva": 162026735,
+            "hex": "66c74424500101"
+          },
+          {
+            "rva": 162026742,
+            "hex": "c644245301"
+          },
+          {
+            "rva": 162026747,
+            "hex": "664489742471"
+          },
+          {
+            "rva": 162026753,
+            "hex": "4488742473"
+          },
+          {
+            "rva": 162026758,
+            "hex": "0f104c2450"
+          },
+          {
+            "rva": 162026763,
+            "hex": "0f114c2474"
+          },
+          {
+            "rva": 162026768,
+            "hex": "c644247001"
+          },
+          {
+            "rva": 162026773,
+            "hex": "4d85d2"
+          },
+          {
+            "rva": 162026776,
+            "hex": "0f8421030000"
+          },
+          {
+            "rva": 162026782,
+            "hex": "0f10442470"
+          },
+          {
+            "rva": 162026787,
+            "hex": "0f29442450"
+          },
+          {
+            "rva": 162026792,
+            "hex": "660f73d90c"
+          },
+          {
+            "rva": 162026797,
+            "hex": "660f7e4c2460"
+          },
+          {
+            "rva": 162026803,
+            "hex": "4c89742448"
+          },
+          {
+            "rva": 162026808,
+            "hex": "4488742440"
+          },
+          {
+            "rva": 162026813,
+            "hex": "488d8c24c0000000"
+          },
+          {
+            "rva": 162026821,
+            "hex": "48894c2438"
+          },
+          {
+            "rva": 162026826,
+            "hex": "4c89742430"
+          },
+          {
+            "rva": 162026831,
+            "hex": "4c89742428"
+          },
+          {
+            "rva": 162026836,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162026841,
+            "hex": "48894c2420"
+          },
+          {
+            "rva": 162026846,
+            "hex": "4533c9"
+          },
+          {
+            "rva": 162026849,
+            "hex": "4c8bc0"
+          },
+          {
+            "rva": 162026852,
+            "hex": "498bd3"
+          },
+          {
+            "rva": 162026855,
+            "hex": "498bca"
+          },
+          {
+            "rva": 162026858,
+            "hex": "e801dc29fc"
+          },
+          {
+            "rva": 162026863,
+            "hex": "33d2"
+          },
+          {
+            "rva": 162026865,
+            "hex": "488bcf"
+          },
+          {
+            "rva": 162026868,
+            "hex": "e8bf8b3aff"
+          },
+          {
+            "rva": 162026873,
+            "hex": "488bd8"
+          },
+          {
+            "rva": 162026876,
+            "hex": "488b4f18"
+          },
+          {
+            "rva": 162026880,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026883,
+            "hex": "0f84b1020000"
+          },
+          {
+            "rva": 162026889,
+            "hex": "4881c194000000"
+          },
+          {
+            "rva": 162026896,
+            "hex": "e82b0a5afb"
+          },
+          {
+            "rva": 162026901,
+            "hex": "4885db"
+          },
+          {
+            "rva": 162026904,
+            "hex": "0f8497020000"
+          },
+          {
+            "rva": 162026910,
+            "hex": "4533c9"
+          },
+          {
+            "rva": 162026913,
+            "hex": "0f28d0"
+          },
+          {
+            "rva": 162026916,
+            "hex": "488b155565bc06"
+          },
+          {
+            "rva": 162026923,
+            "hex": "488bcb"
+          },
+          {
+            "rva": 162026926,
+            "hex": "e8adaa4dfc"
+          },
+          {
+            "rva": 162026931,
+            "hex": "e92c020000"
+          },
+          {
+            "rva": 162026936,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162026940,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026943,
+            "hex": "0f84e3020000"
+          },
+          {
+            "rva": 162026949,
+            "hex": "488b88b0000000"
+          },
+          {
+            "rva": 162026956,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162026959,
+            "hex": "0f84ce020000"
+          },
+          {
+            "rva": 162026965,
+            "hex": "488b91f0000000"
+          },
+          {
+            "rva": 162026972,
+            "hex": "488b4718"
+          },
+          {
+            "rva": 162026976,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162026979,
+            "hex": "0f84b5020000"
+          },
+          {
+            "rva": 162026985,
+            "hex": "4885d2"
+          },
+          {
+            "rva": 162026988,
+            "hex": "0f84a7020000"
+          },
+          {
+            "rva": 162026994,
+            "hex": "f20f108094000000"
+          },
+          {
+            "rva": 162027002,
+            "hex": "f20f11842490000000"
+          },
+          {
+            "rva": 162027011,
+            "hex": "8b809c000000"
+          },
+          {
+            "rva": 162027017,
+            "hex": "89842498000000"
+          },
+          {
+            "rva": 162027024,
+            "hex": "4533c9"
+          },
+          {
+            "rva": 162027027,
+            "hex": "4c8d842490000000"
+          },
+          {
+            "rva": 162027035,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162027040,
+            "hex": "e85b33a803"
+          },
+          {
+            "rva": 162027045,
+            "hex": "f20f1000"
+          },
+          {
+            "rva": 162027049,
+            "hex": "f20f11442470"
+          },
+          {
+            "rva": 162027055,
+            "hex": "8b7008"
+          },
+          {
+            "rva": 162027058,
+            "hex": "488b5348"
+          },
+          {
+            "rva": 162027062,
+            "hex": "4885d2"
+          },
+          {
+            "rva": 162027065,
+            "hex": "0f8455020000"
+          },
+          {
+            "rva": 162027071,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162027074,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162027079,
+            "hex": "e8d4728afb"
+          },
+          {
+            "rva": 162027084,
+            "hex": "f20f1000"
+          },
+          {
+            "rva": 162027088,
+            "hex": "f20f11842490000000"
+          },
+          {
+            "rva": 162027097,
+            "hex": "660f6efe"
+          },
+          {
+            "rva": 162027101,
+            "hex": "f30f587808"
+          },
+          {
+            "rva": 162027106,
+            "hex": "f3440f10442474"
+          },
+          {
+            "rva": 162027113,
+            "hex": "f3440f58842494000000"
+          },
+          {
+            "rva": 162027123,
+            "hex": "f30f10742470"
+          },
+          {
+            "rva": 162027129,
+            "hex": "f30f58b42490000000"
+          },
+          {
+            "rva": 162027138,
+            "hex": "488b0577bec606"
+          },
+          {
+            "rva": 162027145,
+            "hex": "488b88b8000000"
+          },
+          {
+            "rva": 162027152,
+            "hex": "488b4918"
+          },
+          {
+            "rva": 162027156,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162027159,
+            "hex": "0f84f2010000"
+          },
+          {
+            "rva": 162027165,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162027168,
+            "hex": "488d9424a0000000"
+          },
+          {
+            "rva": 162027176,
+            "hex": "e8576749ff"
+          },
+          {
+            "rva": 162027181,
+            "hex": "84c0"
+          },
+          {
+            "rva": 162027183,
+            "hex": "7412"
+          },
+          {
+            "rva": 162027185,
+            "hex": "f30f10b424a0000000"
+          },
+          {
+            "rva": 162027194,
+            "hex": "f30f10bc24a8000000"
+          },
+          {
+            "rva": 162027203,
+            "hex": "488b8c2450010000"
+          },
+          {
+            "rva": 162027211,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162027214,
+            "hex": "0f84b6010000"
+          },
+          {
+            "rva": 162027220,
+            "hex": "410f14f0"
+          },
+          {
+            "rva": 162027224,
+            "hex": "f20f11742470"
+          },
+          {
+            "rva": 162027230,
+            "hex": "f30f117c2478"
+          },
+          {
+            "rva": 162027236,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162027239,
+            "hex": "488d542470"
+          },
+          {
+            "rva": 162027244,
+            "hex": "e83fdcedf8"
+          },
+          {
+            "rva": 162027249,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162027253,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162027256,
+            "hex": "0f8487010000"
+          },
+          {
+            "rva": 162027262,
+            "hex": "488b9028010000"
+          },
+          {
+            "rva": 162027269,
+            "hex": "4885d2"
+          },
+          {
+            "rva": 162027272,
+            "hex": "0f8472010000"
+          },
+          {
+            "rva": 162027278,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162027281,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162027286,
+            "hex": "e8c56876fc"
+          },
+          {
+            "rva": 162027291,
+            "hex": "0f1000"
+          },
+          {
+            "rva": 162027294,
+            "hex": "0f118424d8000000"
+          },
+          {
+            "rva": 162027302,
+            "hex": "f20f104810"
+          },
+          {
+            "rva": 162027307,
+            "hex": "f20f118c24e8000000"
+          },
+          {
+            "rva": 162027316,
+            "hex": "488b4348"
+          },
+          {
+            "rva": 162027320,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 162027323,
+            "hex": "0f843a010000"
+          },
+          {
+            "rva": 162027329,
+            "hex": "4c8b9028010000"
+          },
+          {
+            "rva": 162027336,
+            "hex": "4c8b9ff0000000"
+          },
+          {
+            "rva": 162027343,
+            "hex": "488b8c2450010000"
+          },
+          {
+            "rva": 162027351,
+            "hex": "e884c99afb"
+          },
+          {
+            "rva": 162027356,
+            "hex": "0f57c0"
+          },
+          {
+            "rva": 162027359,
+            "hex": "0f11442450"
+          },
+          {
+            "rva": 162027364,
+            "hex": "66c74424500101"
+          },
+          {
+            "rva": 162027371,
+            "hex": "c644245301"
+          },
+          {
+            "rva": 162027376,
+            "hex": "664489742471"
+          },
+          {
+            "rva": 162027382,
+            "hex": "4488742473"
+          },
+          {
+            "rva": 162027387,
+            "hex": "0f104c2450"
+          },
+          {
+            "rva": 162027392,
+            "hex": "0f114c2474"
+          },
+          {
+            "rva": 162027397,
+            "hex": "c644247001"
+          },
+          {
+            "rva": 162027402,
+            "hex": "4d85d2"
+          },
+          {
+            "rva": 162027405,
+            "hex": "0f84e3000000"
+          },
+          {
+            "rva": 162027411,
+            "hex": "0f10442470"
+          },
+          {
+            "rva": 162027416,
+            "hex": "0f29442450"
+          },
+          {
+            "rva": 162027421,
+            "hex": "660f73d90c"
+          },
+          {
+            "rva": 162027426,
+            "hex": "660f7e4c2460"
+          },
+          {
+            "rva": 162027432,
+            "hex": "4c89742448"
+          },
+          {
+            "rva": 162027437,
+            "hex": "4488742440"
+          },
+          {
+            "rva": 162027442,
+            "hex": "488d8c24d8000000"
+          },
+          {
+            "rva": 162027450,
+            "hex": "48894c2438"
+          },
+          {
+            "rva": 162027455,
+            "hex": "4c89742430"
+          },
+          {
+            "rva": 162027460,
+            "hex": "4c89742428"
+          },
+          {
+            "rva": 162027465,
+            "hex": "488d4c2450"
+          },
+          {
+            "rva": 162027470,
+            "hex": "48894c2420"
+          },
+          {
+            "rva": 162027475,
+            "hex": "4533c9"
+          },
+          {
+            "rva": 162027478,
+            "hex": "4c8bc0"
+          },
+          {
+            "rva": 162027481,
+            "hex": "498bd3"
+          },
+          {
+            "rva": 162027484,
+            "hex": "498bca"
+          },
+          {
+            "rva": 162027487,
+            "hex": "e88cd929fc"
+          },
+          {
+            "rva": 162027492,
+            "hex": "488b0515bdc606"
+          },
+          {
+            "rva": 162027499,
+            "hex": "488b88b8000000"
+          },
+          {
+            "rva": 162027506,
+            "hex": "488b8958020000"
+          },
+          {
+            "rva": 162027513,
+            "hex": "4885c9"
+          },
+          {
+            "rva": 162027516,
+            "hex": "7473"
+          },
+          {
+            "rva": 162027518,
+            "hex": "4533c0"
+          },
+          {
+            "rva": 162027521,
+            "hex": "418d5002"
+          },
+          {
+            "rva": 162027525,
+            "hex": "e8067caafb"
+          },
+          {
+            "rva": 162027530,
+            "hex": "90"
+          },
+          {
+            "rva": 162027531,
+            "hex": "488d8c24b0000000"
+          },
+          {
+            "rva": 162027539,
+            "hex": "e8f8ba7af6"
+          },
+          {
+            "rva": 162027544,
+            "hex": "e94cfaffff"
+          },
+          {
+            "rva": 162027549,
+            "hex": "488d8c24b0000000"
+          },
+          {
+            "rva": 162027557,
+            "hex": "e8e6ba7af6"
+          },
+          {
+            "rva": 162027562,
+            "hex": "e93afaffff"
+          },
+          {
+            "rva": 162027567,
+            "hex": "e8fc9065f6"
+          },
+          {
+            "rva": 162027572,
+            "hex": "90"
+          },
+          {
+            "rva": 162027573,
+            "hex": "e8f69065f6"
+          },
+          {
+            "rva": 162027578,
+            "hex": "e8f19065f6"
+          },
+          {
+            "rva": 162027583,
+            "hex": "e8ec9065f6"
+          },
+          {
+            "rva": 162027588,
+            "hex": "e8e79065f6"
+          },
+          {
+            "rva": 162027593,
+            "hex": "e8e29065f6"
+          },
+          {
+            "rva": 162027598,
+            "hex": "e8dd9065f6"
+          },
+          {
+            "rva": 162027603,
+            "hex": "e8d89065f6"
+          },
+          {
+            "rva": 162027608,
+            "hex": "e8d39065f6"
+          },
+          {
+            "rva": 162027613,
+            "hex": "e8ce9065f6"
+          },
+          {
+            "rva": 162027618,
+            "hex": "e8c99065f6"
+          },
+          {
+            "rva": 162027623,
+            "hex": "e8c49065f6"
+          },
+          {
+            "rva": 162027628,
+            "hex": "e8bf9065f6"
+          },
+          {
+            "rva": 162027633,
+            "hex": "e8ba9065f6"
+          },
+          {
+            "rva": 162027638,
+            "hex": "e8b59065f6"
+          },
+          {
+            "rva": 162027643,
+            "hex": "e8b09065f6"
+          },
+          {
+            "rva": 162027648,
+            "hex": "e8ab9065f6"
+          },
+          {
+            "rva": 162027653,
+            "hex": "e8a69065f6"
+          },
+          {
+            "rva": 162027658,
+            "hex": "e8a19065f6"
+          },
+          {
+            "rva": 162027663,
+            "hex": "e89c9065f6"
+          },
+          {
+            "rva": 162027668,
+            "hex": "e8979065f6"
+          },
+          {
+            "rva": 162027673,
+            "hex": "e8929065f6"
+          },
+          {
+            "rva": 162027678,
+            "hex": "e88d9065f6"
+          },
+          {
+            "rva": 162027683,
+            "hex": "e8889065f6"
+          },
+          {
+            "rva": 162027688,
+            "hex": "e8839065f6"
+          },
+          {
+            "rva": 162027693,
+            "hex": "e87e9065f6"
+          },
+          {
+            "rva": 162027698,
+            "hex": "e8799065f6"
+          },
+          {
+            "rva": 162027703,
+            "hex": "cc"
+          },
+          {
+            "rva": 162027704,
+            "hex": "cc"
+          }
+        ]
+      },
+      "referenceCarrier": {
+        "entryRva": 88285408,
+        "ownership": "unwind-family",
+        "windows": [
+          {
+            "startRva": 88285408,
+            "endRva": 88285449,
+            "sha256": "eebc03801d93dbe3b872fd9b690b1f35fe621f20bc5ef502ef4ba9cfcbca010e"
+          }
+        ],
+        "instructions": [
+          {
+            "rva": 88285408,
+            "hex": "4889542410"
+          },
+          {
+            "rva": 88285413,
+            "hex": "4883ec28"
+          },
+          {
+            "rva": 88285417,
+            "hex": "488bd1"
+          },
+          {
+            "rva": 88285420,
+            "hex": "48c744243800000000"
+          },
+          {
+            "rva": 88285429,
+            "hex": "488d4c2438"
+          },
+          {
+            "rva": 88285434,
+            "hex": "e811000000"
+          },
+          {
+            "rva": 88285439,
+            "hex": "488b442438"
+          },
+          {
+            "rva": 88285444,
+            "hex": "4883c428"
+          },
+          {
+            "rva": 88285448,
+            "hex": "c3"
+          }
+        ]
+      },
+      "referenceWriter": {
+        "entryRva": 88285456,
+        "ownership": "leaf-ret-int3",
+        "windows": [
+          {
+            "startRva": 88285456,
+            "endRva": 88285538,
+            "sha256": "14babba033f87e5878b5f850435052d3beaa6e982ff042798e689aac9a763d3c"
+          }
+        ],
+        "instructions": [
+          {
+            "rva": 88285456,
+            "hex": "833d19c32e0c00"
+          },
+          {
+            "rva": 88285463,
+            "hex": "4c8bc1"
+          },
+          {
+            "rva": 88285466,
+            "hex": "488911"
+          },
+          {
+            "rva": 88285469,
+            "hex": "7442"
+          },
+          {
+            "rva": 88285471,
+            "hex": "49c1e80c"
+          },
+          {
+            "rva": 88285475,
+            "hex": "488d0deef8080c"
+          },
+          {
+            "rva": 88285482,
+            "hex": "4181e0ffff1f00"
+          },
+          {
+            "rva": 88285489,
+            "hex": "418bc0"
+          },
+          {
+            "rva": 88285492,
+            "hex": "48c1e806"
+          },
+          {
+            "rva": 88285496,
+            "hex": "4183e03f"
+          },
+          {
+            "rva": 88285500,
+            "hex": "488d14c1"
+          },
+          {
+            "rva": 88285504,
+            "hex": "0f0d0a"
+          },
+          {
+            "rva": 88285507,
+            "hex": "0f1f4000"
+          },
+          {
+            "rva": 88285511,
+            "hex": "660f1f840000000000"
+          },
+          {
+            "rva": 88285520,
+            "hex": "488b02"
+          },
+          {
+            "rva": 88285523,
+            "hex": "488bc8"
+          },
+          {
+            "rva": 88285526,
+            "hex": "4c0fabc1"
+          },
+          {
+            "rva": 88285530,
+            "hex": "f0480fb10a"
+          },
+          {
+            "rva": 88285535,
+            "hex": "75ef"
+          },
+          {
+            "rva": 88285537,
+            "hex": "c3"
+          }
+        ]
+      },
+      "sharedMapGet": {
+        "entryRva": 84206096,
+        "ownership": "unwind-family",
+        "windows": [
+          {
+            "startRva": 84206096,
+            "endRva": 84206243,
+            "sha256": "b2725c6d42aaa02c8a423cd8d9aa88d6ad5388d080f21bef940a7f48eca5ec3b"
+          },
+          {
+            "startRva": 120430196,
+            "endRva": 120430233,
+            "sha256": "d509ef58061a4191900875b8cf4fc49e863a82b5934e9eff1fe0a94e580b4e2a"
+          }
+        ],
+        "instructions": [
+          {
+            "rva": 84206096,
+            "hex": "48895c2408"
+          },
+          {
+            "rva": 84206101,
+            "hex": "4889742410"
+          },
+          {
+            "rva": 84206106,
+            "hex": "57"
+          },
+          {
+            "rva": 84206107,
+            "hex": "4883ec20"
+          },
+          {
+            "rva": 84206111,
+            "hex": "498b4020"
+          },
+          {
+            "rva": 84206115,
+            "hex": "498bf8"
+          },
+          {
+            "rva": 84206118,
+            "hex": "488bf2"
+          },
+          {
+            "rva": 84206121,
+            "hex": "488bd9"
+          },
+          {
+            "rva": 84206124,
+            "hex": "4c8b88c0000000"
+          },
+          {
+            "rva": 84206131,
+            "hex": "498b81b0000000"
+          },
+          {
+            "rva": 84206138,
+            "hex": "4883782000"
+          },
+          {
+            "rva": 84206143,
+            "hex": "0f842fbc2802"
+          },
+          {
+            "rva": 84206149,
+            "hex": "488b4720"
+          },
+          {
+            "rva": 84206153,
+            "hex": "488bd6"
+          },
+          {
+            "rva": 84206156,
+            "hex": "488bcb"
+          },
+          {
+            "rva": 84206159,
+            "hex": "4c8b80c0000000"
+          },
+          {
+            "rva": 84206166,
+            "hex": "4d8b80b0000000"
+          },
+          {
+            "rva": 84206173,
+            "hex": "e8b6610bfb"
+          },
+          {
+            "rva": 84206178,
+            "hex": "4863c8"
+          },
+          {
+            "rva": 84206181,
+            "hex": "85c0"
+          },
+          {
+            "rva": 84206183,
+            "hex": "0f8821bc2802"
+          },
+          {
+            "rva": 84206189,
+            "hex": "488b4318"
+          },
+          {
+            "rva": 84206193,
+            "hex": "4885c0"
+          },
+          {
+            "rva": 84206196,
+            "hex": "7421"
+          },
+          {
+            "rva": 84206198,
+            "hex": "3b4818"
+          },
+          {
+            "rva": 84206201,
+            "hex": "7322"
+          },
+          {
+            "rva": 84206203,
+            "hex": "488b5c2430"
+          },
+          {
+            "rva": 84206208,
+            "hex": "4883c102"
+          },
+          {
+            "rva": 84206212,
+            "hex": "488b742438"
+          },
+          {
+            "rva": 84206217,
+            "hex": "488d0c49"
+          },
+          {
+            "rva": 84206221,
+            "hex": "488b04c8"
+          },
+          {
+            "rva": 84206225,
+            "hex": "4883c420"
+          },
+          {
+            "rva": 84206229,
+            "hex": "5f"
+          },
+          {
+            "rva": 84206230,
+            "hex": "c3"
+          },
+          {
+            "rva": 84206231,
+            "hex": "e8a40609fb"
+          },
+          {
+            "rva": 84206236,
+            "hex": "cc"
+          },
+          {
+            "rva": 84206237,
+            "hex": "e81e4bfdfa"
+          },
+          {
+            "rva": 84206242,
+            "hex": "cc"
+          },
+          {
+            "rva": 120430196,
+            "hex": "498b4020"
+          },
+          {
+            "rva": 120430200,
+            "hex": "4c8b88c0000000"
+          },
+          {
+            "rva": 120430207,
+            "hex": "498b81b0000000"
+          },
+          {
+            "rva": 120430214,
+            "hex": "ff10"
+          },
+          {
+            "rva": 120430216,
+            "hex": "90"
+          },
+          {
+            "rva": 120430217,
+            "hex": "e9b743d7fd"
+          },
+          {
+            "rva": 120430222,
+            "hex": "33d2"
+          },
+          {
+            "rva": 120430224,
+            "hex": "488bce"
+          },
+          {
+            "rva": 120430227,
+            "hex": "e8b8f27205"
+          },
+          {
+            "rva": 120430232,
+            "hex": "cc"
+          }
+        ]
+      }
+    },
+    "fields": [
+      {
+        "id": "activeMap",
+        "type": "Beyond.Gameplay.Core.AbilitySystem",
+        "name": "m_activeSkillMap",
+        "valueType": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.Core.Skill>",
+        "offset": 656,
+        "ordinaryKind": 21
+      },
+      {
+        "id": "skillId",
+        "type": "Beyond.Gameplay.Core.Skill",
+        "name": "m_skillId",
+        "valueType": "string",
+        "offset": 240,
+        "ordinaryKind": 14
+      }
+    ],
+    "typedActiveMapContext": {
+      "instructionRva": 162026317,
+      "instructionHex": "4C8B056490C906",
+      "usageCellRva": 275899320,
+      "usageRawHex": "2B8811C000000000",
+      "tag": 6,
+      "methodSpecIndex": 574485,
+      "methodSpec": [
+        403970,
+        4022,
+        -1
+      ],
+      "typeName": "System.Collections.Generic.Dictionary`2",
+      "methodName": "get_Item",
+      "classArguments": [
+        "string",
+        "Beyond.Gameplay.Core.Skill"
+      ],
+      "methodArguments": []
+    },
+    "sourceCaller": {
+      "rva": 124371920,
+      "owner": "stateTry",
+      "thisSaveRva": 102677824
+    },
+    "markers": {
+      "entryThisSave": 162025940,
+      "firstIdReceiver": 162026204,
+      "firstIdCall": 162026238,
+      "secondIdReceiver": 162026262,
+      "mapLoad": 162026291,
+      "secondIdCall": 162026303,
+      "contextLoad": 162026317,
+      "mapGetCall": 162026330,
+      "selectedSkillSave": 162026335,
+      "carrierInnerCall": 88285434
+    },
+    "castSites": [
+      {
+        "receiverReload": 162026687,
+        "nameLoad": 162026707,
+        "carrierCall": 162026722,
+        "argumentSetup": 162026849,
+        "callRva": 162026858,
+        "returnRva": 162026863
+      },
+      {
+        "receiverReload": 162027316,
+        "nameLoad": 162027336,
+        "carrierCall": 162027351,
+        "argumentSetup": 162027478,
+        "callRva": 162027487,
+        "returnRva": 162027492
+      }
+    ],
+    "evidenceBoundary": {
+      "exact": "Complete selected helper and two carrier callee instruction framing, control flow, typed call and field/register relationships.",
+      "conditional": "Reached selected direct call path, ordinary original readers/collection calls, coherent field reloads and normal returning nonvolatile-preserving helpers. Repeated reader returns are independent unless stability is supplied. The physical shared Dictionary body returns the selected reference slot, with ordinary FindEntry/index semantics, coherent dictionary entry storage and selected typed collection binding supplied; no MethodSpec-to-registration-table direct mapping is claimed.",
+      "unresolved": "Actual earlier Refresh/expiry/clear operations, effective runtime modifier winner, full input scheduling and global object/writer lifetime."
+    },
+    "typedActiveMapCallTargetRva": 84206096,
+    "sharedMapGet": {
+      "findEntryCall": 84206173,
+      "findEntryTargetRva": 1066008,
+      "entryIndex": 84206178,
+      "negativeBranch": 84206183,
+      "entriesLoad": 84206189,
+      "boundsCompare": 84206198,
+      "boundsBranch": 84206201,
+      "valueAddress": 84206208,
+      "valueLoad": 84206221,
+      "successReturn": 84206230,
+      "entryArrayOffset": 24,
+      "arrayLengthOffset": 24,
+      "entryStrideBytes": 24,
+      "arrayHeaderBytes": 32,
+      "valueOffsetInEntry": 16,
+      "thisSave": 84206121,
+      "keySave": 84206118,
+      "mapArguments": 84206149
+    }
+  }
+}

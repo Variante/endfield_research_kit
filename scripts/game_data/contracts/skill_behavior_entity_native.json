@@ -1,0 +1,871 @@
+{
+  "schema": "endfield.skill-behavior-entity-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "direct selected layout; conditional original Init",
+  "types": [
+    {
+      "name": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "index": 7563,
+      "parent": "Beyond.Gameplay.AI.CharacterAIBehavior`1<Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData>",
+      "flags": 1056769,
+      "bitfield": 3072,
+      "fieldCount": 3,
+      "genericContainer": -1,
+      "sizeRowHex": "78000000ffffffff0000000000000000",
+      "instanceBytes": 120
+    },
+    {
+      "name": "Beyond.Gameplay.AI.CharacterAIBehavior`1",
+      "index": 7522,
+      "parent": "Beyond.Gameplay.AI.CharacterAIBehavior",
+      "flags": 1048705,
+      "bitfield": 3072,
+      "fieldCount": 1,
+      "genericContainer": 375,
+      "sizeRowHex": "00000000000000000000000000000000",
+      "instanceBytes": 0
+    },
+    {
+      "name": "Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData",
+      "index": 7562,
+      "parent": "Beyond.Gameplay.AI.CharacterAIBehavior+CharacterAIBehaviorData",
+      "flags": 1056770,
+      "bitfield": 3072,
+      "fieldCount": 1,
+      "genericContainer": -1,
+      "sizeRowHex": "28000000ffffffff0000000000000000",
+      "instanceBytes": 40
+    },
+    {
+      "name": "Beyond.Gameplay.AI.CharacterAIBehavior",
+      "index": 7520,
+      "parent": "Beyond.Gameplay.AI.AIBehavior",
+      "flags": 1056897,
+      "bitfield": 3072,
+      "fieldCount": 0,
+      "genericContainer": -1,
+      "sizeRowHex": "60000000ffffffff0000000000000000",
+      "instanceBytes": 96
+    },
+    {
+      "name": "Beyond.Gameplay.AI.AIBehavior",
+      "index": 7797,
+      "parent": "Beyond.Gameplay.AIClassPool",
+      "flags": 1056897,
+      "bitfield": 3072,
+      "fieldCount": 12,
+      "genericContainer": -1,
+      "sizeRowHex": "60000000ffffffff0000000000000000",
+      "instanceBytes": 96
+    },
+    {
+      "name": "Beyond.Gameplay.AIClassPool",
+      "index": 1765,
+      "parent": "object",
+      "flags": 1048705,
+      "bitfield": 3072,
+      "fieldCount": 2,
+      "genericContainer": -1,
+      "sizeRowHex": "18000000ffffffff0000000000000000",
+      "instanceBytes": 24
+    },
+    {
+      "name": "System.Object",
+      "index": 67769,
+      "parent": "",
+      "flags": 1056769,
+      "bitfield": 3072,
+      "fieldCount": 0,
+      "genericContainer": -1,
+      "sizeRowHex": "10000000ffffffff0000000000000000",
+      "instanceBytes": 16
+    }
+  ],
+  "fields": [
+    {
+      "id": "Beyond.Gameplay.AIClassPool::<poolDestroyTime>k__BackingField",
+      "type": "Beyond.Gameplay.AIClassPool",
+      "name": "<poolDestroyTime>k__BackingField",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 16
+    },
+    {
+      "id": "Beyond.Gameplay.AIClassPool::<inPool>k__BackingField",
+      "type": "Beyond.Gameplay.AIClassPool",
+      "name": "<inPool>k__BackingField",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 20
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_enableTick",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_enableTick",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 24
+    },
+    {
+      "id": "tickInterval",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_tickInterval",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 28
+    },
+    {
+      "id": "tickRatio",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_tickIntervalRatio",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 32
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_tickTime",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_tickTime",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 36
+    },
+    {
+      "id": "tickFix",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_tickFix",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 40
+    },
+    {
+      "id": "isFinish",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_isFinish",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 41
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_aiGraph",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_aiGraph",
+      "valueType": "Beyond.Gameplay.AI.AIGraph",
+      "ordinaryKind": 18,
+      "offset": 48
+    },
+    {
+      "id": "entity",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 56
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_behavior",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_behavior",
+      "valueType": "NodeCanvas.Framework.Graph",
+      "ordinaryKind": 18,
+      "offset": 64
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_aiBehaviorData",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_aiBehaviorData",
+      "valueType": "Beyond.Gameplay.AICanvasGraphData",
+      "ordinaryKind": 18,
+      "offset": 72
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::m_aiOwner",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_aiOwner",
+      "valueType": "NodeCanvas.Framework.GraphOwner",
+      "ordinaryKind": 18,
+      "offset": 80
+    },
+    {
+      "id": "Beyond.Gameplay.AI.AIBehavior::<state>k__BackingField",
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "<state>k__BackingField",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 88
+    },
+    {
+      "id": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_skillData",
+      "valueType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "ordinaryKind": 18,
+      "offset": 104
+    },
+    {
+      "id": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_timer",
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_timer",
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "offset": 112
+    },
+    {
+      "id": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_successCast",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 116
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::value__",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "value__",
+      "valueType": "int",
+      "ordinaryKind": 8,
+      "offset": 16
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::None",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "None",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::Active",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "Active",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::ExitStart",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "ExitStart",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::ExitEnd",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "ExitEnd",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::PauseStart",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "PauseStart",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    },
+    {
+      "id": "Beyond.Gameplay.AI.BehaviorState::PauseEnd",
+      "type": "Beyond.Gameplay.AI.BehaviorState",
+      "name": "PauseEnd",
+      "valueType": "Beyond.Gameplay.AI.BehaviorState",
+      "ordinaryKind": 17,
+      "offset": 0
+    }
+  ],
+  "methods": [
+    {
+      "id": "init",
+      "identity": [
+        46291,
+        "Beyond.Gameplay.AI.AIBehavior",
+        "Init",
+        94138816
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        },
+        {
+          "name": "aiGraph",
+          "type": "Beyond.Gameplay.AI.AIGraph"
+        }
+      ]
+    },
+    {
+      "id": "ctor",
+      "identity": [
+        45044,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        ".ctor",
+        118510064
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "enter",
+      "identity": [
+        45039,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "OnEnter",
+        161410728
+      ],
+      "returnType": "void",
+      "parameters": []
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "init",
+      "startRva": 94138816,
+      "endRva": 94138894,
+      "sha256": "FFEF0297167E18830E63BC9888D08153B24EFA2B406DB2F6C0A54BCA9B678D69",
+      "boundary": "Selected original ordinary receiver/field flow. iFix alternate and runtime invocation unproved."
+    },
+    {
+      "owner": "ctor",
+      "startRva": 118510064,
+      "endRva": 118510129,
+      "sha256": "9C2C7DF2CD4F1AFD151ADCF06E0D033AFB48532A3E653178F3011DD903FD5585",
+      "boundary": "Selected original ordinary receiver/field flow. iFix alternate and runtime invocation unproved."
+    },
+    {
+      "owner": "enter",
+      "startRva": 161410728,
+      "endRva": 161410871,
+      "sha256": "23DF6DFC3CA36C59E40EE18B5AB729DE40CB99B825EBCFA955D9E9568DB37440",
+      "boundary": "Selected original ordinary receiver/field flow. iFix alternate and runtime invocation unproved."
+    }
+  ],
+  "spans": [
+    {
+      "id": "initCapture",
+      "owner": "init",
+      "rva": 94138827,
+      "hex": "4c8bd14d8bd8"
+    },
+    {
+      "id": "initBridge",
+      "owner": "init",
+      "rva": 94138827,
+      "hex": "4c8bd14d8bd8488b48384885c90f85f87ebe01"
+    },
+    {
+      "id": "initWrite",
+      "owner": "init",
+      "rva": 94138846,
+      "hex": "498d4a3849895238e875d173fa"
+    },
+    {
+      "id": "consumerCapture",
+      "owner": "enter",
+      "rva": 161410741,
+      "hex": "488bd9"
+    },
+    {
+      "id": "consumerLoad",
+      "owner": "enter",
+      "rva": 161410786,
+      "hex": "488b4338"
+    },
+    {
+      "id": "ctorStores",
+      "owner": "ctor",
+      "rva": 118510082,
+      "hex": "c7431ccdcccc3dc743200000803f66c743280101"
+    }
+  ],
+  "barrierTargetRva": 1065824,
+  "constructorWrites": [
+    {
+      "field": "tickInterval",
+      "encoding": "dword",
+      "bytes": 4,
+      "valueHex": "cdcccc3d"
+    },
+    {
+      "field": "tickRatio",
+      "encoding": "dword",
+      "bytes": 4,
+      "valueHex": "0000803f"
+    },
+    {
+      "field": "tickFix",
+      "nextField": "isFinish",
+      "encoding": "twoBooleans",
+      "bytes": 2,
+      "valueHex": "0101"
+    }
+  ],
+  "layout": {
+    "concreteType": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+    "ancestorChain": [
+      "Beyond.Gameplay.AI.CharacterAIBehavior`1<Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData>",
+      "Beyond.Gameplay.AI.CharacterAIBehavior",
+      "Beyond.Gameplay.AI.AIBehavior",
+      "Beyond.Gameplay.AIClassPool",
+      "object"
+    ],
+    "fieldOwner": "Beyond.Gameplay.AI.AIBehavior",
+    "fieldName": "m_entity",
+    "entityOffset": 56,
+    "entityBytes": 8,
+    "closedDataOffset": 96,
+    "closedDataBytes": 8,
+    "concreteInstanceBytes": 120,
+    "fieldExtents": {
+      "Beyond.Gameplay.AIClassPool": [
+        {
+          "field": "Beyond.Gameplay.AIClassPool::<poolDestroyTime>k__BackingField",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "field": "Beyond.Gameplay.AIClassPool::<inPool>k__BackingField",
+          "offset": 20,
+          "bytes": 1
+        }
+      ],
+      "Beyond.Gameplay.AI.AIBehavior": [
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_enableTick",
+          "offset": 24,
+          "bytes": 1
+        },
+        {
+          "field": "tickInterval",
+          "offset": 28,
+          "bytes": 4
+        },
+        {
+          "field": "tickRatio",
+          "offset": 32,
+          "bytes": 4
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_tickTime",
+          "offset": 36,
+          "bytes": 4
+        },
+        {
+          "field": "tickFix",
+          "offset": 40,
+          "bytes": 1
+        },
+        {
+          "field": "isFinish",
+          "offset": 41,
+          "bytes": 1
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_aiGraph",
+          "offset": 48,
+          "bytes": 8
+        },
+        {
+          "field": "entity",
+          "offset": 56,
+          "bytes": 8
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_behavior",
+          "offset": 64,
+          "bytes": 8
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_aiBehaviorData",
+          "offset": 72,
+          "bytes": 8
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::m_aiOwner",
+          "offset": 80,
+          "bytes": 8
+        },
+        {
+          "field": "Beyond.Gameplay.AI.AIBehavior::<state>k__BackingField",
+          "offset": 88,
+          "bytes": 4
+        }
+      ],
+      "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+      "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+        {
+          "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+          "offset": 104,
+          "bytes": 8
+        },
+        {
+          "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_timer",
+          "offset": 112,
+          "bytes": 4
+        },
+        {
+          "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+          "offset": 116,
+          "bytes": 1
+        }
+      ]
+    },
+    "padding": {
+      "Beyond.Gameplay.AIClassPool": [
+        [
+          21,
+          24
+        ]
+      ],
+      "Beyond.Gameplay.AI.AIBehavior": [
+        [
+          25,
+          28
+        ],
+        [
+          42,
+          48
+        ],
+        [
+          92,
+          96
+        ]
+      ],
+      "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+      "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+        [
+          117,
+          120
+        ]
+      ]
+    }
+  },
+  "rules": {
+    "inheritedEntityFieldProved": true,
+    "initWritesEntityBeforeBarrier": true,
+    "concreteNativeReadProved": true,
+    "selectedConcreteOnly": true,
+    "allGenericInstantiationsProved": false,
+    "runtimeSelectionProved": false,
+    "initializationInvocationProved": false,
+    "lifetimeProved": false
+  },
+  "facts": [
+    {
+      "id": "inheritedEntityLayout",
+      "evidence": "direct",
+      "layout": {
+        "concreteType": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "ancestorChain": [
+          "Beyond.Gameplay.AI.CharacterAIBehavior`1<Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData>",
+          "Beyond.Gameplay.AI.CharacterAIBehavior",
+          "Beyond.Gameplay.AI.AIBehavior",
+          "Beyond.Gameplay.AIClassPool",
+          "object"
+        ],
+        "fieldOwner": "Beyond.Gameplay.AI.AIBehavior",
+        "fieldName": "m_entity",
+        "entityOffset": 56,
+        "entityBytes": 8,
+        "closedDataOffset": 96,
+        "closedDataBytes": 8,
+        "concreteInstanceBytes": 120,
+        "fieldExtents": {
+          "Beyond.Gameplay.AIClassPool": [
+            {
+              "field": "Beyond.Gameplay.AIClassPool::<poolDestroyTime>k__BackingField",
+              "offset": 16,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AIClassPool::<inPool>k__BackingField",
+              "offset": 20,
+              "bytes": 1
+            }
+          ],
+          "Beyond.Gameplay.AI.AIBehavior": [
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_enableTick",
+              "offset": 24,
+              "bytes": 1
+            },
+            {
+              "field": "tickInterval",
+              "offset": 28,
+              "bytes": 4
+            },
+            {
+              "field": "tickRatio",
+              "offset": 32,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_tickTime",
+              "offset": 36,
+              "bytes": 4
+            },
+            {
+              "field": "tickFix",
+              "offset": 40,
+              "bytes": 1
+            },
+            {
+              "field": "isFinish",
+              "offset": 41,
+              "bytes": 1
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiGraph",
+              "offset": 48,
+              "bytes": 8
+            },
+            {
+              "field": "entity",
+              "offset": 56,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_behavior",
+              "offset": 64,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiBehaviorData",
+              "offset": 72,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiOwner",
+              "offset": 80,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::<state>k__BackingField",
+              "offset": 88,
+              "bytes": 4
+            }
+          ],
+          "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+          "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "offset": 104,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_timer",
+              "offset": 112,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+              "offset": 116,
+              "bytes": 1
+            }
+          ]
+        },
+        "padding": {
+          "Beyond.Gameplay.AIClassPool": [
+            [
+              21,
+              24
+            ]
+          ],
+          "Beyond.Gameplay.AI.AIBehavior": [
+            [
+              25,
+              28
+            ],
+            [
+              42,
+              48
+            ],
+            [
+              92,
+              96
+            ]
+          ],
+          "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+          "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+            [
+              117,
+              120
+            ]
+          ]
+        }
+      },
+      "rules": {
+        "inheritedEntityFieldProved": true,
+        "initWritesEntityBeforeBarrier": true,
+        "concreteNativeReadProved": true,
+        "selectedConcreteOnly": true,
+        "allGenericInstantiationsProved": false,
+        "runtimeSelectionProved": false,
+        "initializationInvocationProved": false,
+        "lifetimeProved": false
+      },
+      "boundary": "Exact selected metadata/runtime sizes/field offsets and concrete native reader. Does not identify a live instance."
+    },
+    {
+      "id": "originalInitWrite",
+      "evidence": "conditional",
+      "layout": {
+        "concreteType": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "ancestorChain": [
+          "Beyond.Gameplay.AI.CharacterAIBehavior`1<Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData>",
+          "Beyond.Gameplay.AI.CharacterAIBehavior",
+          "Beyond.Gameplay.AI.AIBehavior",
+          "Beyond.Gameplay.AIClassPool",
+          "object"
+        ],
+        "fieldOwner": "Beyond.Gameplay.AI.AIBehavior",
+        "fieldName": "m_entity",
+        "entityOffset": 56,
+        "entityBytes": 8,
+        "closedDataOffset": 96,
+        "closedDataBytes": 8,
+        "concreteInstanceBytes": 120,
+        "fieldExtents": {
+          "Beyond.Gameplay.AIClassPool": [
+            {
+              "field": "Beyond.Gameplay.AIClassPool::<poolDestroyTime>k__BackingField",
+              "offset": 16,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AIClassPool::<inPool>k__BackingField",
+              "offset": 20,
+              "bytes": 1
+            }
+          ],
+          "Beyond.Gameplay.AI.AIBehavior": [
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_enableTick",
+              "offset": 24,
+              "bytes": 1
+            },
+            {
+              "field": "tickInterval",
+              "offset": 28,
+              "bytes": 4
+            },
+            {
+              "field": "tickRatio",
+              "offset": 32,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_tickTime",
+              "offset": 36,
+              "bytes": 4
+            },
+            {
+              "field": "tickFix",
+              "offset": 40,
+              "bytes": 1
+            },
+            {
+              "field": "isFinish",
+              "offset": 41,
+              "bytes": 1
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiGraph",
+              "offset": 48,
+              "bytes": 8
+            },
+            {
+              "field": "entity",
+              "offset": 56,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_behavior",
+              "offset": 64,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiBehaviorData",
+              "offset": 72,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::m_aiOwner",
+              "offset": 80,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.AIBehavior::<state>k__BackingField",
+              "offset": 88,
+              "bytes": 4
+            }
+          ],
+          "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+          "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_skillData",
+              "offset": 104,
+              "bytes": 8
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_timer",
+              "offset": 112,
+              "bytes": 4
+            },
+            {
+              "field": "Beyond.Gameplay.AI.CharacterCastSkillBehavior::m_successCast",
+              "offset": 116,
+              "bytes": 1
+            }
+          ]
+        },
+        "padding": {
+          "Beyond.Gameplay.AIClassPool": [
+            [
+              21,
+              24
+            ]
+          ],
+          "Beyond.Gameplay.AI.AIBehavior": [
+            [
+              25,
+              28
+            ],
+            [
+              42,
+              48
+            ],
+            [
+              92,
+              96
+            ]
+          ],
+          "Beyond.Gameplay.AI.CharacterAIBehavior": [],
+          "Beyond.Gameplay.AI.CharacterCastSkillBehavior": [
+            [
+              117,
+              120
+            ]
+          ]
+        }
+      },
+      "rules": {
+        "inheritedEntityFieldProved": true,
+        "initWritesEntityBeforeBarrier": true,
+        "concreteNativeReadProved": true,
+        "selectedConcreteOnly": true,
+        "allGenericInstantiationsProved": false,
+        "runtimeSelectionProved": false,
+        "initializationInvocationProved": false,
+        "lifetimeProved": false
+      },
+      "boundary": "If original AIBehavior.Init is called on the selected receiver, entity argument is written to the inherited slot before write-barrier. Invocation and lifetime are not proved."
+    }
+  ]
+}

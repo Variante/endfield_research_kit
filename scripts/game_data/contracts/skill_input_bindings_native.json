@@ -1,0 +1,1290 @@
+{
+  "schema": "endfield.skill-input-bindings-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Direct selected metadata enums/entry ABI and conditional original local held-flag writes. No physical key delivery, live binding, repeat scheduling, long-press acceptance or player command success proved.",
+  "methods": [
+    {
+      "id": "Beyond.Input.InputBindingInfo.Trigger",
+      "identity": [
+        540191,
+        "Beyond.Input.InputBindingInfo",
+        "Trigger",
+        98586960
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo._RealTriggerCallback",
+      "identity": [
+        540197,
+        "Beyond.Input.InputBindingInfo",
+        "_RealTriggerCallback",
+        77041120
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "isRepeat",
+          "type": "bool"
+        },
+        {
+          "name": "allowFailureDelay",
+          "type": "bool"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.UI.SkillButton+PressHandlerLongPress.OnPressStart",
+      "identity": [
+        504350,
+        "Beyond.UI.SkillButton+PressHandlerLongPress",
+        "OnPressStart",
+        99683888
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 5,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.UI.SkillButton+PressHandlerLongPress.OnUpdate",
+      "identity": [
+        504351,
+        "Beyond.UI.SkillButton+PressHandlerLongPress",
+        "OnUpdate",
+        99300608
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "deltaTime",
+          "type": "float"
+        }
+      ],
+      "slot": 6,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.UI.SkillButton+PressHandlerLongPress.OnPressEnd",
+      "identity": [
+        504352,
+        "Beyond.UI.SkillButton+PressHandlerLongPress",
+        "OnPressEnd",
+        99299536
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 7,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.PlayerController.StartCastNormalAttack",
+      "identity": [
+        87660,
+        "Beyond.Gameplay.Core.PlayerController",
+        "StartCastNormalAttack",
+        99139344
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.PlayerController.EndCastNormalAttack",
+      "identity": [
+        87661,
+        "Beyond.Gameplay.Core.PlayerController",
+        "EndCastNormalAttack",
+        112887584
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 65535,
+      "isStatic": false
+    }
+  ],
+  "fields": [
+    {
+      "id": "Beyond.Input.InputBindingInfo::<id>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<id>k__BackingField",
+      "offset": 16,
+      "valueType": "int",
+      "ordinaryKind": 8,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_callback",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_callback",
+      "offset": 24,
+      "valueType": "System.Func`3<bool,bool,bool>",
+      "ordinaryKind": 21,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_callbackTarget",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_callbackTarget",
+      "offset": 32,
+      "valueType": "object",
+      "ordinaryKind": 28,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<group>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<group>k__BackingField",
+      "offset": 40,
+      "valueType": "Beyond.Input.InputBindingGroup",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::playerActionId",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "playerActionId",
+      "offset": 48,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<shouldShowControllerHint>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<shouldShowControllerHint>k__BackingField",
+      "offset": 56,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<controllerHintPriority>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<controllerHintPriority>k__BackingField",
+      "offset": 60,
+      "valueType": "int",
+      "ordinaryKind": 8,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<isCommonOpenUIAction>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<isCommonOpenUIAction>k__BackingField",
+      "offset": 64,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_selfEnabled",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_selfEnabled",
+      "offset": 65,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_groupEnabled",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_groupEnabled",
+      "offset": 66,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_parentIgnored",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_parentIgnored",
+      "offset": 67,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_forceKeyhintToGrayState",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_forceKeyhintToGrayState",
+      "offset": 68,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<enabledPriority>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<enabledPriority>k__BackingField",
+      "offset": 72,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::<actionPriority>k__BackingField",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "<actionPriority>k__BackingField",
+      "offset": 76,
+      "valueType": "int",
+      "ordinaryKind": 8,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_bindingView",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_bindingView",
+      "offset": 80,
+      "valueType": "Beyond.Input.IBindingView",
+      "ordinaryKind": 18,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_text",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_text",
+      "offset": 88,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_continuousTriggerTimerId",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_continuousTriggerTimerId",
+      "offset": 96,
+      "valueType": "int",
+      "ordinaryKind": 8,
+      "static": false
+    },
+    {
+      "id": "Beyond.Input.InputBindingInfo::m_continuousTriggerVersion",
+      "type": "Beyond.Input.InputBindingInfo",
+      "name": "m_continuousTriggerVersion",
+      "offset": 100,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "static": false
+    },
+    {
+      "id": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField",
+      "type": "Beyond.Gameplay.Core.PlayerController",
+      "name": "<castingNormalAttack>k__BackingField",
+      "offset": 314,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "static": false
+    }
+  ],
+  "enums": [
+    {
+      "type": "Beyond.Input.KeyboardKeyCode",
+      "members": [
+        {
+          "id": 0,
+          "name": "None",
+          "fieldIndex": 296379,
+          "token": "0x04000038"
+        },
+        {
+          "id": 8,
+          "name": "Backspace",
+          "fieldIndex": 296380,
+          "token": "0x04000039"
+        },
+        {
+          "id": 9,
+          "name": "Tab",
+          "fieldIndex": 296381,
+          "token": "0x0400003a"
+        },
+        {
+          "id": 12,
+          "name": "Clear",
+          "fieldIndex": 296382,
+          "token": "0x0400003b"
+        },
+        {
+          "id": 13,
+          "name": "Return",
+          "fieldIndex": 296383,
+          "token": "0x0400003c"
+        },
+        {
+          "id": 19,
+          "name": "Pause",
+          "fieldIndex": 296384,
+          "token": "0x0400003d"
+        },
+        {
+          "id": 27,
+          "name": "EscapeOnly",
+          "fieldIndex": 296385,
+          "token": "0x0400003e"
+        },
+        {
+          "id": 32,
+          "name": "Space",
+          "fieldIndex": 296386,
+          "token": "0x0400003f"
+        },
+        {
+          "id": 33,
+          "name": "Exclaim",
+          "fieldIndex": 296387,
+          "token": "0x04000040"
+        },
+        {
+          "id": 34,
+          "name": "DoubleQuote",
+          "fieldIndex": 296388,
+          "token": "0x04000041"
+        },
+        {
+          "id": 35,
+          "name": "Hash",
+          "fieldIndex": 296389,
+          "token": "0x04000042"
+        },
+        {
+          "id": 36,
+          "name": "Dollar",
+          "fieldIndex": 296390,
+          "token": "0x04000043"
+        },
+        {
+          "id": 37,
+          "name": "Percent",
+          "fieldIndex": 296391,
+          "token": "0x04000044"
+        },
+        {
+          "id": 38,
+          "name": "Ampersand",
+          "fieldIndex": 296392,
+          "token": "0x04000045"
+        },
+        {
+          "id": 39,
+          "name": "Quote",
+          "fieldIndex": 296393,
+          "token": "0x04000046"
+        },
+        {
+          "id": 40,
+          "name": "LeftParen",
+          "fieldIndex": 296394,
+          "token": "0x04000047"
+        },
+        {
+          "id": 41,
+          "name": "RightParen",
+          "fieldIndex": 296395,
+          "token": "0x04000048"
+        },
+        {
+          "id": 42,
+          "name": "Asterisk",
+          "fieldIndex": 296396,
+          "token": "0x04000049"
+        },
+        {
+          "id": 43,
+          "name": "Plus",
+          "fieldIndex": 296397,
+          "token": "0x0400004a"
+        },
+        {
+          "id": 44,
+          "name": "Comma",
+          "fieldIndex": 296398,
+          "token": "0x0400004b"
+        },
+        {
+          "id": 45,
+          "name": "Minus",
+          "fieldIndex": 296399,
+          "token": "0x0400004c"
+        },
+        {
+          "id": 46,
+          "name": "Period",
+          "fieldIndex": 296400,
+          "token": "0x0400004d"
+        },
+        {
+          "id": 47,
+          "name": "Slash",
+          "fieldIndex": 296401,
+          "token": "0x0400004e"
+        },
+        {
+          "id": 48,
+          "name": "Alpha0",
+          "fieldIndex": 296402,
+          "token": "0x0400004f"
+        },
+        {
+          "id": 49,
+          "name": "Alpha1",
+          "fieldIndex": 296403,
+          "token": "0x04000050"
+        },
+        {
+          "id": 50,
+          "name": "Alpha2",
+          "fieldIndex": 296404,
+          "token": "0x04000051"
+        },
+        {
+          "id": 51,
+          "name": "Alpha3",
+          "fieldIndex": 296405,
+          "token": "0x04000052"
+        },
+        {
+          "id": 52,
+          "name": "Alpha4",
+          "fieldIndex": 296406,
+          "token": "0x04000053"
+        },
+        {
+          "id": 53,
+          "name": "Alpha5",
+          "fieldIndex": 296407,
+          "token": "0x04000054"
+        },
+        {
+          "id": 54,
+          "name": "Alpha6",
+          "fieldIndex": 296408,
+          "token": "0x04000055"
+        },
+        {
+          "id": 55,
+          "name": "Alpha7",
+          "fieldIndex": 296409,
+          "token": "0x04000056"
+        },
+        {
+          "id": 56,
+          "name": "Alpha8",
+          "fieldIndex": 296410,
+          "token": "0x04000057"
+        },
+        {
+          "id": 57,
+          "name": "Alpha9",
+          "fieldIndex": 296411,
+          "token": "0x04000058"
+        },
+        {
+          "id": 58,
+          "name": "Colon",
+          "fieldIndex": 296412,
+          "token": "0x04000059"
+        },
+        {
+          "id": 59,
+          "name": "Semicolon",
+          "fieldIndex": 296413,
+          "token": "0x0400005a"
+        },
+        {
+          "id": 60,
+          "name": "Less",
+          "fieldIndex": 296414,
+          "token": "0x0400005b"
+        },
+        {
+          "id": 61,
+          "name": "Equals",
+          "fieldIndex": 296415,
+          "token": "0x0400005c"
+        },
+        {
+          "id": 62,
+          "name": "Greater",
+          "fieldIndex": 296416,
+          "token": "0x0400005d"
+        },
+        {
+          "id": 63,
+          "name": "Question",
+          "fieldIndex": 296417,
+          "token": "0x0400005e"
+        },
+        {
+          "id": 64,
+          "name": "At",
+          "fieldIndex": 296418,
+          "token": "0x0400005f"
+        },
+        {
+          "id": 91,
+          "name": "LeftBracket",
+          "fieldIndex": 296419,
+          "token": "0x04000060"
+        },
+        {
+          "id": 92,
+          "name": "Backslash",
+          "fieldIndex": 296420,
+          "token": "0x04000061"
+        },
+        {
+          "id": 93,
+          "name": "RightBracket",
+          "fieldIndex": 296421,
+          "token": "0x04000062"
+        },
+        {
+          "id": 94,
+          "name": "Caret",
+          "fieldIndex": 296422,
+          "token": "0x04000063"
+        },
+        {
+          "id": 95,
+          "name": "Underscore",
+          "fieldIndex": 296423,
+          "token": "0x04000064"
+        },
+        {
+          "id": 96,
+          "name": "BackQuote",
+          "fieldIndex": 296424,
+          "token": "0x04000065"
+        },
+        {
+          "id": 97,
+          "name": "A",
+          "fieldIndex": 296425,
+          "token": "0x04000066"
+        },
+        {
+          "id": 98,
+          "name": "B",
+          "fieldIndex": 296426,
+          "token": "0x04000067"
+        },
+        {
+          "id": 99,
+          "name": "C",
+          "fieldIndex": 296427,
+          "token": "0x04000068"
+        },
+        {
+          "id": 100,
+          "name": "D",
+          "fieldIndex": 296428,
+          "token": "0x04000069"
+        },
+        {
+          "id": 101,
+          "name": "E",
+          "fieldIndex": 296429,
+          "token": "0x0400006a"
+        },
+        {
+          "id": 102,
+          "name": "F",
+          "fieldIndex": 296430,
+          "token": "0x0400006b"
+        },
+        {
+          "id": 103,
+          "name": "G",
+          "fieldIndex": 296431,
+          "token": "0x0400006c"
+        },
+        {
+          "id": 104,
+          "name": "H",
+          "fieldIndex": 296432,
+          "token": "0x0400006d"
+        },
+        {
+          "id": 105,
+          "name": "I",
+          "fieldIndex": 296433,
+          "token": "0x0400006e"
+        },
+        {
+          "id": 106,
+          "name": "J",
+          "fieldIndex": 296434,
+          "token": "0x0400006f"
+        },
+        {
+          "id": 107,
+          "name": "K",
+          "fieldIndex": 296435,
+          "token": "0x04000070"
+        },
+        {
+          "id": 108,
+          "name": "L",
+          "fieldIndex": 296436,
+          "token": "0x04000071"
+        },
+        {
+          "id": 109,
+          "name": "M",
+          "fieldIndex": 296437,
+          "token": "0x04000072"
+        },
+        {
+          "id": 110,
+          "name": "N",
+          "fieldIndex": 296438,
+          "token": "0x04000073"
+        },
+        {
+          "id": 111,
+          "name": "O",
+          "fieldIndex": 296439,
+          "token": "0x04000074"
+        },
+        {
+          "id": 112,
+          "name": "P",
+          "fieldIndex": 296440,
+          "token": "0x04000075"
+        },
+        {
+          "id": 113,
+          "name": "Q",
+          "fieldIndex": 296441,
+          "token": "0x04000076"
+        },
+        {
+          "id": 114,
+          "name": "R",
+          "fieldIndex": 296442,
+          "token": "0x04000077"
+        },
+        {
+          "id": 115,
+          "name": "S",
+          "fieldIndex": 296443,
+          "token": "0x04000078"
+        },
+        {
+          "id": 116,
+          "name": "T",
+          "fieldIndex": 296444,
+          "token": "0x04000079"
+        },
+        {
+          "id": 117,
+          "name": "U",
+          "fieldIndex": 296445,
+          "token": "0x0400007a"
+        },
+        {
+          "id": 118,
+          "name": "V",
+          "fieldIndex": 296446,
+          "token": "0x0400007b"
+        },
+        {
+          "id": 119,
+          "name": "W",
+          "fieldIndex": 296447,
+          "token": "0x0400007c"
+        },
+        {
+          "id": 120,
+          "name": "X",
+          "fieldIndex": 296448,
+          "token": "0x0400007d"
+        },
+        {
+          "id": 121,
+          "name": "Y",
+          "fieldIndex": 296449,
+          "token": "0x0400007e"
+        },
+        {
+          "id": 122,
+          "name": "Z",
+          "fieldIndex": 296450,
+          "token": "0x0400007f"
+        },
+        {
+          "id": 123,
+          "name": "LeftCurlyBracket",
+          "fieldIndex": 296451,
+          "token": "0x04000080"
+        },
+        {
+          "id": 124,
+          "name": "Pipe",
+          "fieldIndex": 296452,
+          "token": "0x04000081"
+        },
+        {
+          "id": 125,
+          "name": "RightCurlyBracket",
+          "fieldIndex": 296453,
+          "token": "0x04000082"
+        },
+        {
+          "id": 126,
+          "name": "Tilde",
+          "fieldIndex": 296454,
+          "token": "0x04000083"
+        },
+        {
+          "id": 127,
+          "name": "Delete",
+          "fieldIndex": 296455,
+          "token": "0x04000084"
+        },
+        {
+          "id": 256,
+          "name": "Keypad0",
+          "fieldIndex": 296456,
+          "token": "0x04000085"
+        },
+        {
+          "id": 257,
+          "name": "Keypad1",
+          "fieldIndex": 296457,
+          "token": "0x04000086"
+        },
+        {
+          "id": 258,
+          "name": "Keypad2",
+          "fieldIndex": 296458,
+          "token": "0x04000087"
+        },
+        {
+          "id": 259,
+          "name": "Keypad3",
+          "fieldIndex": 296459,
+          "token": "0x04000088"
+        },
+        {
+          "id": 260,
+          "name": "Keypad4",
+          "fieldIndex": 296460,
+          "token": "0x04000089"
+        },
+        {
+          "id": 261,
+          "name": "Keypad5",
+          "fieldIndex": 296461,
+          "token": "0x0400008a"
+        },
+        {
+          "id": 262,
+          "name": "Keypad6",
+          "fieldIndex": 296462,
+          "token": "0x0400008b"
+        },
+        {
+          "id": 263,
+          "name": "Keypad7",
+          "fieldIndex": 296463,
+          "token": "0x0400008c"
+        },
+        {
+          "id": 264,
+          "name": "Keypad8",
+          "fieldIndex": 296464,
+          "token": "0x0400008d"
+        },
+        {
+          "id": 265,
+          "name": "Keypad9",
+          "fieldIndex": 296465,
+          "token": "0x0400008e"
+        },
+        {
+          "id": 266,
+          "name": "KeypadPeriod",
+          "fieldIndex": 296466,
+          "token": "0x0400008f"
+        },
+        {
+          "id": 267,
+          "name": "KeypadDivide",
+          "fieldIndex": 296467,
+          "token": "0x04000090"
+        },
+        {
+          "id": 268,
+          "name": "KeypadMultiply",
+          "fieldIndex": 296468,
+          "token": "0x04000091"
+        },
+        {
+          "id": 269,
+          "name": "KeypadMinus",
+          "fieldIndex": 296469,
+          "token": "0x04000092"
+        },
+        {
+          "id": 270,
+          "name": "KeypadPlus",
+          "fieldIndex": 296470,
+          "token": "0x04000093"
+        },
+        {
+          "id": 271,
+          "name": "KeypadEnter",
+          "fieldIndex": 296471,
+          "token": "0x04000094"
+        },
+        {
+          "id": 272,
+          "name": "KeypadEquals",
+          "fieldIndex": 296472,
+          "token": "0x04000095"
+        },
+        {
+          "id": 273,
+          "name": "UpArrow",
+          "fieldIndex": 296473,
+          "token": "0x04000096"
+        },
+        {
+          "id": 274,
+          "name": "DownArrow",
+          "fieldIndex": 296474,
+          "token": "0x04000097"
+        },
+        {
+          "id": 275,
+          "name": "RightArrow",
+          "fieldIndex": 296475,
+          "token": "0x04000098"
+        },
+        {
+          "id": 276,
+          "name": "LeftArrow",
+          "fieldIndex": 296476,
+          "token": "0x04000099"
+        },
+        {
+          "id": 277,
+          "name": "Insert",
+          "fieldIndex": 296477,
+          "token": "0x0400009a"
+        },
+        {
+          "id": 278,
+          "name": "Home",
+          "fieldIndex": 296478,
+          "token": "0x0400009b"
+        },
+        {
+          "id": 279,
+          "name": "End",
+          "fieldIndex": 296479,
+          "token": "0x0400009c"
+        },
+        {
+          "id": 280,
+          "name": "PageUp",
+          "fieldIndex": 296480,
+          "token": "0x0400009d"
+        },
+        {
+          "id": 281,
+          "name": "PageDown",
+          "fieldIndex": 296481,
+          "token": "0x0400009e"
+        },
+        {
+          "id": 282,
+          "name": "F1",
+          "fieldIndex": 296482,
+          "token": "0x0400009f"
+        },
+        {
+          "id": 283,
+          "name": "F2",
+          "fieldIndex": 296483,
+          "token": "0x040000a0"
+        },
+        {
+          "id": 284,
+          "name": "F3",
+          "fieldIndex": 296484,
+          "token": "0x040000a1"
+        },
+        {
+          "id": 285,
+          "name": "F4",
+          "fieldIndex": 296485,
+          "token": "0x040000a2"
+        },
+        {
+          "id": 286,
+          "name": "F5",
+          "fieldIndex": 296486,
+          "token": "0x040000a3"
+        },
+        {
+          "id": 287,
+          "name": "F6",
+          "fieldIndex": 296487,
+          "token": "0x040000a4"
+        },
+        {
+          "id": 288,
+          "name": "F7",
+          "fieldIndex": 296488,
+          "token": "0x040000a5"
+        },
+        {
+          "id": 289,
+          "name": "F8",
+          "fieldIndex": 296489,
+          "token": "0x040000a6"
+        },
+        {
+          "id": 290,
+          "name": "F9",
+          "fieldIndex": 296490,
+          "token": "0x040000a7"
+        },
+        {
+          "id": 291,
+          "name": "F10",
+          "fieldIndex": 296491,
+          "token": "0x040000a8"
+        },
+        {
+          "id": 292,
+          "name": "F11",
+          "fieldIndex": 296492,
+          "token": "0x040000a9"
+        },
+        {
+          "id": 293,
+          "name": "F12",
+          "fieldIndex": 296493,
+          "token": "0x040000aa"
+        },
+        {
+          "id": 294,
+          "name": "F13",
+          "fieldIndex": 296494,
+          "token": "0x040000ab"
+        },
+        {
+          "id": 295,
+          "name": "F14",
+          "fieldIndex": 296495,
+          "token": "0x040000ac"
+        },
+        {
+          "id": 296,
+          "name": "F15",
+          "fieldIndex": 296496,
+          "token": "0x040000ad"
+        },
+        {
+          "id": 300,
+          "name": "Numlock",
+          "fieldIndex": 296497,
+          "token": "0x040000ae"
+        },
+        {
+          "id": 301,
+          "name": "CapsLock",
+          "fieldIndex": 296498,
+          "token": "0x040000af"
+        },
+        {
+          "id": 302,
+          "name": "ScrollLock",
+          "fieldIndex": 296499,
+          "token": "0x040000b0"
+        },
+        {
+          "id": 303,
+          "name": "RightShift",
+          "fieldIndex": 296500,
+          "token": "0x040000b1"
+        },
+        {
+          "id": 304,
+          "name": "LeftShift",
+          "fieldIndex": 296501,
+          "token": "0x040000b2"
+        },
+        {
+          "id": 305,
+          "name": "RightControl",
+          "fieldIndex": 296502,
+          "token": "0x040000b3"
+        },
+        {
+          "id": 306,
+          "name": "LeftControl",
+          "fieldIndex": 296503,
+          "token": "0x040000b4"
+        },
+        {
+          "id": 307,
+          "name": "RightAlt",
+          "fieldIndex": 296504,
+          "token": "0x040000b5"
+        },
+        {
+          "id": 308,
+          "name": "LeftAlt",
+          "fieldIndex": 296505,
+          "token": "0x040000b6"
+        },
+        {
+          "id": 309,
+          "name": "RightApple",
+          "fieldIndex": 296506,
+          "token": "0x040000b7"
+        },
+        {
+          "id": 309,
+          "name": "RightCommand",
+          "fieldIndex": 296507,
+          "token": "0x040000b8"
+        },
+        {
+          "id": 309,
+          "name": "RightMeta",
+          "fieldIndex": 296508,
+          "token": "0x040000b9"
+        },
+        {
+          "id": 310,
+          "name": "LeftApple",
+          "fieldIndex": 296509,
+          "token": "0x040000ba"
+        },
+        {
+          "id": 310,
+          "name": "LeftCommand",
+          "fieldIndex": 296510,
+          "token": "0x040000bb"
+        },
+        {
+          "id": 310,
+          "name": "LeftMeta",
+          "fieldIndex": 296511,
+          "token": "0x040000bc"
+        },
+        {
+          "id": 311,
+          "name": "LeftWindows",
+          "fieldIndex": 296512,
+          "token": "0x040000bd"
+        },
+        {
+          "id": 312,
+          "name": "RightWindows",
+          "fieldIndex": 296513,
+          "token": "0x040000be"
+        },
+        {
+          "id": 313,
+          "name": "AltGr",
+          "fieldIndex": 296514,
+          "token": "0x040000bf"
+        },
+        {
+          "id": 315,
+          "name": "Help",
+          "fieldIndex": 296515,
+          "token": "0x040000c0"
+        },
+        {
+          "id": 316,
+          "name": "Print",
+          "fieldIndex": 296516,
+          "token": "0x040000c1"
+        },
+        {
+          "id": 317,
+          "name": "SysReq",
+          "fieldIndex": 296517,
+          "token": "0x040000c2"
+        },
+        {
+          "id": 318,
+          "name": "Break",
+          "fieldIndex": 296518,
+          "token": "0x040000c3"
+        },
+        {
+          "id": 319,
+          "name": "Menu",
+          "fieldIndex": 296519,
+          "token": "0x040000c4"
+        },
+        {
+          "id": 323,
+          "name": "Mouse0",
+          "fieldIndex": 296520,
+          "token": "0x040000c5"
+        },
+        {
+          "id": 324,
+          "name": "Mouse1",
+          "fieldIndex": 296521,
+          "token": "0x040000c6"
+        },
+        {
+          "id": 325,
+          "name": "Mouse2",
+          "fieldIndex": 296522,
+          "token": "0x040000c7"
+        },
+        {
+          "id": 326,
+          "name": "Mouse3",
+          "fieldIndex": 296523,
+          "token": "0x040000c8"
+        },
+        {
+          "id": 327,
+          "name": "Mouse4",
+          "fieldIndex": 296524,
+          "token": "0x040000c9"
+        },
+        {
+          "id": 328,
+          "name": "Mouse5",
+          "fieldIndex": 296525,
+          "token": "0x040000ca"
+        },
+        {
+          "id": 329,
+          "name": "Mouse6",
+          "fieldIndex": 296526,
+          "token": "0x040000cb"
+        },
+        {
+          "id": 330,
+          "name": "EscapeWithRightMouse",
+          "fieldIndex": 296527,
+          "token": "0x040000cc"
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Input.InputTimingType",
+      "members": [
+        {
+          "id": 0,
+          "name": "OnPress",
+          "fieldIndex": 296561,
+          "token": "0x040000ee"
+        },
+        {
+          "id": 1,
+          "name": "OnRelease",
+          "fieldIndex": 296562,
+          "token": "0x040000ef"
+        },
+        {
+          "id": 2,
+          "name": "OnClick",
+          "fieldIndex": 296563,
+          "token": "0x040000f0"
+        },
+        {
+          "id": 3,
+          "name": "OnLongPress",
+          "fieldIndex": 296564,
+          "token": "0x040000f1"
+        }
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "callbackEntry",
+      "method": "Beyond.Input.InputBindingInfo._RealTriggerCallback",
+      "startRva": 77041120,
+      "endRva": 77041165,
+      "sha256": "E6904BB828A0FBC20A299C41CC021167FBF9A64A7075A8B920B6E8CB9310FCEB",
+      "boundary": "Reviewed bounded entry or ordinary local flag-write fragment."
+    },
+    {
+      "role": "attackStart",
+      "method": "Beyond.Gameplay.Core.PlayerController.StartCastNormalAttack",
+      "startRva": 99139389,
+      "endRva": 99139403,
+      "sha256": "797838CDC0A3D4F6CD3B258EE15B2C74CFB01194A98D6EAE0447422467241660",
+      "boundary": "Reviewed bounded entry or ordinary local flag-write fragment."
+    },
+    {
+      "role": "attackEnd",
+      "method": "Beyond.Gameplay.Core.PlayerController.EndCastNormalAttack",
+      "startRva": 112887629,
+      "endRva": 112887636,
+      "sha256": "DFB2456EEA3D6CEB75985275365DE009ABB3B1565D6FE95BEB5790B4748ED238",
+      "boundary": "Reviewed bounded entry or ordinary local flag-write fragment."
+    }
+  ],
+  "operands": {
+    "callbackArgumentSaves": {
+      "rva": 77041154,
+      "hex": "410fb6e8440fb6f2488bf1"
+    },
+    "attackStartStore": {
+      "rva": 99139396,
+      "hex": "c6833a01000001",
+      "field": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField"
+    },
+    "attackEndStore": {
+      "rva": 112887629,
+      "hex": "c6833a01000000",
+      "field": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField"
+    }
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "entryAbi": {
+      "method": "Beyond.Input.InputBindingInfo._RealTriggerCallback",
+      "receiverRegister": "RCX",
+      "isRepeatRegister": "DL",
+      "allowFailureDelayRegister": "R8B",
+      "resultRegister": "AL",
+      "idField": "Beyond.Input.InputBindingInfo::<id>k__BackingField",
+      "playerActionIdField": "Beyond.Input.InputBindingInfo::playerActionId",
+      "saveSpanPremise": "incoming argument values survive entry to reviewed save span",
+      "entryToSaveContinuityProved": false
+    },
+    "attackHeldFlag": {
+      "methodStart": "Beyond.Gameplay.Core.PlayerController.StartCastNormalAttack",
+      "methodEnd": "Beyond.Gameplay.Core.PlayerController.EndCastNormalAttack",
+      "field": "Beyond.Gameplay.Core.PlayerController::<castingNormalAttack>k__BackingField",
+      "startWrites": true,
+      "endWrites": false,
+      "receiverPremise": "RBX is the selected PlayerController receiver at the reviewed store",
+      "entryToStoreReceiverContinuityProved": false
+    },
+    "physicalInputProved": false,
+    "activeKeyOverridesProved": false,
+    "heldRepeatSchedulingProved": false,
+    "longPressUltimateAcceptanceProved": false,
+    "playerCommandAcceptanceProved": false,
+    "runtimeExecutionProved": false
+  }
+}

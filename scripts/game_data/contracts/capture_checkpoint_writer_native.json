@@ -1,0 +1,489 @@
+{
+  "schema": "endfield.capture-checkpoint-writer-native-contract.v2",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional",
+  "nativeInputs": {
+    "dll": "666c5d5443ffe4356dc589d2595e0ec77d59f81d0803f3bce85773840eaa478b",
+    "sessionObject": "77bfeb06bb83d8536edaa975e0ac38948e492ad5c1dd6080981f2c3cea97527f",
+    "providerObject": "99ca70624c7e4cdeeb5b785cadf24b82def2924ef7cc094cb290c9c66357bf50",
+    "runtimeObject": "2e557ec22af9777e5f1cfedf80b0c770708e4205a42f89a077536d1ec1bf4016"
+  },
+  "functions": {
+    "poll": {
+      "object": "sessionObject",
+      "symbol": "?poll@Session@mission_trace@endfield_capture@@QEAA_NXZ",
+      "rva": 3595088,
+      "bytes": 1768,
+      "objectSectionSha256": "8b80c033e7ff99af00192ee71e3fa994eb7cebcdb7a35f6f4dcc500e97b50c96"
+    },
+    "status": {
+      "object": "sessionObject",
+      "symbol": "?status@Impl@Session@mission_trace@endfield_capture@@QEAA_N_N0@Z",
+      "rva": 3613760,
+      "bytes": 5200,
+      "objectSectionSha256": "fc3cdb181e3993b9c0080be2dd8a63b6fa6564b4af5f44f23a7cbbd2135923a1"
+    },
+    "write": {
+      "object": "sessionObject",
+      "symbol": "?write@Impl@Session@mission_trace@endfield_capture@@QEAA_NAEBURecord@34@@Z",
+      "rva": 3625920,
+      "bytes": 2534,
+      "objectSectionSha256": "76604208b6c4df3ee37226da3341338202924742a36c3630ce333ff00eadddee"
+    },
+    "pop": {
+      "object": "providerObject",
+      "symbol": "?pop@Recorder@mission_trace@endfield_capture@@QEAA_NAEAURecord@23@@Z",
+      "rva": 634496,
+      "bytes": 137,
+      "objectSectionSha256": "46936e4e76b19974dffa661f9bed55d5a79e1e218f6fa1d4614ade04ce4dbd02"
+    },
+    "outputWrite": {
+      "object": "sessionObject",
+      "symbol": "?write@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@PEBD_J@Z",
+      "rva": 317920,
+      "bytes": 419,
+      "objectSectionSha256": "c0c76e041ec3445beb5dec24f6599ec4b033cb14650021936639f107bfde1e31"
+    },
+    "unsignedInsert": {
+      "object": "sessionObject",
+      "symbol": "??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV01@_K@Z",
+      "rva": 79952,
+      "bytes": 540,
+      "objectSectionSha256": "be77f0d5fc7d41095d01b2e5e3aa40e2333cc6a8188d24f64f0da06cee20ee6a"
+    },
+    "stringInsert": {
+      "object": "sessionObject",
+      "symbol": "??$?6U?$char_traits@D@std@@@std@@YAAEAV?$basic_ostream@DU?$char_traits@D@std@@@0@AEAV10@PEBD@Z",
+      "rva": 12352,
+      "bytes": 729,
+      "objectSectionSha256": "38482f7310becd3d83808e8849966f3f09a70f669bedb060b329baa3b7669d86"
+    },
+    "flush": {
+      "object": "runtimeObject",
+      "symbol": "?flush@?$basic_ostream@DU?$char_traits@D@std@@@std@@QEAAAEAV12@XZ",
+      "rva": 174640,
+      "bytes": 383,
+      "objectSectionSha256": "94dc02085f2ea8eaee4bffa0989191d877a8b7f105e19f28e0dbc95f56d0028c"
+    }
+  },
+  "operands": {
+    "recorder": 268944,
+    "writeOk": 269732,
+    "unrecorded": 270392,
+    "output": 269768,
+    "bytes": 270352,
+    "rows": 270344,
+    "dropped": 16,
+    "unreadable": 24,
+    "truncated": 32
+  },
+  "anchors": {
+    "pollRecorder": {
+      "owner": "poll",
+      "offset": 1422,
+      "hex": "488b8b901a0400"
+    },
+    "pollWriteReceiver": {
+      "owner": "poll",
+      "offset": 1447,
+      "hex": "488d542430488bcb"
+    },
+    "pollWriteResult": {
+      "owner": "poll",
+      "offset": 1460,
+      "hex": "8883a41d040041b601"
+    },
+    "pollUnrecorded": {
+      "owner": "poll",
+      "offset": 1474,
+      "hex": "48ff8338200400"
+    },
+    "pollFlushReceiver": {
+      "owner": "poll",
+      "offset": 1521,
+      "hex": "488d8bc81d0400"
+    },
+    "pollStatusReceiver": {
+      "owner": "poll",
+      "offset": 1644,
+      "hex": "4533c033d2488bcb"
+    },
+    "writeOutputReceiver": {
+      "owner": "write",
+      "offset": 2195,
+      "hex": "498d8fc81d0400"
+    },
+    "writeSuccess": {
+      "owner": "write",
+      "offset": 2240,
+      "hex": "488b45604901871020040049ff8708200400b301"
+    },
+    "writeFailure": {
+      "owner": "write",
+      "offset": 2229,
+      "hex": "49ff873820040032db"
+    },
+    "statusRows": {
+      "owner": "status",
+      "offset": 1619,
+      "hex": "488b9608200400"
+    },
+    "statusBytes": {
+      "owner": "status",
+      "offset": 3193,
+      "hex": "488b9610200400"
+    },
+    "statusUnrecorded": {
+      "owner": "status",
+      "offset": 1675,
+      "hex": "488b9638200400"
+    },
+    "statusDropped": {
+      "owner": "status",
+      "offset": 282,
+      "hex": "4c8b7010"
+    },
+    "statusUnreadable": {
+      "owner": "status",
+      "offset": 304,
+      "hex": "4c8b6018"
+    },
+    "statusTruncated": {
+      "owner": "status",
+      "offset": 326,
+      "hex": "4c8b7820"
+    },
+    "statusAttempted": {
+      "owner": "status",
+      "offset": 348,
+      "hex": "488b0848894c2478"
+    },
+    "statusAdmitted": {
+      "owner": "status",
+      "offset": 376,
+      "hex": "488b40084889442470"
+    },
+    "outputDropped": {
+      "owner": "status",
+      "offset": 1649,
+      "hex": "498bd6"
+    },
+    "outputUnreadable": {
+      "owner": "status",
+      "offset": 1705,
+      "hex": "498bd4"
+    },
+    "outputTruncated": {
+      "owner": "status",
+      "offset": 1731,
+      "hex": "498bd7"
+    },
+    "outputAttempted": {
+      "owner": "status",
+      "offset": 1563,
+      "hex": "488b542478"
+    },
+    "outputAdmitted": {
+      "owner": "status",
+      "offset": 1591,
+      "hex": "488b542470"
+    },
+    "statusRecorderDropped": {
+      "owner": "status",
+      "offset": 270,
+      "hex": "488b86901a0400"
+    },
+    "statusRecorderUnreadable": {
+      "owner": "status",
+      "offset": 292,
+      "hex": "488b86901a0400"
+    },
+    "statusRecorderTruncated": {
+      "owner": "status",
+      "offset": 314,
+      "hex": "488b86901a0400"
+    },
+    "statusRecorderAttempted": {
+      "owner": "status",
+      "offset": 336,
+      "hex": "488b86901a0400"
+    },
+    "statusRecorderAdmitted": {
+      "owner": "status",
+      "offset": 364,
+      "hex": "488b86901a0400"
+    }
+  },
+  "branches": [
+    {
+      "owner": "poll",
+      "offset": 1415,
+      "targetOffset": 1486,
+      "opcode": "73",
+      "displacementBytes": 1,
+      "role": "drain-limit"
+    },
+    {
+      "owner": "poll",
+      "offset": 1436,
+      "targetOffset": 1486,
+      "opcode": "74",
+      "displacementBytes": 1,
+      "role": "empty-queue"
+    },
+    {
+      "owner": "poll",
+      "offset": 1445,
+      "targetOffset": 1474,
+      "opcode": "74",
+      "displacementBytes": 1,
+      "role": "failed-output"
+    },
+    {
+      "owner": "poll",
+      "offset": 1472,
+      "targetOffset": 1408,
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "role": "written-loop"
+    },
+    {
+      "owner": "poll",
+      "offset": 1484,
+      "targetOffset": 1408,
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "role": "unrecorded-loop"
+    },
+    {
+      "owner": "poll",
+      "offset": 1519,
+      "targetOffset": 1567,
+      "opcode": "74",
+      "displacementBytes": 1,
+      "role": "no-new-write-skip-flush"
+    },
+    {
+      "owner": "poll",
+      "offset": 1635,
+      "targetOffset": 1677,
+      "opcode": "72",
+      "displacementBytes": 1,
+      "role": "status-not-due"
+    },
+    {
+      "owner": "write",
+      "offset": 2160,
+      "targetOffset": 2181,
+      "opcode": "76",
+      "displacementBytes": 1,
+      "role": "within-byte-budget"
+    },
+    {
+      "owner": "write",
+      "offset": 2179,
+      "targetOffset": 2260,
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "role": "over-budget-skips-increment"
+    },
+    {
+      "owner": "write",
+      "offset": 2227,
+      "targetOffset": 2240,
+      "opcode": "74",
+      "displacementBytes": 1,
+      "role": "output-good"
+    },
+    {
+      "owner": "write",
+      "offset": 2238,
+      "targetOffset": 2260,
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "role": "failed-write-skips-increment"
+    }
+  ],
+  "calls": [
+    {
+      "owner": "poll",
+      "relocationOffset": 1430,
+      "target": "pop",
+      "role": "poll-pop"
+    },
+    {
+      "owner": "poll",
+      "relocationOffset": 1456,
+      "target": "write",
+      "role": "poll-write"
+    },
+    {
+      "owner": "poll",
+      "relocationOffset": 1529,
+      "role": "poll-flush",
+      "target": "flush"
+    },
+    {
+      "owner": "poll",
+      "relocationOffset": 1653,
+      "target": "status",
+      "role": "poll-periodic-status"
+    },
+    {
+      "owner": "write",
+      "relocationOffset": 2203,
+      "target": "outputWrite",
+      "role": "write-output"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1559,
+      "target": "stringInsert",
+      "role": "label-attempted"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1572,
+      "target": "unsignedInsert",
+      "role": "value-attempted"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1587,
+      "target": "stringInsert",
+      "role": "label-admitted"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1600,
+      "target": "unsignedInsert",
+      "role": "value-admitted"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1615,
+      "target": "stringInsert",
+      "role": "label-written"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1630,
+      "target": "unsignedInsert",
+      "role": "value-written"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1645,
+      "target": "stringInsert",
+      "role": "label-dropped"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1656,
+      "target": "unsignedInsert",
+      "role": "value-dropped"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1671,
+      "target": "stringInsert",
+      "role": "label-unrecorded"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1686,
+      "target": "unsignedInsert",
+      "role": "value-unrecorded"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1701,
+      "target": "stringInsert",
+      "role": "label-unreadableFields"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1712,
+      "target": "unsignedInsert",
+      "role": "value-unreadableFields"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1727,
+      "target": "stringInsert",
+      "role": "label-truncatedFields"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 1738,
+      "target": "unsignedInsert",
+      "role": "value-truncatedFields"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 3189,
+      "target": "stringInsert",
+      "role": "label-bytesWritten"
+    },
+    {
+      "owner": "status",
+      "relocationOffset": 3204,
+      "target": "unsignedInsert",
+      "role": "value-bytesWritten"
+    }
+  ],
+  "statusLabels": [
+    {
+      "name": "attempted",
+      "relocationOffset": 1554,
+      "carrierAnchor": "outputAttempted"
+    },
+    {
+      "name": "admitted",
+      "relocationOffset": 1582,
+      "carrierAnchor": "outputAdmitted"
+    },
+    {
+      "name": "written",
+      "relocationOffset": 1610,
+      "carrierAnchor": "statusRows"
+    },
+    {
+      "name": "dropped",
+      "relocationOffset": 1640,
+      "carrierAnchor": "outputDropped"
+    },
+    {
+      "name": "unrecorded",
+      "relocationOffset": 1666,
+      "carrierAnchor": "statusUnrecorded"
+    },
+    {
+      "name": "unreadableFields",
+      "relocationOffset": 1696,
+      "carrierAnchor": "outputUnreadable"
+    },
+    {
+      "name": "truncatedFields",
+      "relocationOffset": 1722,
+      "carrierAnchor": "outputTruncated"
+    },
+    {
+      "name": "bytesWritten",
+      "relocationOffset": 3184,
+      "carrierAnchor": "statusBytes"
+    }
+  ],
+  "conditions": [
+    "Original normal paths of the selected physical fragments; no unwind, nonlocal resume or asynchronous state modification.",
+    "The same nonnull Session::Impl and Recorder survive each local operation; nonvolatile registers are preserved by normal Win64 helper returns.",
+    "Ordinary ostream, memcpy and allocator semantics are explicit platform/helper premises; remaining external relocations are not authenticated by nominal COFF names.",
+    "The reviewed complete object sections bind the nonrelocated instruction programs; bounded-cohort target consistency is not whole producer provenance."
+  ],
+  "unresolved": [
+    "Single-writer worker lifetime and no Recorder/journal epoch substitution across runtime calls.",
+    "Context/TLS ancestry, unreadable accounting, full hook enablement and sequence lifetime.",
+    "All external helper semantics, status file publication durability and exact linkage provenance outside the checked cohort.",
+    "A local delivery proof and admitted defenderPoiseFactor remain withheld."
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "schema": "endfield.skill-input-execution-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "conditional selected original-path identity stores/reads; no runtime environment concrete type, unique cast, request transfer, object lifetime or cross-tick synchronous ancestry proof",
+  "fields": [
+    {
+      "id": "environment",
+      "name": "<actionEnvironment>k__BackingField",
+      "offset": 24,
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "valueType": "Beyond.Gameplay.Core.IActionEnvironment",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "sourceSkill",
+      "name": "<sourceSkill>k__BackingField",
+      "offset": 80,
+      "type": "Beyond.Gameplay.Core.Ability",
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "ability",
+      "name": "m_ability",
+      "offset": 48,
+      "type": "Beyond.Gameplay.Core.Skill",
+      "valueType": "Beyond.Gameplay.Core.Ability",
+      "ordinaryKind": 18
+    },
+    {
+      "id": "castId",
+      "name": "skillCastId",
+      "offset": 88,
+      "type": "Beyond.Gameplay.Core.Ability",
+      "valueType": "uint",
+      "ordinaryKind": 9
+    },
+    {
+      "id": "instId",
+      "name": "<instId>k__BackingField",
+      "offset": 184,
+      "type": "Beyond.Gameplay.Core.Skill",
+      "valueType": "ulong",
+      "ordinaryKind": 11
+    },
+    {
+      "id": "executeResult",
+      "name": "m_executeResult",
+      "offset": 16,
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "valueType": "bool",
+      "ordinaryKind": 2
+    }
+  ],
+  "methods": [
+    {
+      "id": "assign",
+      "identity": [
+        60186,
+        "Beyond.Gameplay.Core.AbilityAction",
+        "AssignData",
+        100730064
+      ]
+    },
+    {
+      "id": "reassign",
+      "identity": [
+        60173,
+        "Beyond.Gameplay.Core.AbilityAction",
+        "ReAssign",
+        100729600
+      ]
+    },
+    {
+      "id": "init",
+      "identity": [
+        58611,
+        "Beyond.Gameplay.Core.Ability",
+        "Init",
+        92943792
+      ]
+    },
+    {
+      "id": "skillCastId",
+      "identity": [
+        58666,
+        "Beyond.Gameplay.Core.Skill",
+        "get_skillCastId",
+        101450336
+      ]
+    },
+    {
+      "id": "abilityInstId",
+      "identity": [
+        58598,
+        "Beyond.Gameplay.Core.Ability",
+        "get_instId",
+        107076432
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "assign",
+      "startRva": 100730064,
+      "endRva": 100730122,
+      "sha256": "0f8ceebb3c117174b504517856f9ee51407677147cbc8585afcadd24be61cb87",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "assign",
+      "startRva": 124109958,
+      "endRva": 124110003,
+      "sha256": "93f4938ff152a3a9b01f3dae4464e3b03d52d62b05da389cf8ff5a957a3f4e90",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "reassign",
+      "startRva": 100729600,
+      "endRva": 100729668,
+      "sha256": "357f7b398b221c7d0b4dca57c268015e024a6032019ecd3cebad83953455fb03",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "reassign",
+      "startRva": 124109588,
+      "endRva": 124109628,
+      "sha256": "f52a40de8edc0a7c826010243d9ea1cf06c935f1460771cf4d8e65c27dbac801",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "init",
+      "startRva": 92943792,
+      "endRva": 92943843,
+      "sha256": "cf16f9f50bac52a3bc6f96a623da38a5c6713d2e1a84d1ef097d8cdf47616d49",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "init",
+      "startRva": 92943843,
+      "endRva": 92944159,
+      "sha256": "0cab0109809a1f04193306fdff211b67dafc4bbbba7e2f7d476218fe2aed0958",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "init",
+      "startRva": 92944159,
+      "endRva": 92944175,
+      "sha256": "eaa62004cbdf81cf4114b29e32af00d947239085cd5188dc599215e5d93639df",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "init",
+      "startRva": 92944175,
+      "endRva": 92944181,
+      "sha256": "2bd5960f874c6724988a4891b9a66a7cc79f2f1118d63e21a7cc6056c7cfaa0c",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "init",
+      "startRva": 123244034,
+      "endRva": 123244090,
+      "sha256": "11994337489e1e1abe7de19e143c61336fbe08a39fcea5c1e5373347310653ca",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "skillCastId",
+      "startRva": 101450336,
+      "endRva": 101450383,
+      "sha256": "b68e692ef729be56eab40988cad414ae19b100c2af8620915d4dcd62dbfb3537",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "skillCastId",
+      "startRva": 124215534,
+      "endRva": 124215571,
+      "sha256": "9f7e818dce573cbb993e6d0dc7a2ef08a02d8476fe263930da8c87bb176ef1c4",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "abilityInstId",
+      "startRva": 107076432,
+      "endRva": 107076483,
+      "sha256": "bf93b3431a542bec341d5d3e673e9d395541ea87a6116021162cb84deccc4a62",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    },
+    {
+      "owner": "abilityInstId",
+      "startRva": 124838616,
+      "endRva": 124838653,
+      "sha256": "bfb5dd8a4d3979edc49765c2b553432322e531e8358c46a3b6d7db52c5a481f8",
+      "boundary": "complete selected unwind family interval; original-path conditional"
+    }
+  ],
+  "spans": [
+    {
+      "owner": "assign",
+      "rva": 100730075,
+      "hex": "4c8bd1488b48484885c90f859bbf6401498d4a1841c64210004d894218"
+    },
+    {
+      "owner": "reassign",
+      "rva": 100729611,
+      "hex": "4c8bd14c8bda488b48484885c90f85f6bf6401498d4a184d895a18"
+    },
+    {
+      "owner": "init",
+      "rva": 92943814,
+      "hex": "488bd9498bf1498be84c8bd2488b48484885c90f852358ce01488d4b5048897c24504c895350"
+    },
+    {
+      "owner": "skillCastId",
+      "rva": 101450360,
+      "hex": "488b41304885c074088b40584883c428c3"
+    },
+    {
+      "owner": "abilityInstId",
+      "rva": 107076456,
+      "hex": "488b41504885c0740c488b80b80000004883c428c3"
+    }
+  ],
+  "damageActionParents": [
+    "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.DamageAction+DamageActionData>",
+    "Beyond.Gameplay.Core.AbilityAction"
+  ],
+  "rules": {
+    "originalPathOnly": true,
+    "actionEnvironmentMayRebind": true,
+    "abilityInitStoresSourceSkill": true,
+    "skillCastIdReadsAbilityField": true,
+    "abilityInstIdReadsSourceSkillField": true,
+    "actionEnvironmentRuntimeTypeProved": false,
+    "requestToInstanceJoinProved": false,
+    "castOccurrenceUniqueProved": false,
+    "lifetimeProved": false,
+    "synchronousAncestorCrossTickProved": false,
+    "playerInputExecutionProved": false
+  },
+  "reviewedOperands": {
+    "dispatchTableOffset": 72,
+    "savedRdiStackOffset": 80
+  }
+}

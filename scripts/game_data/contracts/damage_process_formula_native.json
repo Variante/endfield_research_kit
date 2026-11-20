@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.damage-process-formula-native-contract.v2",
+  "schema": "endfield.damage-process-formula-native-contract.v3",
   "status": "reviewed",
   "nativeInputs": {
     "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
@@ -39,6 +39,17 @@
       "type": "Beyond.Gameplay.Core.DamageAction",
       "method": "ExecuteInternal",
       "rva": "0x4f828d0"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "get_defenderPoiseFactor",
+      "rva": "0x5354e50",
+      "parameters": []
+    },
+    {
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "CalculateDamage",
+      "rva": "0x53540c0"
     }
   ],
   "windows": [
@@ -149,6 +160,24 @@
       "rva": "0x4f840a1",
       "byteCount": 54,
       "sha256": "3051d60145e71a5eb64a2a5edbbc570d160578f4e1adf6e694ee522aa54ae83c"
+    },
+    {
+      "name": "defenderPoiseFactorEntry",
+      "rva": "0x5354e50",
+      "byteCount": 40,
+      "sha256": "419070094d396faf27dd79db5e63cf0917ea14dc0cf5646cd5965711b44baaa8"
+    },
+    {
+      "name": "defenderPoiseFactorPatchCold",
+      "rva": "0x74a9182",
+      "byteCount": 37,
+      "sha256": "65c27321972394f5566dd9e9965f7ae24b3602510793f093f9a1495c4871a39d"
+    },
+    {
+      "name": "standaloneDefenderPoiseFactorSelector",
+      "rva": "0x535490b",
+      "byteCount": 52,
+      "sha256": "08375da118716b38de21547199e35af5fccd4670fb191a9eef57b1f1ca3ea71d"
     }
   ],
   "literals": [
@@ -174,7 +203,7 @@
     }
   ],
   "expression": {
-    "normalFinite": "z=mul64(A[62],packFinal); z=mul64(z,add64(crit?A[10]:0,1)); z=mul64(z,defFactor); z=mul64(z,sub64(1,D[63])); z=mul64(z,max(0,typeFactor)); z=mul64(z,callbackFactor); if mask&0x0fd00038:z=mul64(z,A[49]); if mask&0x4001c000:z=mul64(z,A[25])",
+    "normalFinite": "z=mul64(A[62],packFinal); z=mul64(z,add64(crit?A[10]:0,1)); z=mul64(z,defFactor); z=mul64(z,sub64(1,D[63])); z=mul64(z,max(0,typeFactor)); z=mul64(z,defenderPoiseFactor); if mask&0x0fd00038:z=mul64(z,A[49]); if mask&0x4001c000:z=mul64(z,A[25])",
     "defNormal": "div64(1,add64(mul64(widen64(efficiencyOfDEF_Single),D[3]),1))",
     "defNormalSelection": "damageType != 1; D[3] >= original Double -9.999999747378752e-06; finite operands; selected static/provider guards",
     "typeNormal": "typeFactor=mul64(sub64(1,div64(D[resistanceIndex],100)),D[takenScalarIndex])",
@@ -205,7 +234,7 @@
       }
     },
     "type1And5": "cold selected raw path loads original Double 1 then returns via shared footer; requires separate authenticated control proof",
-    "callback": "global anonymous carrier +0x50; callback +0x15e0 and receiver +0x15e8; null carrier or null function yields 1; otherwise callback(pack) return is independent required unknown"
+    "defenderPoiseFactor": "defenderPoiseFactor is the named defenderPoiseFactor selector result: original default Double 1 when its replacement table/function is null; otherwise the replacement normally returned Double. The anonymous runtime selector and actual returned value remain separate required inputs."
   },
   "conditions": [
     "This is a selected finite-number arithmetic fragment, not a complete ProcessDamage result rule.",
@@ -220,7 +249,7 @@
     "XMM14 zero definition exists twice before caller fragment; every observed write in bounded process entry region is XORPS zero; full dominance remains conditional.",
     "Pack attrs/mask source typed field join and live object continuity are separate conditions.",
     "Crit Dice return unobserved: enumerate outcomes without selecting against final output.",
-    "Global callback presence/result unobserved: default1 cannot be assumed.",
+    "The defenderPoiseFactor replacement selector/value is not observed. The named original getter returns one only under its null-table/null-slot selection; getter-hook absence cannot select that branch.",
     "DEF cold negative path not recovered.",
     "RawDamage and special actor shortcut paths excluded.",
     "Subsequent optional actor Single scale, block and settlement operations lie after this arithmetic fragment.",
@@ -322,10 +351,36 @@
       }
     },
     "callbackSelection": {
-      "boundary": "anonymous runtime-written table/slot state; no static proof of live null selection",
+      "boundary": "same named getter patch selector and original Double-one fallback; original runtime root/table/carrier types, live selection and replacement behavior remain unresolved",
       "source": "same RIP root as wrapper guards, table at root+0x50, function at table+0x15e0, receiver at table+0x15e8",
       "defaultFactor": 1,
-      "defaultSelection": "nonnull root with null table or null function; normal matching runtime carrier"
+      "defaultSelection": "nonnull anonymous runtime root; null table or null getter replacement function, with ordinary normal completion",
+      "logicalGetter": "Beyond.Gameplay.Core.DamagePackData.get_defenderPoiseFactor",
+      "meaning": "The multiplier uses the exact root/table/slot selector also used by the named defenderPoiseFactor getter. This identifies its logical property without establishing compiler-inlining history. A replacement can supply a different Double, so static default code does not establish a live value of one.",
+      "identityWitness": {
+        "type": "Beyond.Gameplay.Core.DamagePackData",
+        "method": "get_defenderPoiseFactor",
+        "getterEntryBytes": 40,
+        "guardRow": 1,
+        "aliases": {
+          "r9": "rcx"
+        },
+        "defaultLoadOffset": 27,
+        "defaultBits": "000000000000f03f",
+        "selectors": [
+          {
+            "name": "ProcessDamage.defenderPoiseFactor",
+            "rva": "0x55f6610",
+            "defaultRva": "0x55f6655"
+          },
+          {
+            "name": "CalculateDamage.defenderPoiseFactor",
+            "rva": "0x535490b",
+            "defaultRva": "0x535493b"
+          }
+        ]
+      },
+      "observationBoundary": "The named getter is safe to observe as an ordinary Double return, but these caller selector fragments do not enter that named function. No getter observation does not establish default selection. A later explicit report getter call provides a value only at its own boundary, requiring stable selector/receiver and no intervening replacement effects to relate it to the arithmetic."
     }
   },
   "classInfoDeclarations": [

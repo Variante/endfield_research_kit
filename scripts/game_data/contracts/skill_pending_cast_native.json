@@ -1,0 +1,1483 @@
+{
+  "schema": "endfield.skill-pending-cast-native-contract.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "conditional",
+  "methods": [
+    {
+      "identity": [
+        45039,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "OnEnter",
+        161410728
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "enter"
+    },
+    {
+      "identity": [
+        45040,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "OnTick",
+        161410936
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "deltaTime",
+          "type": "float"
+        }
+      ],
+      "id": "tick"
+    },
+    {
+      "identity": [
+        45041,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "_TryCastSkill",
+        161411916
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "try"
+    },
+    {
+      "identity": [
+        45043,
+        "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+        "_RotateToTarget",
+        161411368
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "rotate"
+    },
+    {
+      "identity": [
+        45768,
+        "Beyond.Gameplay.AI.CharacterAIBrain",
+        "GetComboSkillData",
+        161460816
+      ],
+      "returnType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "parameters": [],
+      "id": "brain"
+    },
+    {
+      "identity": [
+        49773,
+        "Beyond.Gameplay.AI.CharacterSkillSystem",
+        "GetComboSkillData",
+        162053612
+      ],
+      "returnType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ],
+      "id": "pending"
+    },
+    {
+      "identity": [
+        49786,
+        "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+        "get_skillId",
+        162075496
+      ],
+      "returnType": "string",
+      "parameters": [],
+      "id": "id"
+    },
+    {
+      "identity": [
+        49787,
+        "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+        "get_targetHandle",
+        162075560
+      ],
+      "returnType": "Beyond.Gameplay.Core.TargetHandle",
+      "parameters": [],
+      "id": "target"
+    },
+    {
+      "identity": [
+        49788,
+        "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+        "get_onCastEnd",
+        162075432
+      ],
+      "returnType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "parameters": [],
+      "id": "end"
+    },
+    {
+      "identity": [
+        49789,
+        "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+        "get_afterCastStartCallback",
+        162075368
+      ],
+      "returnType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "parameters": [],
+      "id": "after"
+    },
+    {
+      "identity": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "onCastEnd",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "options",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        },
+        {
+          "name": "onExclusiveTimeCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "afterCastStartCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "skillCastInfo",
+          "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        }
+      ],
+      "id": "cast"
+    },
+    {
+      "identity": [
+        59191,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryGetSkill",
+        98050688
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "id": "lookup"
+    },
+    {
+      "identity": [
+        59193,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "SwitchCenterBySkill",
+        149120424
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "playBlinkFx",
+          "type": "bool"
+        },
+        {
+          "name": "playDissolveFx",
+          "type": "bool"
+        },
+        {
+          "name": "playDissolveLow",
+          "type": "bool"
+        },
+        {
+          "name": "ignoreSwitchCd",
+          "type": "bool"
+        },
+        {
+          "name": "ignoreCurCenterCheck",
+          "type": "bool"
+        },
+        {
+          "name": "playSwitchVo",
+          "type": "bool"
+        }
+      ],
+      "id": "switch"
+    },
+    {
+      "identity": [
+        84043,
+        "Beyond.Gameplay.Core.MovementComponent",
+        "get_isInAir",
+        89284848
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "id": "air"
+    },
+    {
+      "identity": [
+        87640,
+        "Beyond.Gameplay.Core.PlayerController",
+        "CastSkill",
+        89313504
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skillEndCallback",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "afterCastStartCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "immediatelyActivate",
+          "type": "bool"
+        },
+        {
+          "name": "triggerAutoLock",
+          "type": "bool"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        },
+        {
+          "name": "skillCastInfo",
+          "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+        },
+        {
+          "name": "castSkillOptionsOverride",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        }
+      ],
+      "id": "playerCast"
+    },
+    {
+      "identity": [
+        45751,
+        "Beyond.Gameplay.AI.CharacterAIBrain",
+        "SwitchAIMode",
+        99521728
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "modeType",
+          "type": "Beyond.Gameplay.AI.CharacterAIModeType"
+        }
+      ],
+      "id": "mode"
+    }
+  ],
+  "fields": [
+    {
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<charAICom>k__BackingField",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "offset": 336,
+      "ordinaryKind": 18,
+      "id": "entityAI"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "name": "m_aiBrain",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "offset": 520,
+      "ordinaryKind": 18,
+      "id": "aiBrain"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "offset": 16,
+      "ordinaryKind": 18,
+      "id": "brainEntity"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_skillData",
+      "valueType": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "offset": 104,
+      "ordinaryKind": 18,
+      "id": "record"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_timer",
+      "valueType": "float",
+      "offset": 112,
+      "ordinaryKind": 12,
+      "id": "timer"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterCastSkillBehavior",
+      "name": "m_successCast",
+      "valueType": "bool",
+      "offset": 116,
+      "ordinaryKind": 2,
+      "id": "success"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "casting",
+      "valueType": "bool",
+      "offset": 136,
+      "ordinaryKind": 2,
+      "id": "casting"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.CharacterSkillSystem+SkillData",
+      "name": "inputData",
+      "valueType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "offset": 48,
+      "ordinaryKind": 17,
+      "id": "input"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillData",
+      "name": "switchToCenterBeforeCast",
+      "valueType": "bool",
+      "offset": 165,
+      "ordinaryKind": 2,
+      "id": "switchBefore"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillId",
+      "valueType": "string",
+      "offset": 16,
+      "ordinaryKind": 14,
+      "id": "inputId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "targetHandle",
+      "valueType": "Beyond.Gameplay.Core.TargetHandle",
+      "offset": 24,
+      "ordinaryKind": 18,
+      "id": "inputTarget"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillEndCallback",
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "offset": 32,
+      "ordinaryKind": 21,
+      "id": "inputEnd"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "afterCastStartCallback",
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "offset": 40,
+      "ordinaryKind": 21,
+      "id": "inputAfter"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.AIBehavior",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "offset": 56,
+      "ordinaryKind": 18,
+      "id": "behaviorEntity"
+    }
+  ],
+  "inputDataHeaderBytes": 16,
+  "codeWindows": [
+    {
+      "owner": "enter",
+      "startRva": 161410728,
+      "endRva": 161410871,
+      "sha256": "23DF6DFC3CA36C59E40EE18B5AB729DE40CB99B825EBCFA955D9E9568DB37440",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "tick",
+      "startRva": 161410936,
+      "endRva": 161411365,
+      "sha256": "79B942857A54B978941F500686958D92CB607617299E3BE311B00240B6D305EC",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "try",
+      "startRva": 161411916,
+      "endRva": 161413050,
+      "sha256": "511D8F0388729BE78B0DFDFF97AB256E2D3A791555DF98628B8D323AF837AF59",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "brain",
+      "startRva": 161460816,
+      "endRva": 161460931,
+      "sha256": "F95296F1CF3978DC1E3A889B984C7FFAF4634DA595A9644CB8C5251A0D721867",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "pending",
+      "startRva": 162053612,
+      "endRva": 162053798,
+      "sha256": "E6A63D5F0E2A6175F17E62EAACEEFF6C39F04862F9668D504D912E4B81C487EF",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "id",
+      "startRva": 162075496,
+      "endRva": 162075557,
+      "sha256": "BF5B8BC6AF1DC1C9639AE80F6574BF507E9260E1A51CD1410315D668B4EB2ABB",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "target",
+      "startRva": 162075560,
+      "endRva": 162075621,
+      "sha256": "FD2142ED946F6ADBA72B8ABF9A1B8D1E598691B2A2987D19AB5032E644EEC282",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "end",
+      "startRva": 162075432,
+      "endRva": 162075493,
+      "sha256": "D9F918E0315DDCDB15454A007D58CFE93B663CC90FC1E64FE72477D2C7305A5A",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "after",
+      "startRva": 162075368,
+      "endRva": 162075429,
+      "sha256": "A53AF823869D6DBD74001A6EBE12119CC80E2F6BDC242985E5B1E73C50F09309",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "targetView",
+      "startRva": 88285408,
+      "endRva": 88285449,
+      "sha256": "EEBC03801D93DBE3B872FD9B690B1F35FE621F20BC5EF502EF4BA9CFCBCA010E",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    },
+    {
+      "owner": "copyRef",
+      "startRva": 88285456,
+      "endRva": 88285538,
+      "sha256": "14BABBA033F87E5878B5F850435052D3BEAA6E982FF042798E689AAC9A763D3C",
+      "boundary": "Selected original callback/normal-return transfer; runtime selection and reentrancy are separate."
+    }
+  ],
+  "nodes": [
+    {
+      "id": "brainForward",
+      "owner": "brain",
+      "rva": 161460920,
+      "hex": "e92f0b0900"
+    },
+    {
+      "id": "enterEntityNull",
+      "owner": "enter",
+      "rva": 161410804,
+      "hex": "743b"
+    },
+    {
+      "id": "enterAINull",
+      "owner": "enter",
+      "rva": 161410816,
+      "hex": "742f"
+    },
+    {
+      "id": "enterBrainNull",
+      "owner": "enter",
+      "rva": 161410828,
+      "hex": "7423"
+    },
+    {
+      "id": "tickEntityNull",
+      "owner": "tick",
+      "rva": 161411017,
+      "hex": "0f8450010000"
+    },
+    {
+      "id": "tickAINull",
+      "owner": "tick",
+      "rva": 161411033,
+      "hex": "0f8440010000"
+    },
+    {
+      "id": "tickBrainNull",
+      "owner": "tick",
+      "rva": 161411049,
+      "hex": "0f8430010000"
+    },
+    {
+      "id": "tickGet",
+      "owner": "tick",
+      "rva": 161411057,
+      "hex": "e85ac20000"
+    },
+    {
+      "id": "brainGet",
+      "owner": "enter",
+      "rva": 161410832,
+      "hex": "e83bc30000"
+    },
+    {
+      "id": "enterBarrier",
+      "owner": "enter",
+      "rva": 161410845,
+      "hex": "e83e5471f6"
+    },
+    {
+      "id": "enterTry",
+      "owner": "enter",
+      "rva": 161410860,
+      "hex": "e91b040000"
+    },
+    {
+      "id": "tickBarrier",
+      "owner": "tick",
+      "rva": 161411095,
+      "hex": "e8445371f6"
+    },
+    {
+      "id": "directDataNull",
+      "owner": "try",
+      "rva": 161412749,
+      "hex": "0f8402010000"
+    },
+    {
+      "id": "onEnd",
+      "owner": "try",
+      "rva": 161412757,
+      "hex": "e88e1c0a00"
+    },
+    {
+      "id": "directEntityNull",
+      "owner": "try",
+      "rva": 161412772,
+      "hex": "0f84eb000000"
+    },
+    {
+      "id": "idDataNull",
+      "owner": "try",
+      "rva": 161412792,
+      "hex": "0f84d7000000"
+    },
+    {
+      "id": "skillId",
+      "owner": "try",
+      "rva": 161412800,
+      "hex": "e8a31c0a00"
+    },
+    {
+      "id": "targetDataNull",
+      "owner": "try",
+      "rva": 161412815,
+      "hex": "0f84c0000000"
+    },
+    {
+      "id": "targetHandle",
+      "owner": "try",
+      "rva": 161412823,
+      "hex": "e8cc1c0a00"
+    },
+    {
+      "id": "targetView",
+      "owner": "try",
+      "rva": 161412831,
+      "hex": "e8fc29a4fb"
+    },
+    {
+      "id": "callbackDataNull",
+      "owner": "try",
+      "rva": 161412846,
+      "hex": "0f84a1000000"
+    },
+    {
+      "id": "afterStart",
+      "owner": "try",
+      "rva": 161412857,
+      "hex": "e8ea1b0a00"
+    },
+    {
+      "id": "abilityNull",
+      "owner": "try",
+      "rva": 161412886,
+      "hex": "747d"
+    },
+    {
+      "id": "cast",
+      "owner": "try",
+      "rva": 161412962,
+      "hex": "e8093a33fc"
+    },
+    {
+      "id": "castFalse",
+      "owner": "try",
+      "rva": 161412972,
+      "hex": "0f844cfcffff"
+    },
+    {
+      "id": "commitDataNull",
+      "owner": "try",
+      "rva": 161412982,
+      "hex": "0f8442fcffff"
+    },
+    {
+      "id": "commitReturn",
+      "owner": "try",
+      "rva": 161412999,
+      "hex": "e932fcffff"
+    },
+    {
+      "id": "lookupSkillId",
+      "owner": "try",
+      "rva": 161412118,
+      "hex": "e84d1f0a00"
+    },
+    {
+      "id": "lookupAbilityNull",
+      "owner": "try",
+      "rva": 161412126,
+      "hex": "0f8471030000"
+    },
+    {
+      "id": "tryGet",
+      "owner": "try",
+      "rva": 161412149,
+      "hex": "e8462e39fc"
+    },
+    {
+      "id": "lookupFalse",
+      "owner": "try",
+      "rva": 161412156,
+      "hex": "0f844a030000"
+    },
+    {
+      "id": "tickTry",
+      "owner": "tick",
+      "rva": 161411304,
+      "hex": "e85f020000"
+    },
+    {
+      "id": "tickNoPending",
+      "owner": "tick",
+      "rva": 161411065,
+      "hex": "7421"
+    },
+    {
+      "id": "tickAlreadyCasting",
+      "owner": "tick",
+      "rva": 161411074,
+      "hex": "7518"
+    },
+    {
+      "id": "noSwitch",
+      "owner": "try",
+      "rva": 161412199,
+      "hex": "0f840f020000"
+    },
+    {
+      "id": "switchEntityNull",
+      "owner": "try",
+      "rva": 161412212,
+      "hex": "0f841b030000"
+    },
+    {
+      "id": "entityModeHelper",
+      "owner": "try",
+      "rva": 161412223,
+      "hex": "e8cc926efb"
+    },
+    {
+      "id": "entityModeDirect",
+      "owner": "try",
+      "rva": 161412230,
+      "hex": "0f85f0010000"
+    },
+    {
+      "id": "airDirect",
+      "owner": "try",
+      "rva": 161412302,
+      "hex": "0f85a8010000"
+    },
+    {
+      "id": "switchSucceeded",
+      "owner": "try",
+      "rva": 161412477,
+      "hex": "750f"
+    },
+    {
+      "id": "releaseTemp",
+      "owner": "try",
+      "rva": 161412484,
+      "hex": "e8871d84f6"
+    },
+    {
+      "id": "switchFailedDirect",
+      "owner": "try",
+      "rva": 161412489,
+      "hex": "e9ee000000"
+    },
+    {
+      "id": "tryDataNull",
+      "owner": "try",
+      "rva": 161412090,
+      "hex": "74c2"
+    },
+    {
+      "id": "lookupFailureReturn",
+      "owner": "try",
+      "rva": 161413008,
+      "hex": "e929fcffff"
+    },
+    {
+      "id": "copyReference",
+      "owner": "targetView",
+      "rva": 88285434,
+      "hex": "e811000000"
+    },
+    {
+      "id": "rotate",
+      "owner": "try",
+      "rva": 161412737,
+      "hex": "e8a2faffff"
+    },
+    {
+      "id": "switch",
+      "owner": "try",
+      "rva": 161412470,
+      "hex": "e82d7044ff"
+    },
+    {
+      "id": "air",
+      "owner": "try",
+      "rva": 161412295,
+      "hex": "e8246cb3fb"
+    },
+    {
+      "id": "playerCast",
+      "owner": "try",
+      "rva": 161412691,
+      "hex": "e888dab3fb"
+    },
+    {
+      "id": "tryReturn",
+      "owner": "try",
+      "rva": 161412030,
+      "hex": "4881c4e0000000"
+    },
+    {
+      "id": "exception",
+      "owner": "try",
+      "rva": 161413013,
+      "hex": "e896f16ef6"
+    },
+    {
+      "id": "tickSuccessCheck",
+      "owner": "tick",
+      "rva": 161411100,
+      "hex": "807f7400"
+    },
+    {
+      "id": "directStart",
+      "owner": "try",
+      "rva": 161412732,
+      "hex": "33d2"
+    },
+    {
+      "id": "specialStart",
+      "owner": "try",
+      "rva": 161412494,
+      "hex": "488b0d33cbc906"
+    },
+    {
+      "id": "enterException",
+      "owner": "enter",
+      "rva": 161410865,
+      "hex": "e80afa6ef6"
+    },
+    {
+      "id": "tickException",
+      "owner": "tick",
+      "rva": 161411359,
+      "hex": "e81cf86ef6"
+    },
+    {
+      "id": "lookupFailure",
+      "owner": "try",
+      "rva": 161413004,
+      "hex": "40887e74"
+    }
+  ],
+  "programs": [
+    {
+      "id": "brainForwarding",
+      "owner": "brain",
+      "rva": 161460909,
+      "hex": "498b51104533c04883c428e92f0b0900"
+    },
+    {
+      "id": "enterAcquire",
+      "owner": "enter",
+      "rva": 161410786,
+      "hex": "488b4338c7437000000000c64374004885c0743b488b88500100004885c9742f488b89080200004885c97423"
+    },
+    {
+      "id": "tickAcquire",
+      "owner": "tick",
+      "rva": 161411010,
+      "hex": "488b47384885c00f8450010000488b88500100004885c90f8440010000488b89080200004885c90f843001000033d2e85ac20000"
+    },
+    {
+      "id": "enterStore",
+      "owner": "enter",
+      "rva": 161410830,
+      "hex": "33d2e83bc30000488d4b6848894368e83e5471f633d2488bcb4883c4205be91b040000"
+    },
+    {
+      "id": "tickStore",
+      "owner": "tick",
+      "rva": 161411076,
+      "hex": "488d4f68c6477400c747700000000048894768e8445371f6"
+    },
+    {
+      "id": "directArguments",
+      "owner": "try",
+      "rva": 161412742,
+      "hex": "488b4e684885c90f840201000033d2e88e1c0a004c8be0488b4e384885c90f84eb0000004c8bb128010000488b4e684885c90f84d700000033d2e8a31c0a004c8bf8488b4e684885c90f84c000000033d2e8cc1c0a00488bc8e8fc29a4fb488bd8488b4e684885c90f84a10000004533ed33d2e8ea1b0a000f57c033c90f118424a000000048898c24b00000004d85f6747d0f298424800000004489ac249000000048897c244840887c2440488d8c24a000000048894c2438488944243048897c2428488d84248000000048894424204d8bcc4c8bc3498bd7498bcee8093a33fc"
+    },
+    {
+      "id": "castCommit",
+      "owner": "try",
+      "rva": 161412967,
+      "hex": "88467484c00f844cfcffff48397e680f8442fcffff488b4668c6808800000001e932fcffff"
+    },
+    {
+      "id": "tryLookup",
+      "owner": "try",
+      "rva": 161412105,
+      "hex": "488b982801000033d2488b4e68e84d1f0a004885db0f84710300004533c94c8d842438010000488bd0488bcbe8462e39fc84c00f844a030000"
+    },
+    {
+      "id": "tickRetry",
+      "owner": "tick",
+      "rva": 161411289,
+      "hex": "f30f58777033d2488bcff30f117770e85f020000"
+    },
+    {
+      "id": "tickPendingGuard",
+      "owner": "tick",
+      "rva": 161411062,
+      "hex": "4885c0742180b888000000007518"
+    },
+    {
+      "id": "directLane",
+      "owner": "try",
+      "rva": 161412192,
+      "hex": "4038b9a50000000f840f020000488b4e384885c90f841b030000ba02000000e8cc926efb84c00f85f0010000"
+    },
+    {
+      "id": "afterAirCheck",
+      "owner": "try",
+      "rva": 161412300,
+      "hex": "84c00f85a8010000"
+    },
+    {
+      "id": "afterSwitch",
+      "owner": "try",
+      "rva": 161412475,
+      "hex": "84c0750f488d4c2468e8871d84f6e9ee000000"
+    },
+    {
+      "id": "tryNoData",
+      "owner": "try",
+      "rva": 161412086,
+      "hex": "48397e6874c2"
+    },
+    {
+      "id": "lookupFailure",
+      "owner": "try",
+      "rva": 161413004,
+      "hex": "40887e74e929fcffff"
+    },
+    {
+      "id": "getSkillId",
+      "owner": "id",
+      "rva": 162075548,
+      "hex": "498b4130"
+    },
+    {
+      "id": "getTargetHandle",
+      "owner": "target",
+      "rva": 162075612,
+      "hex": "498b4138"
+    },
+    {
+      "id": "getOnEnd",
+      "owner": "end",
+      "rva": 162075484,
+      "hex": "498b4140"
+    },
+    {
+      "id": "getAfterStart",
+      "owner": "after",
+      "rva": 162075420,
+      "hex": "498b4148"
+    },
+    {
+      "id": "targetViewCopy",
+      "owner": "targetView",
+      "rva": 88285408,
+      "hex": "48895424104883ec28488bd148c744243800000000488d4c2438e811000000488b4424384883c428c3"
+    }
+  ],
+  "edges": [
+    {
+      "source": "directDataNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "directEntityNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "idDataNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "targetDataNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "callbackDataNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "abilityNull",
+      "target": "exception",
+      "opcode": "74"
+    },
+    {
+      "source": "castFalse",
+      "target": "tryReturn",
+      "opcode": "0f84"
+    },
+    {
+      "source": "commitDataNull",
+      "target": "tryReturn",
+      "opcode": "0f84"
+    },
+    {
+      "source": "commitReturn",
+      "target": "tryReturn",
+      "opcode": "e9"
+    },
+    {
+      "source": "lookupAbilityNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "lookupFalse",
+      "target": "lookupFailure",
+      "opcode": "0f84"
+    },
+    {
+      "source": "lookupFailureReturn",
+      "target": "tryReturn",
+      "opcode": "e9"
+    },
+    {
+      "source": "tickNoPending",
+      "target": "tickSuccessCheck",
+      "opcode": "74"
+    },
+    {
+      "source": "tickAlreadyCasting",
+      "target": "tickSuccessCheck",
+      "opcode": "75"
+    },
+    {
+      "source": "noSwitch",
+      "target": "directStart",
+      "opcode": "0f84"
+    },
+    {
+      "source": "switchEntityNull",
+      "target": "exception",
+      "opcode": "0f84"
+    },
+    {
+      "source": "entityModeDirect",
+      "target": "directStart",
+      "opcode": "0f85"
+    },
+    {
+      "source": "airDirect",
+      "target": "directStart",
+      "opcode": "0f85"
+    },
+    {
+      "source": "switchSucceeded",
+      "target": "specialStart",
+      "opcode": "75"
+    },
+    {
+      "source": "switchFailedDirect",
+      "target": "directStart",
+      "opcode": "e9"
+    },
+    {
+      "source": "tryDataNull",
+      "target": "tryReturn",
+      "opcode": "74"
+    },
+    {
+      "source": "enterEntityNull",
+      "target": "enterException",
+      "opcode": "74"
+    },
+    {
+      "source": "enterAINull",
+      "target": "enterException",
+      "opcode": "74"
+    },
+    {
+      "source": "enterBrainNull",
+      "target": "enterException",
+      "opcode": "74"
+    },
+    {
+      "source": "tickEntityNull",
+      "target": "tickException",
+      "opcode": "0f84"
+    },
+    {
+      "source": "tickAINull",
+      "target": "tickException",
+      "opcode": "0f84"
+    },
+    {
+      "source": "tickBrainNull",
+      "target": "tickException",
+      "opcode": "0f84"
+    }
+  ],
+  "rules": {
+    "originalPathOnly": true,
+    "normalHelperReturnRequired": true,
+    "runtimeBehaviorSelectionProved": false,
+    "collectionEffectsProved": false,
+    "completePlayerInputAcceptanceProved": false,
+    "recordReloadedAfterTryCast": true,
+    "stableRecordIdentityRequiredForSameRecordClaim": true,
+    "behaviorEntityFieldLayoutProved": true,
+    "tryCastResultStored": true,
+    "castingSetOnlyOnTrue": true,
+    "missingPendingReturns": true,
+    "tryGetFalseStoresSuccessFalse": true,
+    "directLaneOrder": [
+      "pendingNonnull",
+      "TryGetSkill",
+      "switchToCenterBeforeCast",
+      "entityModeHelper",
+      "isInAir",
+      "SwitchCenterBySkill",
+      "rotate",
+      "pendingGetters",
+      "TryCastSkill",
+      "storeSuccess",
+      "conditionalCastingCommit"
+    ],
+    "specialLaneRequest": "PlayerController.CastSkill",
+    "distanceAndAngleReevaluatedHere": false
+  },
+  "facts": [
+    {
+      "id": "pendingAcquire",
+      "evidence": "conditional",
+      "boundary": "Selected original CharacterCastSkillBehavior callback, coherent caller entity/brain/returned record, explicit helper outcomes, normal returns. Actual mode/config/behavior selection, collection implementation and reentrant field replacement are not proved.",
+      "rules": {
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "runtimeBehaviorSelectionProved": false,
+        "collectionEffectsProved": false,
+        "completePlayerInputAcceptanceProved": false,
+        "recordReloadedAfterTryCast": true,
+        "stableRecordIdentityRequiredForSameRecordClaim": true,
+        "behaviorEntityFieldLayoutProved": true,
+        "tryCastResultStored": true,
+        "castingSetOnlyOnTrue": true,
+        "missingPendingReturns": true,
+        "tryGetFalseStoresSuccessFalse": true,
+        "directLaneOrder": [
+          "pendingNonnull",
+          "TryGetSkill",
+          "switchToCenterBeforeCast",
+          "entityModeHelper",
+          "isInAir",
+          "SwitchCenterBySkill",
+          "rotate",
+          "pendingGetters",
+          "TryCastSkill",
+          "storeSuccess",
+          "conditionalCastingCommit"
+        ],
+        "specialLaneRequest": "PlayerController.CastSkill",
+        "distanceAndAngleReevaluatedHere": false
+      }
+    },
+    {
+      "id": "pendingRetry",
+      "evidence": "conditional",
+      "boundary": "Selected original CharacterCastSkillBehavior callback, coherent caller entity/brain/returned record, explicit helper outcomes, normal returns. Actual mode/config/behavior selection, collection implementation and reentrant field replacement are not proved.",
+      "rules": {
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "runtimeBehaviorSelectionProved": false,
+        "collectionEffectsProved": false,
+        "completePlayerInputAcceptanceProved": false,
+        "recordReloadedAfterTryCast": true,
+        "stableRecordIdentityRequiredForSameRecordClaim": true,
+        "behaviorEntityFieldLayoutProved": true,
+        "tryCastResultStored": true,
+        "castingSetOnlyOnTrue": true,
+        "missingPendingReturns": true,
+        "tryGetFalseStoresSuccessFalse": true,
+        "directLaneOrder": [
+          "pendingNonnull",
+          "TryGetSkill",
+          "switchToCenterBeforeCast",
+          "entityModeHelper",
+          "isInAir",
+          "SwitchCenterBySkill",
+          "rotate",
+          "pendingGetters",
+          "TryCastSkill",
+          "storeSuccess",
+          "conditionalCastingCommit"
+        ],
+        "specialLaneRequest": "PlayerController.CastSkill",
+        "distanceAndAngleReevaluatedHere": false
+      }
+    },
+    {
+      "id": "pendingCastAttempt",
+      "evidence": "conditional",
+      "boundary": "Selected original CharacterCastSkillBehavior callback, coherent caller entity/brain/returned record, explicit helper outcomes, normal returns. Actual mode/config/behavior selection, collection implementation and reentrant field replacement are not proved.",
+      "rules": {
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "runtimeBehaviorSelectionProved": false,
+        "collectionEffectsProved": false,
+        "completePlayerInputAcceptanceProved": false,
+        "recordReloadedAfterTryCast": true,
+        "stableRecordIdentityRequiredForSameRecordClaim": true,
+        "behaviorEntityFieldLayoutProved": true,
+        "tryCastResultStored": true,
+        "castingSetOnlyOnTrue": true,
+        "missingPendingReturns": true,
+        "tryGetFalseStoresSuccessFalse": true,
+        "directLaneOrder": [
+          "pendingNonnull",
+          "TryGetSkill",
+          "switchToCenterBeforeCast",
+          "entityModeHelper",
+          "isInAir",
+          "SwitchCenterBySkill",
+          "rotate",
+          "pendingGetters",
+          "TryCastSkill",
+          "storeSuccess",
+          "conditionalCastingCommit"
+        ],
+        "specialLaneRequest": "PlayerController.CastSkill",
+        "distanceAndAngleReevaluatedHere": false
+      }
+    },
+    {
+      "id": "pendingCastCommit",
+      "evidence": "conditional",
+      "boundary": "Selected original CharacterCastSkillBehavior callback, coherent caller entity/brain/returned record, explicit helper outcomes, normal returns. Actual mode/config/behavior selection, collection implementation and reentrant field replacement are not proved.",
+      "rules": {
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "runtimeBehaviorSelectionProved": false,
+        "collectionEffectsProved": false,
+        "completePlayerInputAcceptanceProved": false,
+        "recordReloadedAfterTryCast": true,
+        "stableRecordIdentityRequiredForSameRecordClaim": true,
+        "behaviorEntityFieldLayoutProved": true,
+        "tryCastResultStored": true,
+        "castingSetOnlyOnTrue": true,
+        "missingPendingReturns": true,
+        "tryGetFalseStoresSuccessFalse": true,
+        "directLaneOrder": [
+          "pendingNonnull",
+          "TryGetSkill",
+          "switchToCenterBeforeCast",
+          "entityModeHelper",
+          "isInAir",
+          "SwitchCenterBySkill",
+          "rotate",
+          "pendingGetters",
+          "TryCastSkill",
+          "storeSuccess",
+          "conditionalCastingCommit"
+        ],
+        "specialLaneRequest": "PlayerController.CastSkill",
+        "distanceAndAngleReevaluatedHere": false
+      }
+    }
+  ],
+  "unresolved": [
+    "SwitchAIMode(modeType=5) -> selected CharacterAIMode configuration -> actual graph/behavior dispatch is not proved.",
+    "CharacterCastSkillBehavior inherited entity carrier at +56 is a selected conditional pointer source; abstract/generic inherited field runtime-offset table was not available.",
+    "Brain GetComboSkillData -> pending reverse list helper effects/owner ObjectPtr resolution require explicit collection/owner outcomes.",
+    "Anonymous entityModeHelper is an explicit bool result with argument2, not inferred from its call name.",
+    "Special SwitchCenter success calls PlayerController.CastSkill; this contract does not inline that separate command pipeline.",
+    "A post-call reload of m_skillData means casting writes current record; same-record provenance requires explicit stability through callbacks."
+  ],
+  "reviewedPrograms": {
+    "brainForwarding": "498b5110 4533c0 4883c428 @brainForward",
+    "enterAcquire": "488b4338 c7437000000000 c6437400 4885c0 @enterEntityNull 488b8850010000 4885c9 @enterAINull 488b8908020000 4885c9 @enterBrainNull",
+    "tickAcquire": "488b4738 4885c0 @tickEntityNull 488b8850010000 4885c9 @tickAINull 488b8908020000 4885c9 @tickBrainNull 33d2 @tickGet",
+    "enterStore": "33d2 @brainGet 488d4b68 48894368 @enterBarrier 33d2 488bcb 4883c420 5b @enterTry",
+    "tickStore": "488d4f68 c6477400 c7477000000000 48894768 @tickBarrier",
+    "directArguments": "488b4e68 4885c9 @directDataNull 33d2 @onEnd 4c8be0 488b4e38 4885c9 @directEntityNull 4c8bb128010000 488b4e68 4885c9 @idDataNull 33d2 @skillId 4c8bf8 488b4e68 4885c9 @targetDataNull 33d2 @targetHandle 488bc8 @targetView 488bd8 488b4e68 4885c9 @callbackDataNull 4533ed 33d2 @afterStart 0f57c0 33c9 0f118424a0000000 48898c24b0000000 4d85f6 @abilityNull 0f29842480000000 4489ac2490000000 48897c2448 40887c2440 488d8c24a0000000 48894c2438 4889442430 48897c2428 488d842480000000 4889442420 4d8bcc 4c8bc3 498bd7 498bce @cast",
+    "castCommit": "884674 84c0 @castFalse 48397e68 @commitDataNull 488b4668 c6808800000001 @commitReturn",
+    "tryLookup": "488b9828010000 33d2 488b4e68 @lookupSkillId 4885db @lookupAbilityNull 4533c9 4c8d842438010000 488bd0 488bcb @tryGet 84c0 @lookupFalse",
+    "tickRetry": "f30f587770 33d2 488bcf f30f117770 @tickTry",
+    "tickPendingGuard": "4885c0 @tickNoPending 80b88800000000 @tickAlreadyCasting",
+    "directLane": "4038b9a5000000 @noSwitch 488b4e38 4885c9 @switchEntityNull ba02000000 @entityModeHelper 84c0 @entityModeDirect",
+    "afterAirCheck": "84c0 @airDirect",
+    "afterSwitch": "84c0 @switchSucceeded 488d4c2468 @releaseTemp @switchFailedDirect",
+    "tryNoData": "48397e68 @tryDataNull",
+    "lookupFailure": "40887e74 @lookupFailureReturn",
+    "getSkillId": "498b4130",
+    "getTargetHandle": "498b4138",
+    "getOnEnd": "498b4140",
+    "getAfterStart": "498b4148",
+    "targetViewCopy": "4889542410 4883ec28 488bd1 48c744243800000000 488d4c2438 @copyReference 488b442438 4883c428 c3"
+  },
+  "operandBindings": {
+    "operand1": {
+      "kind": "field",
+      "field": "brainEntity",
+      "value": 16
+    },
+    "operand2": {
+      "kind": "opaqueLiteral",
+      "role": "brainForwarding",
+      "value": 40
+    },
+    "operand3": {
+      "kind": "field",
+      "field": "behaviorEntity",
+      "value": 56
+    },
+    "operand4": {
+      "kind": "field",
+      "field": "timer",
+      "value": 112
+    },
+    "operand5": {
+      "kind": "zero",
+      "value": 0
+    },
+    "operand6": {
+      "kind": "field",
+      "field": "success",
+      "value": 116
+    },
+    "operand7": {
+      "kind": "field",
+      "field": "entityAI",
+      "value": 336
+    },
+    "operand8": {
+      "kind": "field",
+      "field": "aiBrain",
+      "value": 520
+    },
+    "operand9": {
+      "kind": "field",
+      "field": "record",
+      "value": 104
+    },
+    "operand10": {
+      "kind": "opaqueLiteral",
+      "role": "enterStore",
+      "value": 32
+    },
+    "operand11": {
+      "kind": "contextOffset",
+      "role": "directArguments",
+      "value": 296
+    },
+    "operand12": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 160
+    },
+    "operand13": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 176
+    },
+    "operand14": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 128
+    },
+    "operand15": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 144
+    },
+    "operand16": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 72
+    },
+    "operand17": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 64
+    },
+    "operand18": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 56
+    },
+    "operand19": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 48
+    },
+    "operand20": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 40
+    },
+    "operand21": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 32
+    },
+    "operand22": {
+      "kind": "field",
+      "field": "casting",
+      "value": 136
+    },
+    "operand23": {
+      "kind": "one",
+      "value": 1
+    },
+    "operand24": {
+      "kind": "contextOffset",
+      "role": "tryLookup",
+      "value": 296
+    },
+    "operand25": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 312
+    },
+    "operand26": {
+      "kind": "field",
+      "field": "switchBefore",
+      "value": 165
+    },
+    "operand27": {
+      "kind": "opaqueLiteral",
+      "role": "directLane",
+      "value": 2
+    },
+    "operand28": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 104
+    },
+    "operand29": {
+      "kind": "inputField",
+      "base": "input",
+      "field": "inputId",
+      "value": 48
+    },
+    "operand30": {
+      "kind": "inputField",
+      "base": "input",
+      "field": "inputTarget",
+      "value": 56
+    },
+    "operand31": {
+      "kind": "inputField",
+      "base": "input",
+      "field": "inputEnd",
+      "value": 64
+    },
+    "operand32": {
+      "kind": "inputField",
+      "base": "input",
+      "field": "inputAfter",
+      "value": 72
+    },
+    "operand33": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 16
+    },
+    "operand34": {
+      "kind": "opaqueLiteral",
+      "role": "targetViewCopy",
+      "value": 40
+    }
+  },
+  "behaviorEntityAncestors": [
+    "Beyond.Gameplay.AI.CharacterAIBehavior`1<Beyond.Gameplay.AI.CharacterCastSkillBehavior+CharacterCastSkillBehaviorData>",
+    "Beyond.Gameplay.AI.CharacterAIBehavior",
+    "Beyond.Gameplay.AI.AIBehavior"
+  ]
+}

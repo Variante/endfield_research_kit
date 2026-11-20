@@ -1,0 +1,691 @@
+{
+  "schema": "endfield.skill-blackboard-consumer-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "fields": [
+    {
+      "id": "stateBB",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_blackboard",
+      "valueType": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "ordinaryKind": 18,
+      "offset": 56
+    },
+    {
+      "id": "stateEntity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 72
+    },
+    {
+      "id": "keep",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+      "name": "keepSkillOnEnter",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 80
+    },
+    {
+      "id": "bbInput",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+      "name": "skillInputData",
+      "valueType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "ordinaryKind": 17,
+      "offset": 16
+    },
+    {
+      "id": "inputEnd",
+      "type": "Beyond.Gameplay.Core.SkillCastInputData",
+      "name": "skillEndCallback",
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "offset": 32
+    },
+    {
+      "id": "entityAbility",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<abilityCom>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem",
+      "ordinaryKind": 18,
+      "offset": 296
+    },
+    {
+      "id": "combo",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_comboController",
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "ordinaryKind": 18,
+      "offset": 1120
+    },
+    {
+      "id": "viewId",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillId",
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "offset": 16
+    },
+    {
+      "id": "viewTarget",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "targetHandleView",
+      "valueType": "Beyond.Gameplay.Core.TargetHandleView",
+      "ordinaryKind": 17,
+      "offset": 24
+    },
+    {
+      "id": "viewEnd",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillEndCallback",
+      "valueType": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>",
+      "ordinaryKind": 21,
+      "offset": 32
+    },
+    {
+      "id": "viewAfter",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "afterCastStartCallback",
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "offset": 40
+    },
+    {
+      "id": "viewExclusive",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "onExclusiveTimeCallback",
+      "valueType": "System.Action`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "offset": 48
+    },
+    {
+      "id": "viewInfo",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillCastInfo",
+      "valueType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+      "ordinaryKind": 17,
+      "offset": 56
+    },
+    {
+      "id": "viewSkip",
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skipApplyCost",
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "offset": 80
+    }
+  ],
+  "methods": [
+    {
+      "id": "enter",
+      "identity": [
+        49642,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+        "OnEnter",
+        89312128
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "fromStateId",
+          "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState"
+        }
+      ]
+    },
+    {
+      "id": "cast",
+      "identity": [
+        49645,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+        "_DoCastSkill",
+        89317328
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "view",
+      "identity": [
+        58907,
+        "Beyond.Gameplay.Core.SkillCastInputView",
+        ".ctor",
+        89317168
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "inputData",
+          "type": "Beyond.Gameplay.Core.SkillCastInputData"
+        }
+      ]
+    },
+    {
+      "id": "try",
+      "identity": [
+        59174,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkill",
+        97661296
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "onCastEnd",
+          "type": "System.Action`2<Beyond.Gameplay.Core.Skill+FinishType,int>"
+        },
+        {
+          "name": "options",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.Skill+CastSkillOptions>"
+        },
+        {
+          "name": "onExclusiveTimeCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "afterCastStartCallback",
+          "type": "System.Action`1<Beyond.Gameplay.Core.Skill>"
+        },
+        {
+          "name": "skillCastInfo",
+          "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"
+        },
+        {
+          "name": "skipApplyCost",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "id": "clearRequest",
+      "identity": [
+        59364,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearSkillRequest",
+        98085312
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "comboClear",
+      "identity": [
+        59610,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "ClearSkillRequest",
+        98085376
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "dispose",
+      "identity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "stop",
+      "identity": [
+        49610,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+        "Stop",
+        98088112
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "clear",
+      "identity": [
+        49612,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+        "Clear",
+        98088192
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "clearAll",
+      "identity": [
+        49611,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+        "ClearAll",
+        162030440
+      ],
+      "returnType": "void",
+      "parameters": []
+    },
+    {
+      "id": "perfect",
+      "identity": [
+        49646,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterSkillState",
+        "_ProcessPerfectDodge",
+        89313376
+      ],
+      "returnType": "void",
+      "parameters": []
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "enter",
+      "startRva": 89312128,
+      "endRva": 89312349,
+      "sha256": "bd4a3537206ac46f7dbf51fe4727130cd885802fdec080ebaa87ff5d5caa1d1a",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "enter",
+      "startRva": 122624762,
+      "endRva": 122624811,
+      "sha256": "5ce6372777cae290d9c31d6a08cac90031862482ce9d67cb0271faadea69af0b",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89317328,
+      "endRva": 89317393,
+      "sha256": "0c71abb58870919f4d3b84fa11ba04b3f2463e5f05c49d2eac812d6a22281406",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89317393,
+      "endRva": 89317942,
+      "sha256": "22e14b70c776f6460d4da38ed24e82156d96ad2e883c207c798371876a81c052",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89317942,
+      "endRva": 89317963,
+      "sha256": "48278affea3a989399915a1a77c37dd82d1ef80562cd52771b554c187a91c2be",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89317963,
+      "endRva": 89317969,
+      "sha256": "df8d78206fc59f2fb389a46965c8f7df234e0a311b8b729e308b41f161df86a7",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89317969,
+      "endRva": 89318041,
+      "sha256": "069513961e7a6cf0aa7984dfe926f07361f58b9d8b0893834bb4bcd3f7b4d09f",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 89318041,
+      "endRva": 89318051,
+      "sha256": "03f2f18c76271050c22195ecd32b6e761a44b8d09e683c7f30dfcf913be7ac3a",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 122626496,
+      "endRva": 122626533,
+      "sha256": "748e5fbe5b4ff5e2c1cc58e3e263623138a64787e3a767adf6e031909a6fef5a",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "cast",
+      "startRva": 122626533,
+      "endRva": 122626673,
+      "sha256": "d8874ce52a9a52f4d6e7d7691e7258f67b075cf39513017a94fb459957f673be",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "view",
+      "startRva": 89317168,
+      "endRva": 89317325,
+      "sha256": "ba0cfdd0f0d35064f3fb77291373b30816d5749e1db93a3b0510f3869bc3428d",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "try",
+      "startRva": 97661296,
+      "endRva": 97661466,
+      "sha256": "91b3a5b8ec6a07b048af440ad8e87502e48e9abb63aed741ad4d1ef500f1337b",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "try",
+      "startRva": 97661466,
+      "endRva": 97667981,
+      "sha256": "6edac93db9505af0e4b1eff57ef2d8e0c16f40794b159f71762b6f54bc34b9c9",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "try",
+      "startRva": 97667981,
+      "endRva": 97668156,
+      "sha256": "32cdce0df19a6d6223db2abb2ee96d9dae17f9328559c06af6b6ee03d23ec22f",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "clearRequest",
+      "startRva": 98085312,
+      "endRva": 98085370,
+      "sha256": "7e7a212291cc9c67968294864374b91b7a7a5aca2b36109714b481c0e0641688",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "clearRequest",
+      "startRva": 123838262,
+      "endRva": 123838299,
+      "sha256": "bba97bbb677bdc17e4672441333aa829f6e1b99ba30670bc84cffbd404857456",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "comboClear",
+      "startRva": 98085376,
+      "endRva": 98085467,
+      "sha256": "e619eec1ac83611038a54826895109c92ffc7f1eae71568be2596015356c62ff",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "comboClear",
+      "startRva": 98085467,
+      "endRva": 98085614,
+      "sha256": "b999bd03a8c7ddd426b79352c12487f102a459317610ec0ef54494918d798f09",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "comboClear",
+      "startRva": 98085614,
+      "endRva": 98085623,
+      "sha256": "84c444f1522d3e651ebe47af1faa758499de1cfbc8d45a94679802abe30d092c",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "comboClear",
+      "startRva": 123838300,
+      "endRva": 123838337,
+      "sha256": "b886f8665c6cacc5f4f6384279e65c7dc8593aadd5f8ea1f205b31725e22d080",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "comboClear",
+      "startRva": 123838337,
+      "endRva": 123838376,
+      "sha256": "c947c4623919940849e457afe63a06bcacd9e3cbda3be297bc9e0deb0c79bf46",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "dispose",
+      "startRva": 98088288,
+      "endRva": 98088363,
+      "sha256": "2b27291feee4d4b99d36d4aa6e82af8a8228e3c23cc78feae8f538503c5cfce9",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "dispose",
+      "startRva": 123839008,
+      "endRva": 123839045,
+      "sha256": "acb421647679d68565e7bac9f222ce7b42753b5526367a0d3fb8c2fe0763441d",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "stop",
+      "startRva": 98088112,
+      "endRva": 98088187,
+      "sha256": "d1b00575d74d04ec9720fbcf5aa5994300dce0d4e07828f7ba2ab5b3a6769b7b",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "stop",
+      "startRva": 123838932,
+      "endRva": 123838969,
+      "sha256": "888ce497afb7822aa5611a9728a0bff7607186acb866390b733b4103a4a4e47f",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "clear",
+      "startRva": 98088192,
+      "endRva": 98088280,
+      "sha256": "352817389eea978edff5b57d25dddc653ae2844cb059b5edb564845dea140426",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "clear",
+      "startRva": 123838970,
+      "endRva": 123839007,
+      "sha256": "d0a5b75e430cbc53ac6be111d1de295e9ad5499e4923c6909ce6b3653bfc1fe1",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "clearAll",
+      "startRva": 162030440,
+      "endRva": 162030488,
+      "sha256": "984a80559aa8efd90391f43651134840c46069f1235c8e9d2657f5ee805e565b",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "perfect",
+      "startRva": 89313376,
+      "endRva": 89313495,
+      "sha256": "b05beada79c41403cd4fa416265c2ff184e46a87fdab536dc1a0b2bafaffa8e5",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    },
+    {
+      "owner": "perfect",
+      "startRva": 122625284,
+      "endRva": 122625647,
+      "sha256": "83aa47920e2c88bda1a4ee4b6533ff2022635ec81a41d04f16d24c90fd015d66",
+      "boundary": "complete selected family interval or bounded all-path leaf grammar"
+    }
+  ],
+  "spans": [
+    {
+      "id": "keepGuard",
+      "owner": "enter",
+      "rva": 89312201,
+      "hex": "807b50000f854f4ffc01"
+    },
+    {
+      "id": "keepExit",
+      "owner": "enter",
+      "rva": 122624802,
+      "hex": "c6435000e9f1b003fe"
+    },
+    {
+      "id": "enterInvoke",
+      "owner": "enter",
+      "rva": 89312264,
+      "hex": "33d2488bcbe8be13000033d2488bcbe844040000"
+    },
+    {
+      "id": "copyInput",
+      "owner": "cast",
+      "rva": 89317477,
+      "hex": "488b43380f57c00f1144247066c744247001010f287424704885c00f84c50100000f1040104533c0488d55e00f104820488d4d800f2945e00f1040300f294df00f1048400f2945000f1040500f294d10f20f1048600f294520f20f114d30e868feffff"
+    },
+    {
+      "id": "tryReceiver",
+      "owner": "cast",
+      "rva": 89317722,
+      "hex": "488b43484885c00f84e40000004c8b902801000033ff66897c245140887c2453c6442450010f117424544d85d20f84be000000"
+    },
+    {
+      "id": "tryGuard",
+      "owner": "cast",
+      "rva": 89317773,
+      "hex": "488b05bc101f0c488b48484885c90f858b40fc01"
+    },
+    {
+      "id": "tryArgs",
+      "owner": "cast",
+      "rva": 89317793,
+      "hex": "0fb645c0498bca0f104424504c8b4d904c8b4588488b558048897c244888442440488d45a84889442438488b45984889442430488b45a04889442428488d442450660f73de0c48894424200f29442450660f7e742460e8744f7f00"
+    },
+    {
+      "id": "postCallback",
+      "owner": "cast",
+      "rva": 89317884,
+      "hex": "488b4b384885c97446488979204883c120e84e61bdfa"
+    },
+    {
+      "id": "postClear",
+      "owner": "cast",
+      "rva": 89317906,
+      "hex": "4c8b4b484d85c97430498b89280100004885c9742433d2e892c78500"
+    },
+    {
+      "id": "clearForward",
+      "owner": "clearRequest",
+      "rva": 98085336,
+      "hex": "488b89600400004885c9741033d24883c428e911000000"
+    },
+    {
+      "id": "clearPrefix",
+      "owner": "clearRequest",
+      "rva": 98085312,
+      "hex": "4883ec28488b058548990b4c8b48484d85c90f855ef58801"
+    },
+    {
+      "id": "stopBody",
+      "owner": "stop",
+      "rva": 98088141,
+      "hex": "488d4b1033d2e8880000000f57c033c00f1143100f1143200f1143300f1143400f11435048894360"
+    },
+    {
+      "id": "clearBody",
+      "owner": "clear",
+      "rva": 98088221,
+      "hex": "488d4b1033d2e8380000000f57c033c00f1143100f1143200f1143300f1143400f11435048894360"
+    },
+    {
+      "id": "stopPrefix",
+      "owner": "stop",
+      "rva": 98088112,
+      "hex": "40534883ec20488b05933d990b488bd9488b48384885c90f8507ed8801"
+    },
+    {
+      "id": "clearPrefixBB",
+      "owner": "clear",
+      "rva": 98088192,
+      "hex": "40534883ec20488b05433d990b488bd9488b48384885c90f85ddec8801"
+    },
+    {
+      "id": "clearAllLeaf",
+      "owner": "clearAll",
+      "rva": 162030440,
+      "hex": "488b05e18ec9074c8bc9488b48384885c9741c488b81f0c000004885c07410488b89f8c000004c8bc2498bd148ffe0c3"
+    }
+  ],
+  "operands": {
+    "enterReturnRva": 89312284,
+    "castNullRva": 89317963,
+    "defaultOptionsStack": 112,
+    "fallbackOptionsWord": 257,
+    "inputTempRbp": -32,
+    "viewTempRbp": -128,
+    "nullablePadWordStack": 81,
+    "nullablePadByteStack": 83,
+    "nullableOptionsStack": 80,
+    "nullableValueStack": 84,
+    "tryDispatchCell": 292680272,
+    "dispatchOffset": 72,
+    "tryReplacementRva": 122626604,
+    "viewSkipRbp": -64,
+    "viewEndRbp": -112,
+    "viewTargetRbp": -120,
+    "viewIdRbp": -128,
+    "methodInfoStack": 72,
+    "skipStack": 64,
+    "viewInfoRbp": -88,
+    "infoStack": 56,
+    "viewExclusiveRbp": -96,
+    "exclusiveStack": 40,
+    "viewAfterRbp": -104,
+    "afterStack": 48,
+    "optionsTailShift": 12,
+    "optionsStack": 32,
+    "nullableTailStack": 96,
+    "barrierRva": 1065824,
+    "clearFrame": 40,
+    "clearTypeInfoCell": 292680272,
+    "clearReplacementRva": 123838262,
+    "clearNullRva": 98085364,
+    "bbFrame": 32,
+    "bbDispatchOffset": 56,
+    "stopTypeInfoCell": 292680272,
+    "clearTypeInfoCellBB": 292680272,
+    "stopReplacementRva": 123838932,
+    "clearReplacementRvaBB": 123838970,
+    "clearAllTypeInfoCell": 292680272,
+    "clearAllRetRva": 162030487,
+    "clearAllFunctionOffset": 49392,
+    "clearAllContextOffset": 49400,
+    "nullHelperRva": 911680,
+    "clearTypeInfoCellForBB": 292680272,
+    "clearReplacementRvaForBB": 123838970,
+    "bbChunk0": 16,
+    "bbChunk1": 32,
+    "bbChunk2": 48,
+    "bbChunk3": 64,
+    "bbChunk4": 80,
+    "bbChunk5": 96,
+    "inputChunk1": -16,
+    "inputChunk2": 0,
+    "inputChunk3": 16,
+    "inputChunk4": 32,
+    "inputChunk5": 48
+  },
+  "boxedHeaderBytes": 16,
+  "clearAllLeafBytes": 48,
+  "rules": {
+    "originalPathOnly": true,
+    "normalWin64HelperReturnRequired": true,
+    "blackboardInputPayloadBytes": 88,
+    "typedNamedBlackboardFieldProved": true,
+    "sameWriterConsumerLiveBlackboardProved": false,
+    "runtimeFSMSelectionProved": false,
+    "blackboardToPendingJoinProved": false,
+    "directTryCastRouteProved": true,
+    "viewConstructorResultExplicitRequired": true,
+    "selectedOptionsCarrierExplicitRequired": true,
+    "tryCastBoolUsedForCleanupBranch": false,
+    "cleanupReloadsBlackboard": true,
+    "cleanupClearsSkillEndCallbackOnly": true,
+    "cleanupThenReloadsEntityThenAbility": true,
+    "nullCleanupCarrierRequiresExceptionalExit": true,
+    "clearRequestTailForwardsToComboClear": true,
+    "stopAndClearDisposeBeforeDirectZero88": true,
+    "blackboardClearAllOriginalNoOp": true,
+    "keepTrueClearsFlagAndSkipsCast": true,
+    "baseOnEnterEffectsExcludedFromKeepPrimitive": true,
+    "upstreamSkillInstanceContinuityProved": false,
+    "currentSessionBlackboardIdentityProved": false,
+    "stateReceiverContinuityPremiseRequired": true
+  },
+  "boundaries": [
+    "Static direct CenterSkillState to AbilitySystem.TryCastSkill consumer; no BB-to-pending edge is asserted.",
+    "Typed CenterBlackboard.skillInputData definition matches the writer declaration, but live writer/reader BB object identity and FSM scheduling remain unproved.",
+    "Constructor result and selected options carrier are explicit conditions; this audit does not infer helper conversion values or stable raw padding.",
+    "TryCastSkill normal return value is not consulted for callback/request cleanup; postBB and postEntity are independent fresh field reads.",
+    "Stop/Clear whole input-zeroing is a separate original path from post-cast skillEndCallback-only clearing. ClearAll original body is a no-op despite its name."
+  ]
+}

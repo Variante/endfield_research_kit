@@ -1,0 +1,108 @@
+{
+  "schema": "endfield.skill-input-bindings-source-contract.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "Conditional stored defaults, exact exported UI references and reviewed Lua source text. No current rebinding profile, active panel/input scope, physical timing or command acceptance inferred.",
+  "namedObjects": [
+    "InputSettingConfig",
+    "BattleDefaultInputSetting",
+    "FactoryDefaultInputSetting",
+    "SnapshotDefaultInputSetting",
+    "InputRebindConfig"
+  ],
+  "uiReference": {
+    "sourceFile": "CAB-b468bd687358f8ea91d37edf16beba53",
+    "pathId": 4472112127373424356
+  },
+  "uiRefFields": [
+    "jumpBtn",
+    "sprintBtn",
+    "attackButton"
+  ],
+  "luaClaims": [
+    {
+      "id": "attackBinding",
+      "path": "UI/Widgets/AttackButton.lua",
+      "start": "AttackButton.BindNormalAttackInputEvent =",
+      "end": "AttackButton.ToggleNormalAttackInputEvent =",
+      "tokens": [
+        "battle_attack_start",
+        "not InputManager.cursorVisible",
+        "self:StartPressAttackBtn()",
+        "battle_attack_end",
+        "self:ReleaseNormalAttackBtn()"
+      ]
+    },
+    {
+      "id": "attackStart",
+      "path": "UI/Widgets/AttackButton.lua",
+      "start": "AttackButton.StartPressAttackBtn =",
+      "end": "AttackButton.ReleaseNormalAttackBtn =",
+      "tokens": [
+        "Utils.isInThrowMode()",
+        "Utils.isInCustomAbility()",
+        "canPressAttackButton",
+        "self.m_castingAttack = true",
+        "GameInstance.playerController:StartCastNormalAttack()"
+      ]
+    },
+    {
+      "id": "attackRelease",
+      "path": "UI/Widgets/AttackButton.lua",
+      "start": "AttackButton.ReleaseNormalAttackBtn =",
+      "end": "AttackButton.ToggleControllerIndicator =",
+      "tokens": [
+        "if self.m_castingAttack then",
+        "GameInstance.playerController:EndCastNormalAttack()",
+        "self.m_castingAttack = false"
+      ]
+    },
+    {
+      "id": "mainHudBindings",
+      "path": "UI/Panels/MainHud/MainHudCtrl.lua",
+      "start": "MainHudCtrl._InitMainHudBinding =",
+      "end": "MainHudCtrl._InitDebugAction =",
+      "tokens": [
+        "self.view.sprintBtn.onPressStart:AddListener",
+        "self:_OnPressSprint()",
+        "self.view.sprintBtn.onPressEnd:AddListener",
+        "self:_OnReleaseSprint()",
+        "self.view.jumpBtn.onPressStart:AddListener",
+        "self:_OnPressJump()"
+      ]
+    },
+    {
+      "id": "jumpCallback",
+      "path": "UI/Panels/MainHud/MainHudCtrl.lua",
+      "start": "MainHudCtrl._OnPressJump =",
+      "end": "MainHudCtrl.m_startPressSprintTime =",
+      "tokens": [
+        "self.m_onPressJumpOverride",
+        "GameInstance.playerController:Jump()"
+      ]
+    },
+    {
+      "id": "sprintCallbacks",
+      "path": "UI/Panels/MainHud/MainHudCtrl.lua",
+      "start": "MainHudCtrl._OnPressSprint =",
+      "end": "MainHudCtrl._OnDragSprint =",
+      "tokens": [
+        "KeyboardKeyCode.Mouse1",
+        "ForbidType.ForbidMove",
+        "GameWorld.battle.dashEnable",
+        "GameInstance.playerController:OnSprintPressed()",
+        "GameInstance.playerController:OnSprintReleased()"
+      ]
+    },
+    {
+      "id": "rebind",
+      "path": "UI/Panels/GameSetting/GameSettingCtrl.lua",
+      "start": "GameSettingCtrl._KeyChangeActions =",
+      "end": "GameSettingCtrl._KeyClearPendingActions =",
+      "tokens": [
+        "gameSettingSystem:SetKeySetting",
+        "gameSettingSystem:ResetAllKeySettings",
+        "gameSettingSystem:SaveSetting"
+      ]
+    }
+  ]
+}

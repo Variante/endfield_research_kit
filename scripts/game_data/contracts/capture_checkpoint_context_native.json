@@ -1,0 +1,239 @@
+{
+  "schema": "endfield.capture-checkpoint-context-native-contract.v2",
+  "status": "reviewed",
+  "inputs": {
+    "stagedDll": {
+      "bytes": 9225216,
+      "sha256": "666c5d5443ffe4356dc589d2595e0ec77d59f81d0803f3bce85773840eaa478b"
+    },
+    "sessionObject": {
+      "bytes": 16338493,
+      "sha256": "77bfeb06bb83d8536edaa975e0ac38948e492ad5c1dd6080981f2c3cea97527f"
+    }
+  },
+  "functions": {
+    "context": {
+      "symbol": "efc_mission_context",
+      "rva": 3628464,
+      "bytes": 2437,
+      "sha256": "6f8da40bcff23d1a7aafd46a3987ac5134616a62e71fe073403614df8d8edfd2"
+    },
+    "entry": {
+      "symbol": "efc_mission_entry",
+      "rva": 3630912,
+      "bytes": 687,
+      "sha256": "c0e342aa6d5d3f436dc2e0692df9331891f9570824bc55e5a8713c3ce32c86c4"
+    },
+    "pairedRecord": {
+      "symbol": "?paired_record@?A0x8b77ace6@mission_trace@endfield_capture@@YAXAEBUPairFrame@123@I_K@Z",
+      "rva": 3593648,
+      "bytes": 1439,
+      "sha256": "dd3157d6b8abe0843e5415e16f83302ebae8d06d3977f6ce01666222131fed74"
+    },
+    "pairedBegin": {
+      "symbol": "?paired_begin@?A0x8b77ace6@mission_trace@endfield_capture@@YAXIPEB_K_K1PEAUPairFrame@123@@Z",
+      "rva": 3592800,
+      "bytes": 847,
+      "sha256": "6febad34b212b98014263958e973c24fa1b30e351153e8f7a850678ad5235d05"
+    },
+    "start": {
+      "symbol": "?start@Session@mission_trace@endfield_capture@@QEAA?AUResult@23@AEBUActivation@23@_KAEBVpath@filesystem@std@@@Z",
+      "rva": 3609296,
+      "bytes": 4462,
+      "sha256": "97df15bf958ef89cad77e07a086372f636cc692138c22f58801ebc55fa57d481"
+    },
+    "stop": {
+      "symbol": "?stop@Session@mission_trace@endfield_capture@@QEAA_NXZ",
+      "rva": 3618960,
+      "bytes": 5935,
+      "sha256": "946f04bd682bf799d1c4403999fbf80ee3ec9fd5bc2250b08becb6ad7c8edbfe"
+    },
+    "pairCaller": {
+      "symbol": "?invoke@?$PairedCall@$00XU?$integer_sequence@_K$0A@@std@@@?A0x8b77ace6@mission_trace@endfield_capture@@SAX_K@Z",
+      "rva": 896736,
+      "bytes": 490,
+      "sha256": "8b726d9364473a6189351d1b7fd0e373eff1020668c6ecb8ffc020a46bf38d56"
+    }
+  },
+  "tlsSymbol": "?g_nesting@?A0x8b77ace6@mission_trace@endfield_capture@@3UNesting@123@A",
+  "storageSymbols": {
+    "recorder": "?g_recorder@?A0x8b77ace6@mission_trace@endfield_capture@@3U?$atomic@PEAVRecorder@mission_trace@endfield_capture@@@std@@A",
+    "sequence": "?g_sequence@?A0x8b77ace6@mission_trace@endfield_capture@@3U?$atomic@_K@std@@A",
+    "attempted": "?g_attempted@?A0x8b77ace6@mission_trace@endfield_capture@@3U?$atomic@_N@std@@A",
+    "retained": "?g_retained@?A0x8b77ace6@mission_trace@endfield_capture@@3_NA"
+  },
+  "spans": {
+    "earlyCounter": {
+      "owner": "context",
+      "rva": 3628799,
+      "hex": "4d85ff740f4084f6750a488b442470f048ff4018"
+    },
+    "startAttempt": {
+      "owner": "start",
+      "rva": 3609450,
+      "hex": "84c07526b8010000008605ac6a7f0084c00f84d404000044882e488d05e50a200048894608e984100000"
+    }
+  },
+  "earlyCounterOperands": {
+    "savedRecorderStackSlot": 112,
+    "counterSlotOffset": 24
+  },
+  "startGuardTargets": {
+    "adopt": 3609492,
+    "firstOrdinary": 3610709,
+    "rejectedReturn": 3613720
+  },
+  "contextCallers": {
+    "contextCaller12": {
+      "rva": 3658756,
+      "bytes": 539,
+      "sha256": "8ae9b0651055ff0169f3bf0e72f5a0ac7816cd6caa895dd573069af9bc13b50f",
+      "hookIndex": 12
+    },
+    "contextCaller13": {
+      "rva": 3659295,
+      "bytes": 539,
+      "sha256": "3f07737cc3d50a5a4721e2f38963e1c987ef13699c87b820f5e0b9ceba7f8e5a",
+      "hookIndex": 13
+    },
+    "contextCaller14": {
+      "rva": 3659834,
+      "bytes": 539,
+      "sha256": "98f5add25de0e7cae557fc2bc42bd76d13bff7ae68b5f0971c53753c32263f9a",
+      "hookIndex": 14
+    }
+  },
+  "directCalls": [
+    {
+      "owner": "contextCaller12",
+      "rva": 3659173,
+      "target": "context"
+    },
+    {
+      "owner": "contextCaller13",
+      "rva": 3659712,
+      "target": "context"
+    },
+    {
+      "owner": "contextCaller14",
+      "rva": 3660251,
+      "target": "context"
+    },
+    {
+      "owner": "pairCaller",
+      "rva": 896902,
+      "target": "pairedBegin"
+    }
+  ],
+  "sequenceIncrements": {
+    "context": {
+      "owner": "context",
+      "rva": 3629958,
+      "hex": "b80100000044896500c745bc04000000f0480fc105891a7f0048ffc0"
+    },
+    "entry": {
+      "owner": "entry",
+      "rva": 3631249,
+      "hex": "b801000000f0480fc10589157f0048ffc0"
+    },
+    "pairedRecord": {
+      "owner": "pairedRecord",
+      "rva": 3594793,
+      "hex": "bb010000008bc3f0480fc105efa37f0048ffc0"
+    }
+  },
+  "sequenceLocalOperands": {
+    "indexSlot": 0,
+    "phaseSlot": -68,
+    "phaseValue": 4
+  },
+  "rules": {
+    "completeComdatCandidateJoinsProved": true,
+    "sharedTlsRelativeOffsetConsistent": true,
+    "independentTlsNamedIdentityProved": false,
+    "conditionalEarlyCounterIncrementProved": true,
+    "everyContextEarlyExitCounted": false,
+    "recorderCodeReferencesEnumerated": true,
+    "sequenceCodeReferencesAreIncrementOnly": true,
+    "allModuleWritesEnumerated": false,
+    "ordinaryStartAttemptGuardProved": true,
+    "wholeRecorderEpochProved": false,
+    "allScopedHooksEnabledForPrefixProved": false,
+    "backendImplementationProved": false,
+    "localDeliveryProved": false,
+    "transportAdmitted": false
+  },
+  "facts": [
+    {
+      "id": "compiledContextEarlyCounter",
+      "evidence": "conditional",
+      "rules": {
+        "completeComdatCandidateJoinsProved": true,
+        "sharedTlsRelativeOffsetConsistent": true,
+        "independentTlsNamedIdentityProved": false,
+        "conditionalEarlyCounterIncrementProved": true,
+        "everyContextEarlyExitCounted": false,
+        "recorderCodeReferencesEnumerated": true,
+        "sequenceCodeReferencesAreIncrementOnly": true,
+        "allModuleWritesEnumerated": false,
+        "ordinaryStartAttemptGuardProved": true,
+        "wholeRecorderEpochProved": false,
+        "allScopedHooksEnabledForPrefixProved": false,
+        "backendImplementationProved": false,
+        "localDeliveryProved": false,
+        "transportAdmitted": false
+      },
+      "boundary": "Pinned linked-byte/COFF program witnesses only. External relocations remain conditional where unbound; no named TLS identity, full capture ABI, complete enable epoch, or local delivery is admitted. R15 Process identity and SIL read-success roles are conditions of the reviewed complete context flow; this finite increment block alone does not prove those producer roles or account for every early exit."
+    },
+    {
+      "id": "relativeTlsConsistency",
+      "evidence": "conditional",
+      "rules": {
+        "completeComdatCandidateJoinsProved": true,
+        "sharedTlsRelativeOffsetConsistent": true,
+        "independentTlsNamedIdentityProved": false,
+        "conditionalEarlyCounterIncrementProved": true,
+        "everyContextEarlyExitCounted": false,
+        "recorderCodeReferencesEnumerated": true,
+        "sequenceCodeReferencesAreIncrementOnly": true,
+        "allModuleWritesEnumerated": false,
+        "ordinaryStartAttemptGuardProved": true,
+        "wholeRecorderEpochProved": false,
+        "allScopedHooksEnabledForPrefixProved": false,
+        "backendImplementationProved": false,
+        "localDeliveryProved": false,
+        "transportAdmitted": false
+      },
+      "boundary": "Pinned linked-byte/COFF program witnesses only. External relocations remain conditional where unbound; no named TLS identity, full capture ABI, complete enable epoch, or local delivery is admitted."
+    },
+    {
+      "id": "boundedEpochCandidates",
+      "evidence": "conditional",
+      "rules": {
+        "completeComdatCandidateJoinsProved": true,
+        "sharedTlsRelativeOffsetConsistent": true,
+        "independentTlsNamedIdentityProved": false,
+        "conditionalEarlyCounterIncrementProved": true,
+        "everyContextEarlyExitCounted": false,
+        "recorderCodeReferencesEnumerated": true,
+        "sequenceCodeReferencesAreIncrementOnly": true,
+        "allModuleWritesEnumerated": false,
+        "ordinaryStartAttemptGuardProved": true,
+        "wholeRecorderEpochProved": false,
+        "allScopedHooksEnabledForPrefixProved": false,
+        "backendImplementationProved": false,
+        "localDeliveryProved": false,
+        "transportAdmitted": false
+      },
+      "boundary": "Pinned linked-byte/COFF program witnesses only. External relocations remain conditional where unbound; no named TLS identity, full capture ABI, complete enable epoch, or local delivery is admitted. Start-attempt guard is local to input AL interpreted as non-adopt; the prior g_retained-load-to-AL join is not independently proved here."
+    }
+  ],
+  "unresolved": [
+    "Named TLS layout is not independently proved by SECREL consistency.",
+    "Source-to-object build provenance is not proved by filenames or byte matching.",
+    "Whole-module computed/aliased writes and module reload/counter wrap are not excluded.",
+    "Recorder replacement/enable continuity across the retained prefix is not proved.",
+    "All source early exits are not counted: null recorder, out-of-range index, no ancestry and nonmatching caller are excluded only under separate premises.",
+    "Return-read import and Process/TLS semantic dataflow are reviewed body conditions; this audit does not independently prove the saved entry ABI."
+  ]
+}

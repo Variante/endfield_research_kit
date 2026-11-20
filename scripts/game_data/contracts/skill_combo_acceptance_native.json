@@ -1,0 +1,2719 @@
+{
+  "schema": "endfield.skill-combo-acceptance-native-contract.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": [
+    {
+      "identity": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "newSkill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "id": "AbilitySystem.CheckCanInterruptCurSkill"
+    },
+    {
+      "identity": [
+        59179,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        97669504
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipInterruptCheck",
+          "type": "bool"
+        }
+      ],
+      "id": "AbilitySystem.CanCastSkill"
+    },
+    {
+      "identity": [
+        59217,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastNormalAttackAttack",
+        149103920
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "id": "AbilitySystem.CanCastNormalAttackAttack"
+    },
+    {
+      "identity": [
+        58682,
+        "Beyond.Gameplay.Core.Skill",
+        "get_skillInterruptPriority",
+        97669152
+      ],
+      "returnType": "int",
+      "parameters": [],
+      "id": "Skill.get_skillInterruptPriority"
+    },
+    {
+      "id": "Skill.get_canInterrupt",
+      "identity": [
+        58677,
+        "Beyond.Gameplay.Core.Skill",
+        "get_canInterrupt",
+        97669280
+      ],
+      "returnType": "bool",
+      "parameterTypes": [],
+      "isStatic": false,
+      "parameters": []
+    },
+    {
+      "identity": [
+        58707,
+        "Beyond.Gameplay.Core.Skill",
+        "CanCastToTarget",
+        97661152
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        }
+      ],
+      "id": "Skill.CanCastToTarget"
+    },
+    {
+      "identity": [
+        59365,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearOffsetModifier",
+        98083920
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "clearOffsetSkillId",
+          "type": "bool"
+        }
+      ],
+      "id": "AbilitySystem.ClearOffsetModifier"
+    },
+    {
+      "identity": [
+        59608,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddAllowedNextSkillPack",
+        105193424
+      ],
+      "returnType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "parameters": [
+        {
+          "name": "skillList",
+          "type": "System.Collections.Generic.List`1<string>"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.AddAllowedNextSkillPack"
+    },
+    {
+      "identity": [
+        59609,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveAllowedNextSkillPack",
+        107180624
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "pack",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.RemoveAllowedNextSkillPack"
+    },
+    {
+      "identity": [
+        59634,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+        "Init",
+        105193616
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "skillList",
+          "type": "System.Collections.Generic.List`1<string>"
+        }
+      ],
+      "id": "AbilitySystem+ComboController+AllowedNextSkillPack.Init"
+    },
+    {
+      "identity": [
+        59606,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddMappingModifier",
+        89507408
+      ],
+      "returnType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "parameters": [
+        {
+          "name": "commandType",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType"
+        },
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "priority",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+Priority"
+        },
+        {
+          "name": "clearSkillRequestOnRemove",
+          "type": "bool"
+        },
+        {
+          "name": "overrideCacheTime",
+          "type": "System.Nullable`1<float>"
+        },
+        {
+          "name": "clearOffsetTargetSkillIdOnRemove",
+          "type": "bool"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.AddMappingModifier"
+    },
+    {
+      "identity": [
+        59607,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveMappingModifier",
+        89508192
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "cmdType",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType"
+        },
+        {
+          "name": "instId",
+          "type": "ulong"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.RemoveMappingModifier"
+    },
+    {
+      "identity": [
+        59615,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_UpdateRealEffectedMapping",
+        89508480
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "AbilitySystem+ComboController._UpdateRealEffectedMapping"
+    },
+    {
+      "identity": [
+        59611,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "ClearSkillRequestByModifierInstId",
+        89506992
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "instId",
+          "type": "ulong"
+        }
+      ],
+      "id": "AbilitySystem+ComboController.ClearSkillRequestByModifierInstId"
+    },
+    {
+      "identity": [
+        59630,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+        ".ctor",
+        89507248
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "instId",
+          "type": "ulong"
+        },
+        {
+          "name": "commandType",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType"
+        },
+        {
+          "name": "clearSkillRequestOnRemove",
+          "type": "bool"
+        },
+        {
+          "name": "clearOffsetTargetSkillIdOnRemove",
+          "type": "bool"
+        },
+        {
+          "name": "owner",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        }
+      ],
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle..ctor"
+    },
+    {
+      "identity": [
+        59631,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+        "RemoveModifier",
+        89506736
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier"
+    },
+    {
+      "identity": [
+        60319,
+        "Beyond.Gameplay.Core.AllowNextSkillAction",
+        "ExecuteInternal",
+        105193184
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "id": "AllowNextSkillAction.ExecuteInternal"
+    },
+    {
+      "identity": [
+        60320,
+        "Beyond.Gameplay.Core.AllowNextSkillAction",
+        "OnEnd",
+        107180432
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "AllowNextSkillAction.OnEnd"
+    },
+    {
+      "identity": [
+        60886,
+        "Beyond.Gameplay.Core.ComboCacheAction",
+        "OnEnd",
+        89505744
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "id": "ComboCacheAction.OnEnd"
+    }
+  ],
+  "fields": [
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_skills",
+      "offset": 648,
+      "valueType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem::m_skills"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_activeSkillMap",
+      "offset": 656,
+      "valueType": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.Core.Skill>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem::m_activeSkillMap"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<plungingAttackStart>k__BackingField",
+      "offset": 800,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "id": "AbilitySystem::<plungingAttackStart>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<plungingAttackEnd>k__BackingField",
+      "offset": 808,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "id": "AbilitySystem::<plungingAttackEnd>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "<curSkill>k__BackingField",
+      "offset": 984,
+      "valueType": "Beyond.Gameplay.Core.Skill",
+      "ordinaryKind": 18,
+      "id": "AbilitySystem::<curSkill>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_comboController",
+      "offset": 1120,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "ordinaryKind": 18,
+      "id": "AbilitySystem::m_comboController"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_baseCommandMapping",
+      "offset": 32,
+      "valueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType,Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_baseCommandMapping"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_runtimeCommandMapping",
+      "offset": 40,
+      "valueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType,Beyond.PriorityQueue`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_runtimeCommandMapping"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_realCommandMapping",
+      "offset": 48,
+      "valueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType,Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_realCommandMapping"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_nextSkillRequest",
+      "offset": 56,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+NextSkillRequest>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_nextSkillRequest"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_allowedNextSkillPacks",
+      "offset": 184,
+      "valueType": "Beyond.ListSet`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_allowedNextSkillPacks"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_offsetModifierPack",
+      "offset": 192,
+      "valueType": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+OffsetModifierPack>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_offsetModifierPack"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_offsetTargetSkillId",
+      "offset": 256,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "id": "AbilitySystem+ComboController::m_offsetTargetSkillId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+      "name": "m_changeSkillHandles",
+      "offset": 264,
+      "valueType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilitySystem+ChangeSkillHandle>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController::m_changeSkillHandles"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+      "name": "m_alwaysAllowSkills",
+      "offset": 16,
+      "valueType": "string[]",
+      "ordinaryKind": 29,
+      "id": "AbilitySystem+ComboController+AllowedNextSkillPack::m_alwaysAllowSkills"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+      "name": "s_instId",
+      "offset": 0,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "id": "AbilitySystem+ComboController+AllowedNextSkillPack::s_instId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+      "name": "skillList",
+      "offset": 24,
+      "valueType": "System.Collections.Generic.List`1<string>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController+AllowedNextSkillPack::skillList"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+      "name": "<instanceUid>k__BackingField",
+      "offset": 32,
+      "valueType": "uint",
+      "ordinaryKind": 9,
+      "id": "AbilitySystem+ComboController+AllowedNextSkillPack::<instanceUid>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "s_instId",
+      "offset": 0,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "id": "AbilitySystem+ComboController+MappingModifier::s_instId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "skillId",
+      "offset": 16,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "id": "AbilitySystem+ComboController+MappingModifier::skillId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "instId",
+      "offset": 24,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "id": "AbilitySystem+ComboController+MappingModifier::instId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "priority",
+      "offset": 32,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+Priority",
+      "ordinaryKind": 17,
+      "id": "AbilitySystem+ComboController+MappingModifier::priority"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "name": "cacheTime",
+      "offset": 36,
+      "valueType": "float",
+      "ordinaryKind": 12,
+      "id": "AbilitySystem+ComboController+MappingModifier::cacheTime"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AllowNextSkillAction",
+      "name": "m_query",
+      "valueType": "Beyond.Gameplay.Core.Skill+AllowNextSkillQuery",
+      "offset": 40,
+      "ordinaryKind": 18,
+      "id": "AllowNextSkillAction::m_query"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AllowNextSkillAction",
+      "name": "m_allowedNextSkillPack",
+      "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+      "offset": 48,
+      "ordinaryKind": 21,
+      "id": "AllowNextSkillAction::m_allowedNextSkillPack"
+    },
+    {
+      "id": "AllowNextSkillAction+Data::allowedSkillIdList",
+      "type": "Beyond.Gameplay.Core.AllowNextSkillAction+Data",
+      "name": "allowedSkillIdList",
+      "offset": 32,
+      "valueType": "System.Collections.Generic.List`1<string>",
+      "ordinaryKind": 21
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "<skillType>k__BackingField",
+      "offset": 216,
+      "valueType": "Beyond.Gameplay.SkillType",
+      "ordinaryKind": 17,
+      "id": "Skill::<skillType>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_skillId",
+      "offset": 240,
+      "valueType": "string",
+      "ordinaryKind": 14,
+      "id": "Skill::m_skillId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "name": "m_owner",
+      "offset": 16,
+      "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "ordinaryKind": 21,
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle::m_owner"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "name": "instId",
+      "offset": 32,
+      "valueType": "ulong",
+      "ordinaryKind": 11,
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle::instId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "name": "commandType",
+      "offset": 40,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+      "ordinaryKind": 17,
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle::commandType"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "name": "clearSkillRequestOnRemove",
+      "offset": 44,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle::clearSkillRequestOnRemove"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier+Handle",
+      "name": "clearOffsetTargetSkillIdOnRemove",
+      "offset": 45,
+      "valueType": "bool",
+      "ordinaryKind": 2,
+      "id": "AbilitySystem+ComboController+MappingModifier+Handle::clearOffsetTargetSkillIdOnRemove"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "name": "m_executeResult",
+      "valueType": "bool",
+      "offset": 16,
+      "ordinaryKind": 2,
+      "id": "AbilityAction::m_executeResult"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "name": "<executingState>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+      "offset": 20,
+      "ordinaryKind": 17,
+      "id": "AbilityAction::<executingState>k__BackingField"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "name": "<actionEnvironment>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.IActionEnvironment",
+      "offset": 24,
+      "ordinaryKind": 18,
+      "id": "AbilityAction::<actionEnvironment>k__BackingField"
+    }
+  ],
+  "codeWindows": [
+    {
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "startRva": 97668656,
+      "endRva": 97669139,
+      "sha256": "6F0A830F4C0396160BE1A3382DB122C4DB6FB2802F90733306174874708278D7",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem.CanCastSkill",
+      "startRva": 97669504,
+      "endRva": 97669718,
+      "sha256": "2C9B92A101734FDE1F8E410767EBAABA4B2B52E37BB7DC45A8F4B8D01359E23E",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "startRva": 149103920,
+      "endRva": 149104232,
+      "sha256": "F357641A28AF9CFB793F066F50D62B05D1119114DF63E958A9F4BE973C48403A",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "Skill.get_skillInterruptPriority",
+      "startRva": 97669152,
+      "endRva": 97669280,
+      "sha256": "4D73A268E4DA4BE66B22FCC0ED5182F647FBDD5A9B571A3E03EC835A7987EE10",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "startRva": 105193424,
+      "endRva": 105193615,
+      "sha256": "4D33EEB1EB49A82CC238DA27070D0156E8ADB7E1FA41EE9E5F70F94EAA21F35F",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveAllowedNextSkillPack",
+      "startRva": 107180624,
+      "endRva": 107180732,
+      "sha256": "B0F211AB91A3280995483019201E804F129B366EB7DDC4B031BD44E265632DBE",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "startRva": 105193616,
+      "endRva": 105193803,
+      "sha256": "5332B8531A00AEF33311D29F5D95DA3558EF3E75A37E5D9351144682B16D224B",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddMappingModifier",
+      "startRva": 89507408,
+      "endRva": 89508096,
+      "sha256": "B25AE24E1D1F1344E160BDCA089E7BF4DF6F8A2F9F0817DBF1897FA9DFFEFF2F",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "startRva": 89508192,
+      "endRva": 89508479,
+      "sha256": "D84608176A2B6256CE3D3238312BC49A44EB2496F2EDD6B3FC03A6592E2A9B05",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "startRva": 89508480,
+      "endRva": 89508885,
+      "sha256": "2DD12CA4A28A54664CE413B453042BBB82F325AB3F90310502CB12359412D3E2",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController.ClearSkillRequestByModifierInstId",
+      "startRva": 89506992,
+      "endRva": 89507248,
+      "sha256": "2C68574A4496C746F5BD0CE20F201FC304629C0A917EA788223B773A2CB2BB62",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle..ctor",
+      "startRva": 89507248,
+      "endRva": 89507334,
+      "sha256": "276B2D38F8D4C2B368BB3A76626E74F14AB6D8942ADB0DF395C3EB340A18B943",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "startRva": 89506736,
+      "endRva": 89506860,
+      "sha256": "78185F2D8AC5391838FCACC1B49D5DC65B230D1F53BB74BE4C3CFEE1BE35A38A",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "startRva": 105193184,
+      "endRva": 105193344,
+      "sha256": "2E2BFE04FA438D5572E6DD43552E01688CB19E5962E607558017BFC5D1204758",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "AllowNextSkillAction.OnEnd",
+      "startRva": 107180432,
+      "endRva": 107180551,
+      "sha256": "539D607A8A5C22C947DB43A37F8E54E3192FE9820D00F0F4E159FDB6E96E3FE2",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "ComboCacheAction.OnEnd",
+      "startRva": 89505744,
+      "endRva": 89505973,
+      "sha256": "780DBF55E547F67E09955BD0665AB0826A1ADDBB3726BD0A6A761D28EF128508",
+      "boundary": "Reviewed original fallback paths; valid receivers/storage and ordinary returning helpers. Active iFix and listed cold/helper selections remain conditional."
+    },
+    {
+      "owner": "MappingRemove.loopCold",
+      "startRva": 122670163,
+      "endRva": 122670177,
+      "sha256": "6F84E108527E69AB6AFF70E7A3F08CD112085DF79AFCBF2D42F840D193BB5DAD",
+      "boundary": "Actual separated continuation or named owner bridge; no address-proximity ownership inference."
+    },
+    {
+      "owner": "Handle.removeBridge",
+      "startRva": 89506928,
+      "endRva": 89506987,
+      "sha256": "D3579899C02629AB3F6B8FB39E6FE88E25886A40F134BAC17430DABB86DF23FE",
+      "boundary": "Actual separated continuation or named owner bridge; no address-proximity ownership inference."
+    },
+    {
+      "owner": "Handle.clearBridge",
+      "startRva": 89506864,
+      "endRva": 89506923,
+      "sha256": "AF7D6E413C65680125F6FC97E339769CBC7781253FA9FAD188E35B993DF076DC",
+      "boundary": "Actual separated continuation or named owner bridge; no address-proximity ownership inference."
+    },
+    {
+      "owner": "AllowNext.removeBridge",
+      "startRva": 107180560,
+      "endRva": 107180619,
+      "sha256": "0E491B4DA67810835C539065E7F8076BEBAE0D688AB9DC98ED63A803B80AA60E",
+      "boundary": "Actual separated continuation or named owner bridge; no address-proximity ownership inference."
+    },
+    {
+      "owner": "Handle.offsetCleanup",
+      "startRva": 122669875,
+      "endRva": 122669918,
+      "sha256": "D966AD96107D80C8B9B1507C4ECE46C909B95AEA98932A6C55AA172E5FAFE9CF",
+      "boundary": "Selected separated flag cleanup continuation with fresh typed owner Lock and normal ClearOffsetModifier(true) request."
+    },
+    {
+      "owner": "ObjectPtr.allowedImplicit",
+      "startRva": 95864032,
+      "endRva": 95864208,
+      "sha256": "562760F2F629D15BA1BE5DF3D94BE7D2881EB53458097E76E38109372B1E684B",
+      "boundary": "Complete selected 16-byte ObjectPtr result output normal paths, including conditional GC barrier loop; ordinary helpers and noninterference remain conditions."
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "currentSkillNull",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668693,
+      "hex": "4883bbd803000000",
+      "field": "AbilitySystem::<curSkill>k__BackingField",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "comboExists",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668731,
+      "hex": "4883bb6004000000",
+      "field": "AbilitySystem::m_comboController",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "newSkillId",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668739,
+      "hex": "488bb2f0000000",
+      "field": "Skill::m_skillId",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "allowedPacks",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668766,
+      "hex": "488b88b8000000",
+      "field": "AbilitySystem+ComboController::m_allowedNextSkillPacks",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "packSkillList",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669098,
+      "hex": "488b4818",
+      "field": "AbilitySystem+ComboController+AllowedNextSkillPack::skillList",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "plungeStart",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668837,
+      "hex": "488b9320030000",
+      "field": "AbilitySystem::<plungingAttackStart>k__BackingField",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "plungeEnd",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668906,
+      "hex": "488b9328030000",
+      "field": "AbilitySystem::<plungingAttackEnd>k__BackingField",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "initExistingList",
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193645,
+      "hex": "488b4b18",
+      "field": "AbilitySystem+ComboController+AllowedNextSkillPack::skillList",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "initAlwaysSkills",
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193683,
+      "hex": "488b4310",
+      "field": "AbilitySystem+ComboController+AllowedNextSkillPack::m_alwaysAllowSkills",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "actionAllowedList",
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "rva": 105193260,
+      "hex": "4c8b4120",
+      "field": "AllowNextSkillAction+Data::allowedSkillIdList",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "actionPackStore",
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "rva": 105193321,
+      "hex": "0f114330",
+      "field": "AllowNextSkillAction::m_allowedNextSkillPack",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "realMapping",
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508519,
+      "hex": "488b4f30",
+      "field": "AbilitySystem+ComboController::m_realCommandMapping",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "runtimeMapping",
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508579,
+      "hex": "488b4f28",
+      "field": "AbilitySystem+ComboController::m_runtimeCommandMapping",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "baseMapping",
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508614,
+      "hex": "488b4f20",
+      "field": "AbilitySystem+ComboController::m_baseCommandMapping",
+      "displacementOffset": 3,
+      "displacementSize": 1
+    },
+    {
+      "role": "currentPriorityReceiver",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668972,
+      "hex": "488b8bd8030000",
+      "field": "AbilitySystem::<curSkill>k__BackingField",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "normalCandidateType",
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "rva": 149104108,
+      "hex": "83b8d800000000",
+      "field": "Skill::<skillType>k__BackingField",
+      "displacementOffset": 2,
+      "displacementSize": 4
+    },
+    {
+      "role": "castActiveMap",
+      "owner": "AbilitySystem.CanCastSkill",
+      "rva": 97669557,
+      "hex": "488b8e90020000",
+      "field": "AbilitySystem::m_activeSkillMap",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "normalSkillList",
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "rva": 149104055,
+      "hex": "488b8e88020000",
+      "field": "AbilitySystem::m_skills",
+      "displacementOffset": 3,
+      "displacementSize": 4
+    },
+    {
+      "role": "handleInstId",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506785,
+      "hex": "4c8b4310",
+      "field": "AbilitySystem+ComboController+MappingModifier+Handle::instId",
+      "displacementOffset": 3,
+      "displacementSize": 1,
+      "valueTypeHeaderAdjustment": 16
+    },
+    {
+      "role": "handleCommand",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506792,
+      "hex": "8b5318",
+      "field": "AbilitySystem+ComboController+MappingModifier+Handle::commandType",
+      "displacementOffset": 2,
+      "displacementSize": 1,
+      "valueTypeHeaderAdjustment": 16
+    },
+    {
+      "role": "handleClearRequest",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506803,
+      "hex": "807b1c00",
+      "field": "AbilitySystem+ComboController+MappingModifier+Handle::clearSkillRequestOnRemove",
+      "displacementOffset": 2,
+      "displacementSize": 1,
+      "valueTypeHeaderAdjustment": 16
+    },
+    {
+      "role": "handleClearOffset",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506844,
+      "hex": "807b1d00",
+      "field": "AbilitySystem+ComboController+MappingModifier+Handle::clearOffsetTargetSkillIdOnRemove",
+      "displacementOffset": 2,
+      "displacementSize": 1,
+      "valueTypeHeaderAdjustment": 16
+    }
+  ],
+  "branches": [
+    {
+      "role": "noCurrentSkill",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668716,
+      "hex": "0f8449010000",
+      "condition": "equal",
+      "targetRva": 97669051
+    },
+    {
+      "role": "missingComboSkipsAllowed",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668746,
+      "hex": "7459",
+      "condition": "equal",
+      "targetRva": 97668837
+    },
+    {
+      "role": "allowedLoopIndexLessCount",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668831,
+      "hex": "0f8cda000000",
+      "condition": "signedLess",
+      "targetRva": 97669055
+    },
+    {
+      "role": "allowedContainsTrue",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669124,
+      "hex": "75b5",
+      "condition": "notEqual",
+      "targetRva": 97669051
+    },
+    {
+      "role": "plungeStartPointerEqual",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668856,
+      "hex": "0f84bd000000",
+      "condition": "equal",
+      "targetRva": 97669051
+    },
+    {
+      "role": "plungeStartContentEqual",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668900,
+      "hex": "0f8591000000",
+      "condition": "notEqual",
+      "targetRva": 97669051
+    },
+    {
+      "role": "plungeEndPointerEqual",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668916,
+      "hex": "0f8481000000",
+      "condition": "equal",
+      "targetRva": 97669051
+    },
+    {
+      "role": "plungeEndContentEqual",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668960,
+      "hex": "7559",
+      "condition": "notEqual",
+      "targetRva": 97669051
+    },
+    {
+      "role": "higherPriority",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668999,
+      "hex": "7f32",
+      "condition": "signedGreater",
+      "targetRva": 97669051
+    },
+    {
+      "role": "currentCanInterrupt",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669022,
+      "hex": "751b",
+      "condition": "notEqual",
+      "targetRva": 97669051
+    },
+    {
+      "role": "initContainsSkipsAdd",
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193726,
+      "hex": "7527",
+      "condition": "notEqual",
+      "targetRva": 105193767
+    },
+    {
+      "role": "removeNoQueue",
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508277,
+      "hex": "0f849e000000",
+      "condition": "equal",
+      "targetRva": 89508441
+    },
+    {
+      "role": "removeInstIdMismatch",
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508355,
+      "hex": "0f854a02fa01",
+      "condition": "notEqual",
+      "targetRva": 122670163
+    },
+    {
+      "role": "removeReverseContinue",
+      "owner": "MappingRemove.loopCold",
+      "rva": 122670166,
+      "hex": "0f8980fd05fe",
+      "condition": "nonNegative",
+      "targetRva": 89508316
+    },
+    {
+      "role": "mappingRuntimeFound",
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508612,
+      "hex": "757c",
+      "condition": "notEqual",
+      "targetRva": 89508738
+    },
+    {
+      "role": "mappingQueueNonEmpty",
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508769,
+      "hex": "742d",
+      "condition": "equal",
+      "targetRva": 89508816
+    },
+    {
+      "role": "handleSkipClearRequest",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506807,
+      "hex": "7423",
+      "condition": "equal",
+      "targetRva": 89506844
+    },
+    {
+      "role": "handleDoClearOffset",
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506848,
+      "hex": "0f850d07fa01",
+      "condition": "notEqual",
+      "targetRva": 122669875
+    },
+    {
+      "role": "allowHandleInvalidReturns",
+      "owner": "AllowNextSkillAction.OnEnd",
+      "rva": 107180479,
+      "hex": "743a",
+      "condition": "equal",
+      "targetRva": 107180539
+    }
+  ],
+  "typedContexts": [
+    {
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668786,
+      "result": {
+        "instructionRva": 97668786,
+        "instructionHex": "488B15AF1C9B0A",
+        "usageCellRva": 275606376,
+        "usageRawHex": "992612C000000000",
+        "tag": 6,
+        "methodSpecIndex": 594764,
+        "methodSpec": [
+          356038,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ListSet`1",
+        "methodName": "get_count",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedInlineCountGuard",
+      "binding": "inline-metadata-guard-only",
+      "closedCollectionAbiProved": false
+    },
+    {
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669079,
+      "result": {
+        "instructionRva": 97669079,
+        "instructionHex": "4C8B059A1B9B0A",
+        "usageCellRva": 275606392,
+        "usageRawHex": "972612C000000000",
+        "tag": 6,
+        "methodSpecIndex": 594763,
+        "methodSpec": [
+          356040,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ListSet`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedItem",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 97669088,
+      "callTargetRva": 100732464,
+      "setupInstructions": [
+        "4c8b059a1b9b0a",
+        "8bd5",
+        "e84bbe2e00"
+      ]
+    },
+    {
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669107,
+      "result": {
+        "instructionRva": 97669107,
+        "instructionHex": "4C8B05E6F0A30A",
+        "usageCellRva": 276185312,
+        "usageRawHex": "4B5312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600485,
+        "methodSpec": [
+          404128,
+          913,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "Contains",
+        "classArguments": [
+          "string"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedContains",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 97669117,
+      "callTargetRva": 83624880,
+      "setupInstructions": [
+        "4c8b05e6f0a30a",
+        "488bd6",
+        "e8aeb329ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "rva": 105193535,
+      "result": {
+        "instructionRva": 105193535,
+        "instructionHex": "4C8B05F204290A",
+        "usageCellRva": 275653944,
+        "usageRawHex": "8F2612C000000000",
+        "tag": 6,
+        "methodSpecIndex": 594759,
+        "methodSpec": [
+          356045,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ListSet`1",
+        "methodName": "Add",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedAdd",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 105193545,
+      "callTargetRva": 105075488,
+      "setupInstructions": [
+        "4c8b05f204290a",
+        "488bd3",
+        "e8d232feff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "rva": 105193550,
+      "result": {
+        "instructionRva": 105193550,
+        "instructionHex": "4C8B05DB04290A",
+        "usageCellRva": 275653936,
+        "usageRawHex": "B3A212C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610649,
+        "methodSpec": [
+          355074,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "op_Implicit",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedObjectPtr",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 105193565,
+      "callTargetRva": 95864032,
+      "setupInstructions": [
+        "4c8b05db04290a",
+        "488d4c2430",
+        "488bd3",
+        "e87ea471ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveAllowedNextSkillPack",
+      "rva": 107180665,
+      "result": {
+        "instructionRva": 107180665,
+        "instructionHex": "4C8B0590B20A0A",
+        "usageCellRva": 275653904,
+        "usageRawHex": "952612C000000000",
+        "tag": 6,
+        "methodSpecIndex": 594762,
+        "methodSpec": [
+          356048,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ListSet`1",
+        "methodName": "Remove",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedRemove",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 107180672,
+      "callTargetRva": 103477888,
+      "setupInstructions": [
+        "4c8b0590b20a0a",
+        "e8fb7fc7ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem.CanCastSkill",
+      "rva": 97669573,
+      "result": {
+        "instructionRva": 97669573,
+        "instructionHex": "4C8B057C939F0A",
+        "usageCellRva": 275899720,
+        "usageRawHex": "138811C000000000",
+        "tag": 6,
+        "methodSpecIndex": 574473,
+        "methodSpec": [
+          403977,
+          4022,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "ContainsKey",
+        "classArguments": [
+          "string",
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      },
+      "role": "castContainsSkill",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 97669580,
+      "callTargetRva": 84205984,
+      "setupInstructions": [
+        "4c8b057c939f0a",
+        "e8cf8f32ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem.CanCastSkill",
+      "rva": 97669605,
+      "result": {
+        "instructionRva": 97669605,
+        "instructionHex": "4C8B05CC919F0A",
+        "usageCellRva": 275899320,
+        "usageRawHex": "2B8811C000000000",
+        "tag": 6,
+        "methodSpecIndex": 574485,
+        "methodSpec": [
+          403970,
+          4022,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "get_Item",
+        "classArguments": [
+          "string",
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      },
+      "role": "castGetSkill",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 97669615,
+      "callTargetRva": 84206096,
+      "setupInstructions": [
+        "4c8b05cc919f0a",
+        "488bd7",
+        "e81c9032ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508592,
+      "result": {
+        "instructionRva": 89508592,
+        "instructionHex": "4C8B0DE95A180B",
+        "usageCellRva": 275654112,
+        "usageRawHex": "17A511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578187,
+        "methodSpec": [
+          403991,
+          4853,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "TryGetValue",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.PriorityQueue`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshRuntimeTry",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508605,
+      "callTargetRva": 87028544,
+      "setupInstructions": [
+        "4c8b0de95a180b",
+        "4c8d4520",
+        "8bd3",
+        "e83e28daff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508627,
+      "result": {
+        "instructionRva": 89508627,
+        "instructionHex": "4C8B0D065C180B",
+        "usageCellRva": 275654432,
+        "usageRawHex": "21A511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578192,
+        "methodSpec": [
+          403991,
+          4854,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "TryGetValue",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshBaseTry",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508640,
+      "callTargetRva": 87032592,
+      "setupInstructions": [
+        "4c8b0d065c180b",
+        "4c8d45a0",
+        "8bd3",
+        "e8eb37daff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193664,
+      "result": {
+        "instructionRva": 105193664,
+        "instructionHex": "4C8B05796D240A",
+        "usageCellRva": 275353152,
+        "usageRawHex": "3F5312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600479,
+        "methodSpec": [
+          404122,
+          913,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "AddRange",
+        "classArguments": [
+          "string"
+        ],
+        "methodArguments": []
+      },
+      "role": "packInitAddRange",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 105193671,
+      "callTargetRva": 98928816,
+      "setupInstructions": [
+        "4c8b05796d240a",
+        "e8e467a0ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193708,
+      "result": {
+        "instructionRva": 105193708,
+        "instructionHex": "4C8B05ED1F310A",
+        "usageCellRva": 276185312,
+        "usageRawHex": "4B5312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600485,
+        "methodSpec": [
+          404128,
+          913,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "Contains",
+        "classArguments": [
+          "string"
+        ],
+        "methodArguments": []
+      },
+      "role": "packInitContains",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 105193719,
+      "callTargetRva": 83624880,
+      "setupInstructions": [
+        "4c8b05ed1f310a",
+        "488b1406",
+        "e8b4e2b6fe"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rva": 105193751,
+      "result": {
+        "instructionRva": 105193751,
+        "instructionHex": "4C8B05CA1F310A",
+        "usageCellRva": 276185320,
+        "usageRawHex": "3D5312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600478,
+        "methodSpec": [
+          404119,
+          913,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "Add",
+        "classArguments": [
+          "string"
+        ],
+        "methodArguments": []
+      },
+      "role": "packInitAdd",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 105193762,
+      "callTargetRva": 83486768,
+      "setupInstructions": [
+        "4c8b05ca1f310a",
+        "488b1416",
+        "e809c7b4fe"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508567,
+      "result": {
+        "instructionRva": 89508567,
+        "instructionHex": "488B15A25D180B",
+        "usageCellRva": 275654784,
+        "usageRawHex": "1FA511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578191,
+        "methodSpec": [
+          403976,
+          4854,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "Clear",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshClear",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 89508574,
+      "callTargetRva": 103195184,
+      "setupInstructions": [
+        "488b15a25d180b",
+        "e84dd7d000"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508751,
+      "result": {
+        "instructionRva": 89508751,
+        "instructionHex": "488B157259180B",
+        "usageCellRva": 275653896,
+        "usageRawHex": "9B530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338381,
+        "methodSpec": [
+          356056,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "get_isEmpty",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshQueueEmpty",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 89508758,
+      "callTargetRva": 89508096,
+      "setupInstructions": [
+        "488b157259180b",
+        "e865fdffff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508771,
+      "result": {
+        "instructionRva": 89508771,
+        "instructionHex": "4C8B0D4E59180B",
+        "usageCellRva": 275653880,
+        "usageRawHex": "41F512C000000000",
+        "tag": 6,
+        "methodSpecIndex": 621216,
+        "methodSpec": [
+          404220,
+          -1,
+          4854
+        ],
+        "typeName": "System.Collections.Generic.CollectionExtensions",
+        "methodName": "GetValueOrDefault",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ]
+      },
+      "role": "refreshBaseDefault",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508789,
+      "callTargetRva": 104658544,
+      "setupInstructions": [
+        "4c8b0d4e59180b",
+        "488d4de0",
+        "488b5720",
+        "448bc3",
+        "e8b62ae700"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508825,
+      "result": {
+        "instructionRva": 89508825,
+        "instructionHex": "4C8B0D9059180B",
+        "usageCellRva": 275654000,
+        "usageRawHex": "97530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338379,
+        "methodSpec": [
+          356057,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshQueueZero",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508839,
+      "callTargetRva": 106297344,
+      "setupInstructions": [
+        "4c8b0d9059180b",
+        "488d4dc0",
+        "4533c0",
+        "e8142c0001"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rva": 89508684,
+      "result": {
+        "instructionRva": 89508684,
+        "instructionHex": "4C8B0D7D5D180B",
+        "usageCellRva": 275654864,
+        "usageRawHex": "23A511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578193,
+        "methodSpec": [
+          403971,
+          4854,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "set_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "refreshSet",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508693,
+      "callTargetRva": 105369056,
+      "setupInstructions": [
+        "4c8b0d7d5d180b",
+        "8bd3",
+        "e88602f200"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508258,
+      "result": {
+        "instructionRva": 89508258,
+        "instructionHex": "4C8B0D375C180B",
+        "usageCellRva": 275654112,
+        "usageRawHex": "17A511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578187,
+        "methodSpec": [
+          403991,
+          4853,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "TryGetValue",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.PriorityQueue`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>"
+        ],
+        "methodArguments": []
+      },
+      "role": "removeQueueTry",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508270,
+      "callTargetRva": 87028544,
+      "setupInstructions": [
+        "4c8b0d375c180b",
+        "4c8d442430",
+        "e88d29daff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508297,
+      "result": {
+        "instructionRva": 89508297,
+        "instructionHex": "488B15B05B180B",
+        "usageCellRva": 275654016,
+        "usageRawHex": "99530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338380,
+        "methodSpec": [
+          356055,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "get_count",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "removeQueueCount",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 89508304,
+      "callTargetRva": 93556880,
+      "setupInstructions": [
+        "488b15b05b180b",
+        "e8bbc63d00"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508330,
+      "result": {
+        "instructionRva": 89508330,
+        "instructionHex": "4C8B0D7F5B180B",
+        "usageCellRva": 275654000,
+        "usageRawHex": "97530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338379,
+        "methodSpec": [
+          356057,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "removeQueueItem",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89508345,
+      "callTargetRva": 106297344,
+      "setupInstructions": [
+        "4c8b0d7f5b180b",
+        "488d4c2450",
+        "448bc7",
+        "e8022e0001"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508409,
+      "result": {
+        "instructionRva": 89508409,
+        "instructionHex": "4C8B05E05A180B",
+        "usageCellRva": 275653920,
+        "usageRawHex": "8F530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338375,
+        "methodSpec": [
+          356063,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "Remove",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "removeQueueRemove",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 89508436,
+      "callTargetRva": 109643760,
+      "setupInstructions": [
+        "4c8b05e05a180b",
+        "f20f104c2448",
+        "488bcb",
+        "0f29442450",
+        "f20f114c2460",
+        "e8973d3301"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddMappingModifier",
+      "rva": 89507653,
+      "result": {
+        "instructionRva": 89507653,
+        "instructionHex": "4C8B0D945E180B",
+        "usageCellRva": 275654112,
+        "usageRawHex": "17A511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 578187,
+        "methodSpec": [
+          403991,
+          4853,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "TryGetValue",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+          "Beyond.PriorityQueue`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier>"
+        ],
+        "methodArguments": []
+      },
+      "role": "addQueueTry",
+      "binding": "selected-callsite",
+      "contextRegister": "r9",
+      "callRva": 89507666,
+      "callTargetRva": 87028544,
+      "setupInstructions": [
+        "4c8b0d945e180b",
+        "4c8d453f",
+        "8bd6",
+        "e8e92bdaff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddMappingModifier",
+      "rva": 89507705,
+      "result": {
+        "instructionRva": 89507705,
+        "instructionHex": "4C8B05505E180B",
+        "usageCellRva": 275654096,
+        "usageRawHex": "89530AC000000000",
+        "tag": 6,
+        "methodSpecIndex": 338372,
+        "methodSpec": [
+          356062,
+          9757,
+          -1
+        ],
+        "typeName": "Beyond.PriorityQueue`1",
+        "methodName": "Add",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier"
+        ],
+        "methodArguments": []
+      },
+      "role": "addQueueAdd",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 89507760,
+      "callTargetRva": 106296848,
+      "setupInstructions": [
+        "4c8b05505e180b",
+        "488945cf",
+        "488b45bf",
+        "488945d7",
+        "8b45c7",
+        "0f2845cf",
+        "8945df",
+        "f20f104ddf",
+        "0fc6c9e1",
+        "f30f10ca",
+        "0f2945ef",
+        "0fc6c9e1",
+        "f20f114dff",
+        "e85b2e0001"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "rva": 105193489,
+      "result": {
+        "instructionRva": 105193489,
+        "instructionHex": "488B0D0005290A",
+        "usageCellRva": 275653912,
+        "usageRawHex": "930912C000000000",
+        "tag": 6,
+        "methodSpecIndex": 591049,
+        "methodSpec": [
+          357675,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.PoolCore.GenericStaticPool`1",
+        "methodName": "Allocate",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allocateAllowedPack",
+      "binding": "selected-callsite",
+      "contextRegister": "rcx",
+      "callRva": 105193496,
+      "callTargetRva": 97225136,
+      "setupInstructions": [
+        "488b0d0005290a",
+        "e8936986ff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "rva": 149104046,
+      "result": {
+        "instructionRva": 149104046,
+        "instructionHex": "488B1503478A07",
+        "usageCellRva": 275606712,
+        "usageRawHex": "DBF312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 621037,
+        "methodSpec": [
+          354238,
+          -1,
+          905
+        ],
+        "typeName": "Beyond.CollectionExtensions",
+        "methodName": "SafeCount",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.Core.Skill"
+        ]
+      },
+      "role": "normalSafeCount",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 149104062,
+      "callTargetRva": 83882160,
+      "setupInstructions": [
+        "488b1503478a07",
+        "33ff",
+        "488b8e88020000",
+        "e8edca1cfc"
+      ]
+    },
+    {
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "rva": 149104089,
+      "result": {
+        "instructionRva": 149104089,
+        "instructionHex": "4C8B05F8468A07",
+        "usageCellRva": 275606744,
+        "usageRawHex": "595212C000000000",
+        "tag": 6,
+        "methodSpecIndex": 600364,
+        "methodSpec": [
+          404114,
+          905,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "get_Item",
+        "classArguments": [
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      },
+      "role": "normalListItem",
+      "binding": "selected-callsite",
+      "contextRegister": "r8",
+      "callRva": 149104098,
+      "callTargetRva": 83492688,
+      "setupInstructions": [
+        "4c8b05f8468a07",
+        "8bd7",
+        "e869d916fc"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506765,
+      "result": {
+        "instructionRva": 89506765,
+        "instructionHex": "488B150C761A0B",
+        "usageCellRva": 275790304,
+        "usageRawHex": "61A112C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610480,
+        "methodSpec": [
+          355072,
+          779,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "Lock",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        "methodArguments": []
+      },
+      "role": "handleOwnerForRemove",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 89506775,
+      "callTargetRva": 83895200,
+      "setupInstructions": [
+        "488b150c761a0b",
+        "488bcb",
+        "e8c45faaff"
+      ]
+    },
+    {
+      "owner": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rva": 89506809,
+      "result": {
+        "instructionRva": 89506809,
+        "instructionHex": "488B15E0751A0B",
+        "usageCellRva": 275790304,
+        "usageRawHex": "61A112C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610480,
+        "methodSpec": [
+          355072,
+          779,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "Lock",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        "methodArguments": []
+      },
+      "role": "handleOwnerForClear",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 89506819,
+      "callTargetRva": 83895200,
+      "setupInstructions": [
+        "488b15e0751a0b",
+        "488bcb",
+        "e8985faaff"
+      ]
+    },
+    {
+      "owner": "Handle.offsetCleanup",
+      "rva": 122669875,
+      "result": {
+        "instructionRva": 122669875,
+        "instructionHex": "488B15A66E2009",
+        "usageCellRva": 275790304,
+        "usageRawHex": "61A112C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610480,
+        "methodSpec": [
+          355072,
+          779,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "Lock",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        "methodArguments": []
+      },
+      "role": "handleOwnerForOffset",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 122669885,
+      "callTargetRva": 83895200,
+      "setupInstructions": [
+        "488b15a66e2009",
+        "488bcb",
+        "e85e58b0fd"
+      ]
+    },
+    {
+      "owner": "AllowNextSkillAction.OnEnd",
+      "rva": 107180461,
+      "result": {
+        "instructionRva": 107180461,
+        "instructionHex": "488B15C48E000A",
+        "usageCellRva": 274989176,
+        "usageRawHex": "B1A212C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610648,
+        "methodSpec": [
+          355070,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "get_isValid",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedHandleValid",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 107180472,
+      "callTargetRva": 89464912,
+      "setupInstructions": [
+        "488b15c48e000a",
+        "488d4b30",
+        "e893aef1fe"
+      ]
+    },
+    {
+      "owner": "AllowNextSkillAction.OnEnd",
+      "rva": 107180496,
+      "result": {
+        "instructionRva": 107180496,
+        "instructionHex": "488B15898E000A",
+        "usageCellRva": 274989152,
+        "usageRawHex": "AFA212C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610647,
+        "methodSpec": [
+          355072,
+          18425,
+          -1
+        ],
+        "typeName": "Beyond.ObjectPtr`1",
+        "methodName": "Lock",
+        "classArguments": [
+          "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack"
+        ],
+        "methodArguments": []
+      },
+      "role": "allowedHandleLock",
+      "binding": "selected-callsite",
+      "contextRegister": "rdx",
+      "callRva": 107180510,
+      "callTargetRva": 83895200,
+      "setupInstructions": [
+        "488b15898e000a",
+        "488d4b30",
+        "488bf8",
+        "e8bdb19cfe"
+      ]
+    }
+  ],
+  "directCalls": [
+    {
+      "role": "newPriority",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668967,
+      "hex": "e8b4000000",
+      "target": [
+        58682,
+        "Beyond.Gameplay.Core.Skill",
+        "get_skillInterruptPriority",
+        97669152
+      ]
+    },
+    {
+      "role": "currentPriority",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668992,
+      "hex": "e89b000000",
+      "target": [
+        58682,
+        "Beyond.Gameplay.Core.Skill",
+        "get_skillInterruptPriority",
+        97669152
+      ]
+    },
+    {
+      "role": "currentCanInterrupt",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669015,
+      "hex": "e804010000",
+      "target": [
+        58677,
+        "Beyond.Gameplay.Core.Skill",
+        "get_canInterrupt",
+        97669280
+      ]
+    },
+    {
+      "role": "interruptCheck",
+      "owner": "AbilitySystem.CanCastSkill",
+      "rva": 97669639,
+      "hex": "e824fcffff",
+      "target": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ]
+    },
+    {
+      "role": "normalCandidateCast",
+      "owner": "AbilitySystem.CanCastNormalAttackAttack",
+      "rva": 149104182,
+      "hex": "e8452beffc",
+      "target": [
+        59179,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        97669504
+      ]
+    },
+    {
+      "role": "targetCheck",
+      "owner": "AbilitySystem.CanCastSkill",
+      "rva": 97669677,
+      "hex": "e8aedeffff",
+      "target": [
+        58707,
+        "Beyond.Gameplay.Core.Skill",
+        "CanCastToTarget",
+        97661152
+      ]
+    },
+    {
+      "role": "packInitialize",
+      "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "rva": 105193518,
+      "hex": "e85d000000",
+      "target": [
+        59634,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack",
+        "Init",
+        105193616
+      ]
+    },
+    {
+      "role": "actionAddPack",
+      "owner": "AllowNextSkillAction.ExecuteInternal",
+      "rva": 105193309,
+      "hex": "e86e000000",
+      "target": [
+        59608,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "AddAllowedNextSkillPack",
+        105193424
+      ]
+    },
+    {
+      "role": "removeBridge",
+      "owner": "AllowNext.removeBridge",
+      "rva": 107180603,
+      "hex": "e910000000",
+      "target": [
+        59609,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveAllowedNextSkillPack",
+        107180624
+      ]
+    },
+    {
+      "role": "mappingAddedRefresh",
+      "owner": "AbilitySystem+ComboController.AddMappingModifier",
+      "rva": 89507770,
+      "hex": "e8c1020000",
+      "target": [
+        59615,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_UpdateRealEffectedMapping",
+        89508480
+      ]
+    },
+    {
+      "role": "mappingRemovedRefresh",
+      "owner": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rva": 89508446,
+      "hex": "e81d000000",
+      "target": [
+        59615,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "_UpdateRealEffectedMapping",
+        89508480
+      ]
+    },
+    {
+      "role": "handleRemove",
+      "owner": "Handle.removeBridge",
+      "rva": 89506971,
+      "hex": "e9c0040000",
+      "target": [
+        59607,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "RemoveMappingModifier",
+        89508192
+      ]
+    },
+    {
+      "role": "handleClearRequest",
+      "owner": "Handle.clearBridge",
+      "rva": 89506907,
+      "hex": "e950000000",
+      "target": [
+        59611,
+        "Beyond.Gameplay.Core.AbilitySystem+ComboController",
+        "ClearSkillRequestByModifierInstId",
+        89506992
+      ]
+    },
+    {
+      "role": "handleClearOffset",
+      "owner": "Handle.offsetCleanup",
+      "rva": 122669907,
+      "hex": "e8f8d888fe",
+      "target": [
+        59365,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "ClearOffsetModifier",
+        98083920
+      ]
+    }
+  ],
+  "flowSpans": [
+    {
+      "role": "trueReturn",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669051,
+      "hex": "b001"
+    },
+    {
+      "role": "allowedIndexZero",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668748,
+      "hex": "33ed"
+    },
+    {
+      "role": "allowedIndexIncrement",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97669126,
+      "hex": "ffc5"
+    },
+    {
+      "role": "signedPriorityCompare",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668997,
+      "hex": "3bf8"
+    },
+    {
+      "role": "priorityNormalReturnTransfer",
+      "owner": "AbilitySystem.CheckCanInterruptCurSkill",
+      "rva": 97668962,
+      "hex": "33d2498bcee8b4000000488b8bd80300008bf84885c90f848f00000033d2e89b0000003bf87f32"
+    }
+  ],
+  "allowNextLayout": {
+    "witness": "Beyond.Gameplay.Core.AllowNextSkillAction",
+    "closedParent": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AllowNextSkillAction+Data>",
+    "base": "Beyond.Gameplay.Core.AbilityAction",
+    "dataArgument": "Beyond.Gameplay.Core.AllowNextSkillAction+Data",
+    "inheritedField": "m_data",
+    "referenceBytes": 8,
+    "suffix": [
+      {
+        "field": "m_query",
+        "bytes": 8
+      },
+      {
+        "field": "m_allowedNextSkillPack",
+        "bytes": 16
+      }
+    ],
+    "selectedObjectPtrValue": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem+ComboController+AllowedNextSkillPack>",
+    "typeSizes": [
+      {
+        "type": "Beyond.Gameplay.Core.AbilityAction",
+        "parent": "object",
+        "flags": 1048705,
+        "bitfield": 3072,
+        "instanceBytes": 32,
+        "typeSizeRowHex": "20000000ffffffff0000000000000000",
+        "genericContainerIndex": -1
+      },
+      {
+        "type": "Beyond.Gameplay.Core.AbilityAction`1",
+        "parent": "Beyond.Gameplay.Core.AbilityAction",
+        "flags": 1048705,
+        "bitfield": 3072,
+        "instanceBytes": 0,
+        "typeSizeRowHex": "00000000000000000000000000000000",
+        "genericContainerIndex": 432
+      },
+      {
+        "type": "Beyond.Gameplay.Core.AllowNextSkillAction",
+        "parent": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AllowNextSkillAction+Data>",
+        "flags": 1048577,
+        "bitfield": 3072,
+        "instanceBytes": 64,
+        "typeSizeRowHex": "40000000ffffffff0000000000000000",
+        "genericContainerIndex": -1
+      },
+      {
+        "type": "Beyond.ObjectPtr`1",
+        "parent": "System.ValueType",
+        "flags": 1048841,
+        "bitfield": 3073,
+        "instanceBytes": 0,
+        "typeSizeRowHex": "00000000000000000000000000000000",
+        "genericContainerIndex": 4325
+      }
+    ],
+    "spans": [
+      {
+        "role": "implicitZero16",
+        "owner": "ObjectPtr.allowedImplicit",
+        "rva": 95864042,
+        "hex": "0f57c0488bd90f1101"
+      },
+      {
+        "role": "implicitReferenceStore",
+        "owner": "ObjectPtr.allowedImplicit",
+        "rva": 95864087,
+        "hex": "48893b"
+      },
+      {
+        "role": "implicitUidStore",
+        "owner": "ObjectPtr.allowedImplicit",
+        "rva": 95864169,
+        "hex": "894308"
+      },
+      {
+        "role": "implicitValueReturn",
+        "owner": "ObjectPtr.allowedImplicit",
+        "rva": 95864172,
+        "hex": "488bc3"
+      },
+      {
+        "role": "implicitNullFields",
+        "owner": "ObjectPtr.allowedImplicit",
+        "rva": 95864186,
+        "hex": "33c0488903894308"
+      },
+      {
+        "role": "controllerResultRead16",
+        "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+        "rva": 105193570,
+        "hex": "0f10442430"
+      },
+      {
+        "role": "controllerResultWrite16",
+        "owner": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+        "rva": 105193583,
+        "hex": "0f1107"
+      },
+      {
+        "role": "actionClosedDataLoad",
+        "owner": "AllowNextSkillAction.ExecuteInternal",
+        "rva": 105193251,
+        "hex": "488b4b20"
+      },
+      {
+        "role": "actionResultRead16",
+        "owner": "AllowNextSkillAction.ExecuteInternal",
+        "rva": 105193314,
+        "hex": "0f1000"
+      },
+      {
+        "role": "actionResultWrite16",
+        "owner": "AllowNextSkillAction.ExecuteInternal",
+        "rva": 105193321,
+        "hex": "0f114330"
+      },
+      {
+        "role": "mappingBaseCopy24",
+        "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+        "rva": 89508662,
+        "hex": "0f1045a0f20f104db00f2945c04c8d45c0f20f114dd0"
+      },
+      {
+        "role": "mappingQueueCopy24",
+        "owner": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+        "rva": 89508849,
+        "hex": "0f1045c04c8d45e0488bcef20f104dd00f2945e0f20f114df0"
+      }
+    ],
+    "allObjectPtrInstantiationsProved": false,
+    "selectedNativeAbiOnly": true
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "completePlayerInputAcceptanceProved": false,
+    "interruptPredicateOrder": [
+      "noCurrentSkill",
+      "allowedPackContains",
+      "plungingStartEquals",
+      "plungingEndEquals",
+      "newPrioritySignedGreater",
+      "currentCanInterrupt"
+    ],
+    "priorityComparison": "signedInt32StrictGreaterThan",
+    "equalPriorityFallsThroughToCurrentGetter": true,
+    "allowedPackLoop": "combo absent skips loop; otherwise index 0 upward, each typed Contains normal result; first true wins",
+    "allowedPackInit": "AddRange supplied list, then append each always-allowed string only when Contains returns false",
+    "mappingRefresh": "Clear real map; for command IDs 0..5: runtime queue found and nonempty -> item 0; empty -> base GetValueOrDefault; runtime queue absent -> copy base only when TryGetValue succeeds",
+    "mappingRemove": "Reverse index search by exact UInt64 instId; first matching row requested for Remove; refresh effective mapping after search, including no match",
+    "objectPtrSuffixWholeLayoutProved": true,
+    "allowNextActionClosedDataSlotProved": true,
+    "objectPtrAllInstantiationsLayoutProved": false,
+    "mappingHandleCleanup": "Re-Lock owner for each stage: nonnull -> remove mapping(instId,cmd); clear-request flag -> re-Lock then ClearSkillRequestByModifierInstId; clear-offset flag -> re-Lock then ClearOffsetModifier(true). Lock failure skips that request; no inferred runtime flags.",
+    "allowNextHandleCleanup": "If typed ObjectPtr.get_isValid is false return; otherwise resolve owner, Lock stored pack and pass it to RemoveAllowedNextSkillPack. Normal compatible owner/pack and handle lifetime remain conditions.",
+    "typedContextsBoundToReviewedCallsites": true,
+    "completeCollectionCallbackAbiProved": false
+  },
+  "orderedPredicates": [
+    "noCurrentSkill",
+    "allowedPackContains",
+    "plungingStartEquals",
+    "plungingEndEquals",
+    "newPrioritySignedGreater",
+    "currentCanInterrupt"
+  ],
+  "facts": [
+    {
+      "id": "orderedInterruptPredicate",
+      "evidence": "conditional",
+      "method": "AbilitySystem.CheckCanInterruptCurSkill",
+      "orderedPredicates": [
+        "noCurrentSkill",
+        "allowedPackContains",
+        "plungingStartEquals",
+        "plungingEndEquals",
+        "newPrioritySignedGreater",
+        "currentCanInterrupt"
+      ],
+      "boundary": "Valid receiver, inactive iFix, stable compatible collections and normal returning typed helpers; true is interruption predicate only, not command acceptance."
+    },
+    {
+      "id": "allowedPackInitialization",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController+AllowedNextSkillPack.Init",
+      "rule": "AddRange supplied list, then append each always-allowed string only when Contains returns false",
+      "boundary": "Existing initialized pack lists and coherent helpers; no assumed pool reset or replacement of old rows."
+    },
+    {
+      "id": "allowedPackRegistrationRemoval",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController.AddAllowedNextSkillPack",
+      "boundary": "Initialize selected allocated pack, ListSet.Add it, convert to ObjectPtr hidden output; Remove requests ListSet.Remove then pool recycle. Pool helper effects/handle lifetime remain conditional."
+    },
+    {
+      "id": "effectiveMappingRefresh",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "rule": "Clear real map; for command IDs 0..5: runtime queue found and nonempty -> item 0; empty -> base GetValueOrDefault; runtime queue absent -> copy base only when TryGetValue succeeds",
+      "boundary": "Queue item0 is the selected request; priority queue ordering and all downstream command acceptance remain separate."
+    },
+    {
+      "id": "mappingRemovalRefresh",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController.RemoveMappingModifier",
+      "rule": "Reverse index search by exact UInt64 instId; first matching row requested for Remove; refresh effective mapping after search, including no match",
+      "boundary": "Coherent queue contents, normal helper effects and unchanged owner/storage; no claim every player cancellation condition follows."
+    },
+    {
+      "id": "normalAttackOuterPredicate",
+      "evidence": "conditional",
+      "method": "AbilitySystem.CanCastNormalAttackAttack",
+      "boundary": "Ascending candidate Skill list; only skillType0 reaches CanCastSkill(skipAngle=true, skipDistance=true, skipInterruptCheck=false). Any normal true yields true; CanCastToTarget and global target remain downstream conditions."
+    },
+    {
+      "id": "allowNextStoredArgumentBridge",
+      "evidence": "conditional",
+      "method": "AllowNextSkillAction.ExecuteInternal",
+      "boundary": "Selected closed Data reference slot and allowedSkillIdList argument, hidden16-byte ObjectPtr output and whole suffix store are authenticated for this witness/ABI. Live owner, selected target and handle lifetime remain conditional."
+    },
+    {
+      "id": "mappingHandleCleanup",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController+MappingModifier+Handle.RemoveModifier",
+      "rule": "Re-Lock owner for each stage: nonnull -> remove mapping(instId,cmd); clear-request flag -> re-Lock then ClearSkillRequestByModifierInstId; clear-offset flag -> re-Lock then ClearOffsetModifier(true). Lock failure skips that request; no inferred runtime flags.",
+      "boundary": "Conditional value-type field view requires explicit object-header adjustment16 and compatible byref Handle storage; each generic Lock must select the recorded current context and return normally. No live ownership or successful input acceptance."
+    },
+    {
+      "id": "allowNextHandleCleanup",
+      "evidence": "conditional",
+      "method": "AllowNextSkillAction.OnEnd",
+      "rule": "If typed ObjectPtr.get_isValid is false return; otherwise resolve owner, Lock stored pack and pass it to RemoveAllowedNextSkillPack. Normal compatible owner/pack and handle lifetime remain conditions.",
+      "boundary": "Typed get_isValid/Lock requests and exact removal bridge; selected constructed suffix width is independently checked, while live lifetime remains open."
+    },
+    {
+      "id": "allowNextClosedDataSlot",
+      "evidence": "conditional",
+      "method": "AllowNextSkillAction.ExecuteInternal",
+      "boundary": "Current concrete class size/default layout, sole closed reference prefix, complete query/ObjectPtr16 suffix and actual selected zero/store/return/caller copies. This is one selected native ABI/witness, not a generic ObjectPtr layout relaxation or runtime provider/lifetime proof."
+    },
+    {
+      "id": "mappingPayload24",
+      "evidence": "conditional",
+      "method": "AbilitySystem+ComboController._UpdateRealEffectedMapping",
+      "payloadBytes": 24,
+      "valueType": "Beyond.Gameplay.Core.AbilitySystem+ComboController+MappingModifier",
+      "valueTypeHeaderAdjustment": 16,
+      "fields": [
+        {
+          "name": "skillId",
+          "offset": 0,
+          "bytes": 8
+        },
+        {
+          "name": "instId",
+          "offset": 8,
+          "bytes": 8
+        },
+        {
+          "name": "priority",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "name": "cacheTime",
+          "offset": 20,
+          "bytes": 4
+        }
+      ],
+      "boundary": "Exact selected 16+8-byte carrier copies into real-map set_Item request. Typed unboxed field interpretation is conditional on explicit header16 and compatible normal returned value; no default helper, priority-queue order or removal comparer effect is inferred."
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Pinned reviewed windows, named current declarations/operands, selected typed MethodInfo requests and branch encodings.",
+    "conditional": "Original fallback paths and compatible stable storage/contexts; helpers must return normally. Executable predicates consume explicit reached results, never assumed false for unknowns.",
+    "unresolved": "Complete player input acceptance, CanCastToTarget/target/source restrictions, selected queue comparator behavior, pool resets/lifetime, live owner/provider selection and full generic collection callback ABI."
+  },
+  "normalTypeZeroPriority": {
+    "owner": "Skill.get_skillInterruptPriority",
+    "skillTypeFieldId": "Skill::<skillType>k__BackingField",
+    "enumMember": {
+      "type": "Beyond.Gameplay.SkillType",
+      "name": "Attack",
+      "id": 0,
+      "token": "0x0400259f"
+    },
+    "ordinaryStartOffset": 24,
+    "zeroReturnEndOffset": 46,
+    "nonzeroTargetOffset": 46,
+    "evidenceBoundary": "Conditional Attack type word zero, absent iFix interception, valid receiver and unchanged type across the two reads. Other types and their jump table are not interpreted; current/candidate Skill type selection remains a separate premise."
+  }
+}

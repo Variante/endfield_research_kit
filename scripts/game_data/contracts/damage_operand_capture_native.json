@@ -1,0 +1,1151 @@
+{
+  "schema": "endfield.damage-operand-capture-native-contract.v2",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "methods": [
+    {
+      "key": "process",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "rva": "0x55f4f70",
+      "return": "bool",
+      "static": false,
+      "parameters": [
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "Beyond.Gameplay.Core.TargetHandleView",
+        "Beyond.Gameplay.Core.BattleTargetWrapper",
+        "bool",
+        "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+        "Beyond.Gameplay.Core.CalcResult"
+      ]
+    },
+    {
+      "key": "pack",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "GetFinalAttackValue",
+      "rva": "0x5354f50",
+      "return": "double",
+      "static": false,
+      "parameters": []
+    },
+    {
+      "key": "usesRaw",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "UsesRawDamageValue",
+      "rva": "0x295d380",
+      "return": "bool",
+      "static": true,
+      "parameters": [
+        "Beyond.GEnums.DamageType"
+      ]
+    },
+    {
+      "key": "healthGetter",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_healthType",
+      "rva": "0x53556f0",
+      "return": "Beyond.Gameplay.Core.HealthType",
+      "static": false,
+      "parameters": []
+    },
+    {
+      "key": "factorGetter",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "get_defenderPoiseFactor",
+      "rva": "0x5354e50",
+      "static": false,
+      "parameters": [],
+      "return": "double"
+    },
+    {
+      "key": "reportInfo",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "GetReportInfo",
+      "rva": "0x5350ec0",
+      "static": false,
+      "parameters": [],
+      "return": "Proto.BATTLE_REPORT_INFO"
+    }
+  ],
+  "functions": [
+    {
+      "name": "process",
+      "rva": "0x55f4f70",
+      "endRva": "0x55f8987",
+      "unwindRva": "0xffaca78"
+    },
+    {
+      "name": "healthPredicate",
+      "rva": "0x53556a0",
+      "endRva": "0x53556e5",
+      "unwindRva": "0xfed8988"
+    },
+    {
+      "name": "healthCold",
+      "rva": "0x74a93ce",
+      "endRva": "0x74a93f3",
+      "unwindRva": "0xff537cc"
+    },
+    {
+      "name": "classInit",
+      "rva": "0x165e0",
+      "endRva": "0x169c2",
+      "unwindRva": "0xfee3ef0"
+    },
+    {
+      "name": "factorGetter",
+      "rva": "0x5354e50",
+      "endRva": "0x5354e78",
+      "unwindRva": "0xfed8988"
+    },
+    {
+      "name": "reportInfo",
+      "rva": "0x5350ec0",
+      "endRva": "0x5350ee4",
+      "unwindRva": "0xff52f24"
+    }
+  ],
+  "windows": [
+    {
+      "name": "process",
+      "rva": "0x55f4f70",
+      "byteCount": 14871,
+      "sha256": "5cb3b8ff3520f62b5b79c0d4e3a04563243caa87491b7079ead0f964febc8fa9"
+    },
+    {
+      "name": "healthPredicate",
+      "rva": "0x53556a0",
+      "byteCount": 69,
+      "sha256": "f760f9bf125d460e18c000b7a5c65a45218464f0ba2cccf58ca5e1c9217b6d09"
+    },
+    {
+      "name": "healthCold",
+      "rva": "0x74a93ce",
+      "byteCount": 37,
+      "sha256": "611311ca93da2c1057e235b3bf1e878a236ca884d1943fbadec051f1c83aec9c"
+    },
+    {
+      "name": "classInit",
+      "rva": "0x165e0",
+      "byteCount": 994,
+      "sha256": "4b180fe2cb7f217d1c79eef6d51d4585f4fdfbdb3b517e83f6ad897de8b6e4e9"
+    },
+    {
+      "name": "factorGetter",
+      "rva": "0x5354e50",
+      "byteCount": 40,
+      "sha256": "419070094d396faf27dd79db5e63cf0917ea14dc0cf5646cd5965711b44baaa8"
+    },
+    {
+      "name": "reportInfo",
+      "rva": "0x5350ec0",
+      "byteCount": 36,
+      "sha256": "98eb5dc8799cf12061ecba800db9f3701a37b216f5038dd2a9964e8d4b75e143"
+    },
+    {
+      "name": "usesRaw",
+      "rva": "0x295d380",
+      "byteCount": 58,
+      "sha256": "b791df462be32f2ee8af78adb57352f4088e306a9ce3425ece6d0c247322b944"
+    },
+    {
+      "name": "processUnwind",
+      "rva": "0xffaca78",
+      "byteCount": 68,
+      "sha256": "547d4f4bec62fc31a58c2d665fae413ba24feb653735c1821ec74d055b1637fd"
+    },
+    {
+      "name": "healthPredicateUnwind",
+      "rva": "0xfed8988",
+      "byteCount": 8,
+      "sha256": "2d8867f028f39ef522d70e56d169d2fbb9046163869f9360ec470bdd2040cd24"
+    },
+    {
+      "name": "healthColdUnwind",
+      "rva": "0xff537cc",
+      "byteCount": 16,
+      "sha256": "d9bcd696d493ec28b1fcd1bd2d28a857c95d1ad7e902f377b14f86eeb4310173"
+    },
+    {
+      "name": "classInitUnwind",
+      "rva": "0xfee3ef0",
+      "byteCount": 32,
+      "sha256": "96cca76714ee42fbd4857a19999ac90f32b89f29aed9c65f75dd84d933ad133a"
+    },
+    {
+      "name": "reportInfoUnwind",
+      "rva": "0xff52f24",
+      "byteCount": 8,
+      "sha256": "92e7342dfa9bed3b6d1b85642e83d4cfea0a9792b2723d694f0e3ea934896b06"
+    }
+  ],
+  "fields": [
+    {
+      "field": "Beyond.Gameplay.Core.DamagePackData::defender",
+      "type": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "offset": 40
+    },
+    {
+      "field": "Beyond.Gameplay.Core.DamagePackData::damageType",
+      "type": "Beyond.GEnums.DamageType",
+      "offset": 72
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::<data>k__BackingField",
+      "type": "Beyond.Gameplay.Core.AbilitySystemData",
+      "offset": 576
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystemData::healthType",
+      "type": "Beyond.Gameplay.Core.HealthType",
+      "offset": 216
+    }
+  ],
+  "contextEntries": [
+    {
+      "key": "factorClassInitEntry",
+      "name": "factorClassInitEntry",
+      "type": "entryContext",
+      "owner": "classInit",
+      "rva": "0x165e0",
+      "expectedBytes": "48895c24184889742420555741544156",
+      "callerReturnRvas": [
+        "0x55f67dc",
+        "0x55f68b1"
+      ],
+      "sourceUnwind": {
+        "kind": "runtimeFunction",
+        "rva": "0xfee3ef0",
+        "version": 1,
+        "flags": 2,
+        "prologueBytes": 30,
+        "codeSlots": 12,
+        "frameByte": 0,
+        "expectedBytes": "111e0c001e680600196417001934160019d212f010e00ec00c700b50981c1a00"
+      },
+      "context": {
+        "role": "factor-carrier",
+        "factorRegister": "xmm1",
+        "factorBits": 64,
+        "localPackOffsetFromEntryRsp": 840,
+        "selection": "earliest matching entry in the same Process invocation; later entries are not factor witnesses",
+        "valueBoundary": "incoming bits before callee instructions; no return value or second getter evaluation"
+      },
+      "namedIdentity": null,
+      "nativeAbiDeclaration": {
+        "kind": "nativeEntryContextOnly",
+        "returnObserved": false,
+        "argumentsObserved": false
+      }
+    },
+    {
+      "key": "factorGetterEntry",
+      "name": "factorGetterEntry",
+      "type": "entryContext",
+      "owner": "factorGetter",
+      "rva": "0x5354e50",
+      "expectedBytes": "4883ec28488b05f5a33c0c4c8bc9488b",
+      "callerReturnRvas": [
+        "0x55f67eb"
+      ],
+      "sourceUnwind": {
+        "kind": "runtimeFunction",
+        "rva": "0xfed8988",
+        "version": 1,
+        "flags": 0,
+        "prologueBytes": 4,
+        "codeSlots": 1,
+        "frameByte": 0,
+        "expectedBytes": "0104010004420000"
+      },
+      "context": {
+        "role": "factor-carrier",
+        "factorRegister": "xmm1",
+        "factorBits": 64,
+        "localPackOffsetFromEntryRsp": 840,
+        "selection": "earliest matching entry in the same Process invocation; later entries are not factor witnesses",
+        "valueBoundary": "incoming bits before callee instructions; no return value or second getter evaluation"
+      },
+      "namedIdentity": {
+        "type": "Beyond.Gameplay.Core.DamagePackData",
+        "method": "get_defenderPoiseFactor"
+      },
+      "nativeAbiDeclaration": {
+        "kind": "nativeEntryContextOnly",
+        "returnObserved": false,
+        "argumentsObserved": false
+      }
+    },
+    {
+      "key": "factorReportInfoEntry",
+      "name": "factorReportInfoEntry",
+      "type": "entryContext",
+      "owner": "reportInfo",
+      "rva": "0x5350ec0",
+      "expectedBytes": "40564883ec20488b0583e33c0c488bf1",
+      "callerReturnRvas": [
+        "0x55f68c0"
+      ],
+      "sourceUnwind": {
+        "kind": "runtimeFunction",
+        "rva": "0xff52f24",
+        "version": 1,
+        "flags": 0,
+        "prologueBytes": 6,
+        "codeSlots": 2,
+        "frameByte": 0,
+        "expectedBytes": "0106020006320260"
+      },
+      "context": {
+        "role": "factor-carrier",
+        "factorRegister": "xmm1",
+        "factorBits": 64,
+        "localPackOffsetFromEntryRsp": 840,
+        "selection": "earliest matching entry in the same Process invocation; later entries are not factor witnesses",
+        "valueBoundary": "incoming bits before callee instructions; no return value or second getter evaluation"
+      },
+      "namedIdentity": {
+        "type": "Beyond.Gameplay.Core.DamagePackData",
+        "method": "GetReportInfo"
+      },
+      "nativeAbiDeclaration": {
+        "kind": "nativeEntryContextOnly",
+        "returnObserved": false,
+        "argumentsObserved": false
+      }
+    }
+  ],
+  "pairedEntries": [
+    {
+      "key": "healthPredicateEntry",
+      "name": "healthPredicateEntry",
+      "type": "physicalPaired",
+      "owner": "healthPredicate",
+      "rva": "0x53556a0",
+      "expectedBytes": "4883ec284885c97432488b05a09b3c0c",
+      "callerReturnRvas": [
+        "0x55f64c4"
+      ],
+      "sourceUnwind": {
+        "kind": "runtimeFunction",
+        "rva": "0xfed8988",
+        "version": 1,
+        "flags": 0,
+        "prologueBytes": 4,
+        "codeSlots": 1,
+        "frameByte": 0,
+        "expectedBytes": "0104010004420000"
+      },
+      "abiId": "win64.scoped_paired_gp_bool_1.v1",
+      "nativeAbiDeclaration": {
+        "kind": "opaquePhysical",
+        "argumentRegisters": [
+          "rcx"
+        ],
+        "returnRegister": "al",
+        "returnKind": "bool",
+        "includesMethodInfo": false,
+        "scopeRequired": true
+      },
+      "fields": [
+        {
+          "name": "defenderData",
+          "field": "Beyond.Gameplay.Core.AbilitySystem::<data>k__BackingField",
+          "offset": 576,
+          "type": "Beyond.Gameplay.Core.AbilitySystemData",
+          "kind": "pointer",
+          "rootRegister": "rcx",
+          "snapshotBoundary": "entryOnly",
+          "nativeActualLoad": false
+        }
+      ],
+      "context": {
+        "role": "actual-health-predicate",
+        "receiverRegister": "rcx",
+        "localPackOffsetFromEntryRsp": 840,
+        "resultBoundary": "normal-return Bool; no actual HealthType enum is captured; data pointer is an entry snapshot"
+      }
+    },
+    {
+      "key": "usesRawEntry",
+      "name": "usesRawEntry",
+      "type": "managedPaired",
+      "owner": "usesRaw",
+      "rva": "0x295d380",
+      "expectedBytes": "488b05c91edc0e4c8b48504d85c9741b",
+      "callerReturnRvas": [
+        "0x55f64da"
+      ],
+      "sourceUnwind": {
+        "kind": "leaf",
+        "pdataEntryAbsent": true
+      },
+      "abiId": "win64.scoped_paired_gp_bool_2.v1",
+      "nativeAbiDeclaration": {
+        "kind": "managedStatic",
+        "argumentRegisters": [
+          "rcx",
+          "rdx"
+        ],
+        "returnRegister": "al",
+        "returnKind": "bool",
+        "includesMethodInfo": true,
+        "methodInfoRegister": "rdx",
+        "parameters": [
+          "Beyond.GEnums.DamageType"
+        ],
+        "scopeRequired": true
+      },
+      "fields": [],
+      "context": {
+        "role": "actual-raw-predicate",
+        "damageTypeRegister": "ecx",
+        "localPackOffsetFromEntryRsp": 840,
+        "resultBoundary": "actual normal-return Bool including replacement result"
+      }
+    }
+  ],
+  "joins": {
+    "framePackOffset": 832,
+    "boxedHeaderBytes": 16,
+    "packArgumentLeaRva": "0x55f646d",
+    "defenderArgumentLeaRva": "0x55f6497",
+    "damageTypeLoadRva": "0x55f64ce",
+    "specialCallRva": "0x55f64bf",
+    "specialPredicateRva": "0x53556a0",
+    "specialDefaultDataLoadOffset": 29,
+    "specialDefaultHealthLoadOffset": 41,
+    "specialIndependentCompareOffset": 47,
+    "specialRootLoadOffset": 9,
+    "specialTableLoadOffset": 16,
+    "specialColdRva": "0x74a93ce",
+    "healthGetterRootLoadOffset": 4,
+    "healthGetterTableLoadOffset": 11,
+    "healthGetterColdRva": "0x74a93f4",
+    "healthTableOffset": 72,
+    "healthFunctionOffset": 20656,
+    "usesRawRootLoadOffset": 0,
+    "usesRawTableOffset": 80,
+    "usesRawFunctionOffset": 2032,
+    "usesRawDefaultOffset": 43,
+    "usesRawTrueCodes": [
+      5,
+      8
+    ],
+    "skipBranches": [
+      {
+        "name": "independentHealth",
+        "rva": "0x55f64c6",
+        "targetRva": "0x55f6989"
+      },
+      {
+        "name": "rawDamage",
+        "rva": "0x55f64dc",
+        "targetRva": "0x55f68e9"
+      }
+    ],
+    "healthGetterDefaultDataLoadOffset": 24,
+    "healthGetterDefaultHealthLoadOffset": 36,
+    "healthGetterRestoreOffset": 42,
+    "factorSelectorRva": "0x55f6610",
+    "factorTableOffset": 80,
+    "alternativeMerge": {
+      "mergeRva": "0x55f69b2",
+      "rawJumpRva": "0x55f6987",
+      "specialLastLoadRva": "0x55f69a8",
+      "specialLastLoadBytes": "f2440f10842470030000"
+    },
+    "healthEntryRva": "0x53556a0",
+    "healthReceiverMoveRva": "0x55f64bc",
+    "healthReceiverMoveBytes": "488bcf",
+    "lockResultMoveRva": "0x55f64a4",
+    "lockResultMoveBytes": "488bf8",
+    "healthCallRva": "0x55f64bf",
+    "healthReturnRva": "0x55f64c4",
+    "rawCallRva": "0x55f64d5",
+    "rawReturnRva": "0x55f64da",
+    "rawMethodInfoZeroRva": "0x55f64cc"
+  },
+  "firstCallGraph": {
+    "entryRva": "0x55f6660",
+    "factorRegister": "xmm1",
+    "factorUseRva": "0x55f668c",
+    "factorUseBytes": "f2440f59c1",
+    "nodes": [
+      {
+        "rva": "0x55f6660",
+        "bytes": "450f28c4",
+        "text": "movaps xmm8, xmm12"
+      },
+      {
+        "rva": "0x55f6664",
+        "bytes": "f2450f59c2",
+        "text": "mulsd xmm8, xmm10"
+      },
+      {
+        "rva": "0x55f6669",
+        "bytes": "0f28c7",
+        "text": "movaps xmm0, xmm7"
+      },
+      {
+        "rva": "0x55f666c",
+        "bytes": "f20f58c2",
+        "text": "addsd xmm0, xmm2"
+      },
+      {
+        "rva": "0x55f6670",
+        "bytes": "f2440f59c0",
+        "text": "mulsd xmm8, xmm0"
+      },
+      {
+        "rva": "0x55f6675",
+        "bytes": "f2450f59c1",
+        "text": "mulsd xmm8, xmm9"
+      },
+      {
+        "rva": "0x55f667a",
+        "bytes": "0f28c2",
+        "text": "movaps xmm0, xmm2"
+      },
+      {
+        "rva": "0x55f667d",
+        "bytes": "f2410f5cc3",
+        "text": "subsd xmm0, xmm11"
+      },
+      {
+        "rva": "0x55f6682",
+        "bytes": "f2440f59c0",
+        "text": "mulsd xmm8, xmm0"
+      },
+      {
+        "rva": "0x55f6687",
+        "bytes": "f2440f59c6",
+        "text": "mulsd xmm8, xmm6"
+      },
+      {
+        "rva": "0x55f668c",
+        "bytes": "f2440f59c1",
+        "text": "mulsd xmm8, xmm1"
+      },
+      {
+        "rva": "0x55f6691",
+        "bytes": "488b842480030000",
+        "text": "mov rax, [rsp+0x380]"
+      },
+      {
+        "rva": "0x55f6699",
+        "bytes": "48a93800d00f",
+        "text": "test rax, signextended imm32"
+      },
+      {
+        "rva": "0x55f669f",
+        "bytes": "741c",
+        "text": "je 0x1855f66bd"
+      },
+      {
+        "rva": "0x55f66a1",
+        "bytes": "4885d2",
+        "text": "test rdx, rdx"
+      },
+      {
+        "rva": "0x55f66a4",
+        "bytes": "0f84e2210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f66aa",
+        "bytes": "837a1831",
+        "text": "cmp [rdx+0x18], 0x31"
+      },
+      {
+        "rva": "0x55f66ae",
+        "bytes": "0f86c5220000",
+        "text": "jcc 0x1855f8979"
+      },
+      {
+        "rva": "0x55f66b4",
+        "bytes": "f2440f5982a8010000",
+        "text": "mulsd xmm8, [rdx+0x1a8]"
+      },
+      {
+        "rva": "0x55f66bd",
+        "bytes": "48a900c00140",
+        "text": "test rax, signextended imm32"
+      },
+      {
+        "rva": "0x55f66c3",
+        "bytes": "741c",
+        "text": "je 0x1855f66e1"
+      },
+      {
+        "rva": "0x55f66c5",
+        "bytes": "4885d2",
+        "text": "test rdx, rdx"
+      },
+      {
+        "rva": "0x55f66c8",
+        "bytes": "0f84be210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f66ce",
+        "bytes": "837a1819",
+        "text": "cmp [rdx+0x18], 0x19"
+      },
+      {
+        "rva": "0x55f66d2",
+        "bytes": "0f86a1220000",
+        "text": "jcc 0x1855f8979"
+      },
+      {
+        "rva": "0x55f66d8",
+        "bytes": "f2440f5982e8000000",
+        "text": "mulsd xmm8, [rdx+0xe8]"
+      },
+      {
+        "rva": "0x55f66e1",
+        "bytes": "0fb6442470",
+        "text": "movzx eax, [rsp+0x70]"
+      },
+      {
+        "rva": "0x55f66e6",
+        "bytes": "4885db",
+        "text": "test rbx, rbx"
+      },
+      {
+        "rva": "0x55f66e9",
+        "bytes": "0f849d210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f66ef",
+        "bytes": "85c0",
+        "text": "test eax, eax"
+      },
+      {
+        "rva": "0x55f66f1",
+        "bytes": "0f95c0",
+        "text": "setne al"
+      },
+      {
+        "rva": "0x55f66f4",
+        "bytes": "884324",
+        "text": "mov [rbx+0x24], al"
+      },
+      {
+        "rva": "0x55f66f7",
+        "bytes": "488b0502ae0f0b",
+        "text": "mov rax, [rip+0xb0fae02 => 0x1906f1500]"
+      },
+      {
+        "rva": "0x55f66fe",
+        "bytes": "488b88b8000000",
+        "text": "mov rcx, [rax+0xb8]"
+      },
+      {
+        "rva": "0x55f6705",
+        "bytes": "488b4118",
+        "text": "mov rax, [rcx+0x18]"
+      },
+      {
+        "rva": "0x55f6709",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f670c",
+        "bytes": "0f847a210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6712",
+        "bytes": "488b8070040000",
+        "text": "mov rax, [rax+0x470]"
+      },
+      {
+        "rva": "0x55f6719",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f671c",
+        "bytes": "0f846a210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6722",
+        "bytes": "80781000",
+        "text": "cmp [rax+0x10], 0x0"
+      },
+      {
+        "rva": "0x55f6726",
+        "bytes": "0f8470010000",
+        "text": "jcc 0x1855f689c"
+      },
+      {
+        "rva": "0x55f672c",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f6730",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f6733",
+        "bytes": "0f8453210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6739",
+        "bytes": "f20f10842470030000",
+        "text": "movsd xmm0, [rsp+0x370]"
+      },
+      {
+        "rva": "0x55f6742",
+        "bytes": "f20f114018",
+        "text": "movsd [rax+0x18], xmm0"
+      },
+      {
+        "rva": "0x55f6747",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f674b",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f674e",
+        "bytes": "0f8438210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6754",
+        "bytes": "f2440f115028",
+        "text": "movsd [rax+0x28], xmm10"
+      },
+      {
+        "rva": "0x55f675a",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f675e",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f6761",
+        "bytes": "0f8425210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6767",
+        "bytes": "f20f117830",
+        "text": "movsd [rax+0x30], xmm7"
+      },
+      {
+        "rva": "0x55f676c",
+        "bytes": "488b4b68",
+        "text": "mov rcx, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f6770",
+        "bytes": "488b8424c8030000",
+        "text": "mov rax, [rsp+0x3c8]"
+      },
+      {
+        "rva": "0x55f6778",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f677b",
+        "bytes": "0f840b210000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6781",
+        "bytes": "83781803",
+        "text": "cmp [rax+0x18], 0x3"
+      },
+      {
+        "rva": "0x55f6785",
+        "bytes": "0f86ee210000",
+        "text": "jcc 0x1855f8979"
+      },
+      {
+        "rva": "0x55f678b",
+        "bytes": "f20f104038",
+        "text": "movsd xmm0, [rax+0x38]"
+      },
+      {
+        "rva": "0x55f6790",
+        "bytes": "4885c9",
+        "text": "test rcx, rcx"
+      },
+      {
+        "rva": "0x55f6793",
+        "bytes": "0f84f3200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6799",
+        "bytes": "f20f114138",
+        "text": "movsd [rcx+0x38], xmm0"
+      },
+      {
+        "rva": "0x55f679e",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f67a2",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f67a5",
+        "bytes": "0f84e1200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f67ab",
+        "bytes": "f2440f114840",
+        "text": "movsd [rax+0x40], xmm9"
+      },
+      {
+        "rva": "0x55f67b1",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f67b5",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f67b8",
+        "bytes": "0f84ce200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f67be",
+        "bytes": "f20f117048",
+        "text": "movsd [rax+0x48], xmm6"
+      },
+      {
+        "rva": "0x55f67c3",
+        "bytes": "488b7b68",
+        "text": "mov rdi, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f67c7",
+        "bytes": "488b0d1abc0a0b",
+        "text": "mov rcx, [rip+0xb0abc1a => 0x1906a23e8]"
+      },
+      {
+        "rva": "0x55f67ce",
+        "bytes": "83b9e000000000",
+        "text": "cmp [rcx+0xe0], 0x0"
+      },
+      {
+        "rva": "0x55f67d5",
+        "bytes": "7505",
+        "text": "jne 0x1855f67dc"
+      },
+      {
+        "rva": "0x55f67d7",
+        "bytes": "e804fea1fa",
+        "text": "call 0x1800165e0"
+      },
+      {
+        "rva": "0x55f67dc",
+        "bytes": "33d2",
+        "text": "xor edx, edx"
+      },
+      {
+        "rva": "0x55f67de",
+        "bytes": "488d8c2440030000",
+        "text": "lea rcx, [rsp+0x340]"
+      },
+      {
+        "rva": "0x55f67e6",
+        "bytes": "e865e6d5ff",
+        "text": "call 0x185354e50"
+      },
+      {
+        "rva": "0x55f67eb",
+        "bytes": "4885ff",
+        "text": "test rdi, rdi"
+      },
+      {
+        "rva": "0x55f67ee",
+        "bytes": "0f8498200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f67f4",
+        "bytes": "f20f114750",
+        "text": "movsd [rdi+0x50], xmm0"
+      },
+      {
+        "rva": "0x55f67f9",
+        "bytes": "488b4b68",
+        "text": "mov rcx, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f67fd",
+        "bytes": "488b8424b8030000",
+        "text": "mov rax, [rsp+0x3b8]"
+      },
+      {
+        "rva": "0x55f6805",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f6808",
+        "bytes": "0f847e200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f680e",
+        "bytes": "83781831",
+        "text": "cmp [rax+0x18], 0x31"
+      },
+      {
+        "rva": "0x55f6812",
+        "bytes": "0f8661210000",
+        "text": "jcc 0x1855f8979"
+      },
+      {
+        "rva": "0x55f6818",
+        "bytes": "f20f1080a8010000",
+        "text": "movsd xmm0, [rax+0x1a8]"
+      },
+      {
+        "rva": "0x55f6820",
+        "bytes": "4885c9",
+        "text": "test rcx, rcx"
+      },
+      {
+        "rva": "0x55f6823",
+        "bytes": "0f8463200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6829",
+        "bytes": "f20f114158",
+        "text": "movsd [rcx+0x58], xmm0"
+      },
+      {
+        "rva": "0x55f682e",
+        "bytes": "488b4b68",
+        "text": "mov rcx, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f6832",
+        "bytes": "488b8424b8030000",
+        "text": "mov rax, [rsp+0x3b8]"
+      },
+      {
+        "rva": "0x55f683a",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f683d",
+        "bytes": "0f8449200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6843",
+        "bytes": "83781819",
+        "text": "cmp [rax+0x18], 0x19"
+      },
+      {
+        "rva": "0x55f6847",
+        "bytes": "0f862c210000",
+        "text": "jcc 0x1855f8979"
+      },
+      {
+        "rva": "0x55f684d",
+        "bytes": "f20f1080e8000000",
+        "text": "movsd xmm0, [rax+0xe8]"
+      },
+      {
+        "rva": "0x55f6855",
+        "bytes": "4885c9",
+        "text": "test rcx, rcx"
+      },
+      {
+        "rva": "0x55f6858",
+        "bytes": "0f842e200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f685e",
+        "bytes": "f20f114178",
+        "text": "movsd [rcx+0x78], xmm0"
+      },
+      {
+        "rva": "0x55f6863",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f6867",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f686a",
+        "bytes": "0f841c200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6870",
+        "bytes": "f2440f114060",
+        "text": "movsd [rax+0x60], xmm8"
+      },
+      {
+        "rva": "0x55f6876",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f687a",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f687d",
+        "bytes": "0f8409200000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6883",
+        "bytes": "f2440f116068",
+        "text": "movsd [rax+0x68], xmm12"
+      },
+      {
+        "rva": "0x55f6889",
+        "bytes": "488b4368",
+        "text": "mov rax, [rbx+0x68]"
+      },
+      {
+        "rva": "0x55f688d",
+        "bytes": "4885c0",
+        "text": "test rax, rax"
+      },
+      {
+        "rva": "0x55f6890",
+        "bytes": "0f84f61f0000",
+        "text": "jcc 0x1855f888c"
+      },
+      {
+        "rva": "0x55f6896",
+        "bytes": "f2440f115870",
+        "text": "movsd [rax+0x70], xmm11"
+      },
+      {
+        "rva": "0x55f689c",
+        "bytes": "488b0d45bb0a0b",
+        "text": "mov rcx, [rip+0xb0abb45 => 0x1906a23e8]"
+      },
+      {
+        "rva": "0x55f68a3",
+        "bytes": "83b9e000000000",
+        "text": "cmp [rcx+0xe0], 0x0"
+      },
+      {
+        "rva": "0x55f68aa",
+        "bytes": "7505",
+        "text": "jne 0x1855f68b1"
+      },
+      {
+        "rva": "0x55f68ac",
+        "bytes": "e82ffda1fa",
+        "text": "call 0x1800165e0"
+      },
+      {
+        "rva": "0x55f68b1",
+        "bytes": "33d2",
+        "text": "xor edx, edx"
+      },
+      {
+        "rva": "0x55f68b3",
+        "bytes": "488d8c2440030000",
+        "text": "lea rcx, [rsp+0x340]"
+      },
+      {
+        "rva": "0x55f68bb",
+        "bytes": "e800a6d5ff",
+        "text": "call 0x185350ec0"
+      }
+    ],
+    "firstCalls": [
+      {
+        "callRva": "0x55f67d7",
+        "returnRva": "0x55f67dc",
+        "targetRva": "0x165e0"
+      },
+      {
+        "callRva": "0x55f67e6",
+        "returnRva": "0x55f67eb",
+        "targetRva": "0x5354e50"
+      },
+      {
+        "callRva": "0x55f68ac",
+        "returnRva": "0x55f68b1",
+        "targetRva": "0x165e0"
+      },
+      {
+        "callRva": "0x55f68bb",
+        "returnRva": "0x55f68c0",
+        "targetRva": "0x5350ec0"
+      }
+    ],
+    "excludedExceptionDestinations": [
+      "0x55f888c",
+      "0x55f8979"
+    ],
+    "excludedExceptionWindows": [
+      {
+        "branchDestinationRva": "0x55f888c",
+        "bytes": "e89f60aefa90e89960aefa90e893",
+        "normalContinuationProved": false
+      },
+      {
+        "branchDestinationRva": "0x55f8979",
+        "bytes": "e832a4a2facc33c9e842114107cc",
+        "normalContinuationProved": false
+      }
+    ],
+    "conditions": [
+      "Ordinary execution beginning at the authenticated factor merge, without asynchronous register mutation, exception/unwind/nonlocal resume, or debugger trap continuation.",
+      "An entry witness is only valid as the earliest scoped context event for the same Process, with complete event delivery; a later incoming volatile XMM1 is not valid.",
+      "The graph proves bounded first-call coverage from factor merge, not original Process selector dominance from an earlier Pack marker."
+    ]
+  },
+  "backendRequirements": [
+    "Normal function-entry transparent capture must save incoming XMM1 before any callee/proxy C++ code can clobber it.",
+    "Context entries record no paired return and do not claim a managed ABI for the native class-init routine.",
+    "Physical health GP1 Bool proof is specific to this entry/caller and cannot widen arbitrary anonymous functions.",
+    "Data pointer entry snapshot is not the later native consumer load, enum result, or replacement-selection proof."
+  ],
+  "unresolved": [
+    "No runtime values established by native validation.",
+    "Error/throw/unwind/debugger-resume paths excluded from finite normal graph.",
+    "Entry backend state preservation, unwind and actual scoped event admission are separately validated.",
+    "No full-program indirect/external-entry or concurrent native mutation theorem."
+  ]
+}

@@ -1,0 +1,634 @@
+{
+  "schema": "endfield.skill-timing-runtime-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": [
+    {
+      "id": "SkillData.get_duration",
+      "identity": [
+        58778,
+        "Beyond.Gameplay.Core.SkillData",
+        "get_duration",
+        92943008
+      ],
+      "returnType": "float",
+      "parameterTypes": [],
+      "isStatic": false
+    },
+    {
+      "id": "SkillData.get_exclusiveTime",
+      "identity": [
+        58779,
+        "Beyond.Gameplay.Core.SkillData",
+        "get_exclusiveTime",
+        97669456
+      ],
+      "returnType": "float",
+      "parameterTypes": [],
+      "isStatic": false
+    },
+    {
+      "id": "SkillData.get_aiExclusiveTime",
+      "identity": [
+        58780,
+        "Beyond.Gameplay.Core.SkillData",
+        "get_aiExclusiveTime",
+        149082648
+      ],
+      "returnType": "float",
+      "parameterTypes": [],
+      "isStatic": false
+    },
+    {
+      "id": "TimelineAction+TimelineActionData.ToAction",
+      "identity": [
+        60243,
+        "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+        "ToAction",
+        90879312
+      ],
+      "returnType": "Beyond.Gameplay.Core.TimelineAction",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.IActionEnvironment"
+      ],
+      "isStatic": false
+    },
+    {
+      "id": "MarkCanInterrupt.ExecuteInternal",
+      "identity": [
+        61842,
+        "Beyond.Gameplay.Core.MarkCanInterrupt",
+        "ExecuteInternal",
+        149508552
+      ],
+      "returnType": "bool",
+      "parameterTypes": [
+        "Beyond.Gameplay.Core.TargetHandleView"
+      ],
+      "isStatic": false
+    },
+    {
+      "id": "Skill.MarkCanInterrupt",
+      "identity": [
+        58714,
+        "Beyond.Gameplay.Core.Skill",
+        "MarkCanInterrupt",
+        149083844
+      ],
+      "returnType": "void",
+      "parameterTypes": [],
+      "isStatic": false
+    },
+    {
+      "id": "Skill.get_canInterrupt",
+      "identity": [
+        58677,
+        "Beyond.Gameplay.Core.Skill",
+        "get_canInterrupt",
+        97669280
+      ],
+      "returnType": "bool",
+      "parameterTypes": [],
+      "isStatic": false
+    },
+    {
+      "id": "Skill.get_canDash",
+      "identity": [
+        58679,
+        "Beyond.Gameplay.Core.Skill",
+        "get_canDash",
+        149086664
+      ],
+      "returnType": "bool",
+      "parameterTypes": [],
+      "isStatic": false
+    }
+  ],
+  "fields": [
+    {
+      "id": "SkillData::durationFrame",
+      "type": "Beyond.Gameplay.Core.SkillData",
+      "name": "durationFrame",
+      "valueType": "int",
+      "offset": 80,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "SkillData::exclusiveFrame",
+      "type": "Beyond.Gameplay.Core.SkillData",
+      "name": "exclusiveFrame",
+      "valueType": "int",
+      "offset": 84,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "SkillData::aiExclusiveFrame",
+      "type": "Beyond.Gameplay.Core.SkillData",
+      "name": "aiExclusiveFrame",
+      "valueType": "int",
+      "offset": 92,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "TimelineAction+TimelineActionData::_startFrame",
+      "type": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+      "name": "_startFrame",
+      "valueType": "int",
+      "offset": 16,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "TimelineAction+TimelineActionData::_endFrame",
+      "type": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+      "name": "_endFrame",
+      "valueType": "int",
+      "offset": 20,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "TimelineAction+TimelineActionData::_sequenceActionData",
+      "type": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+      "name": "_sequenceActionData",
+      "valueType": "Beyond.Gameplay.Core.SequenceActionData",
+      "offset": 24,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "TimelineAction+TimelineActionData::forceSyncAnimData",
+      "type": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+      "name": "forceSyncAnimData",
+      "valueType": "Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData",
+      "offset": 32,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "TimelineAction::<startTime>k__BackingField",
+      "type": "Beyond.Gameplay.Core.TimelineAction",
+      "name": "<startTime>k__BackingField",
+      "valueType": "float",
+      "offset": 16,
+      "ordinaryKind": 12
+    },
+    {
+      "id": "TimelineAction::<endTime>k__BackingField",
+      "type": "Beyond.Gameplay.Core.TimelineAction",
+      "name": "<endTime>k__BackingField",
+      "valueType": "float",
+      "offset": 20,
+      "ordinaryKind": 12
+    },
+    {
+      "id": "TimelineAction::<startFrame>k__BackingField",
+      "type": "Beyond.Gameplay.Core.TimelineAction",
+      "name": "<startFrame>k__BackingField",
+      "valueType": "int",
+      "offset": 24,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "TimelineAction::<endFrame>k__BackingField",
+      "type": "Beyond.Gameplay.Core.TimelineAction",
+      "name": "<endFrame>k__BackingField",
+      "valueType": "int",
+      "offset": 28,
+      "ordinaryKind": 8
+    },
+    {
+      "id": "Skill::m_markCanInterrupt",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_markCanInterrupt",
+      "valueType": "bool",
+      "offset": 140,
+      "ordinaryKind": 2
+    },
+    {
+      "id": "Skill::m_data",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_data",
+      "valueType": "Beyond.Gameplay.Core.SkillData",
+      "offset": 24,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Skill::m_durationTimer",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_durationTimer",
+      "valueType": "Beyond.Gameplay.PeriodicTimer",
+      "offset": 80,
+      "ordinaryKind": 18
+    },
+    {
+      "id": "Skill::m_markCanDash",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_markCanDash",
+      "valueType": "bool",
+      "offset": 141,
+      "ordinaryKind": 2
+    },
+    {
+      "id": "PeriodicTimer::m_passedTime",
+      "type": "Beyond.Gameplay.PeriodicTimer",
+      "name": "m_passedTime",
+      "valueType": "float",
+      "offset": 24,
+      "ordinaryKind": 12
+    }
+  ],
+  "codeWindows": [
+    {
+      "method": "SkillData.get_duration",
+      "startRva": 92943008,
+      "endRva": 92943101,
+      "sha256": "269C86290FB2D907058A3999AC17A847788E182EA1E232F9BFBDE766181B699E",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "SkillData.get_exclusiveTime",
+      "startRva": 97669456,
+      "endRva": 97669501,
+      "sha256": "C098265F1F7DE53821F03DC398D4EA913AF029E8744D38FCC7454823A7A61AE0",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "SkillData.get_aiExclusiveTime",
+      "startRva": 149082648,
+      "endRva": 149082713,
+      "sha256": "A10B5A5EC5FF66876CC9562DE81A764DD062E74B2653D7C2B70079EB0C27DD1B",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "startRva": 90879312,
+      "endRva": 90879556,
+      "sha256": "239B92D9351EF85C39061AD1E54F20FDDFFFB060D1BB75DF1840A42F170CA095",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "MarkCanInterrupt.ExecuteInternal",
+      "startRva": 149508552,
+      "endRva": 149508716,
+      "sha256": "CA5B03B0F1FA13017B6B5F585729D028349C02DA9AB9E1C251699211FDAA09F3",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "Skill.MarkCanInterrupt",
+      "startRva": 149083844,
+      "endRva": 149083905,
+      "sha256": "9E728D42E33C6E90A5D27B5D804F5259F91110D84355A23D9C0D080C15B8E9DD",
+      "boundary": "Reviewed original native entry and ordinary fallback window; iFix targets are not semantic evidence."
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "startRva": 97669280,
+      "endRva": 97669449,
+      "sha256": "BE75E2322F45E002791C997B6A7566565D48FA8D1013CC577E2AF48BC7B29E1D",
+      "boundary": "Complete reviewed primary original fallback through ordinary returns/null trap/class-init rejoin; iFix dispatch targets excluded and interception assumed absent."
+    },
+    {
+      "method": "Skill.get_canDash",
+      "startRva": 149086664,
+      "endRva": 149086750,
+      "sha256": "466E0A733ADD34AE65D312E8299FF9B07410FFD03B141785424C33A53DCCECCC",
+      "boundary": "Complete reviewed primary original fallback through ordinary returns/null trap/class-init rejoin; iFix dispatch targets excluded and interception assumed absent."
+    }
+  ],
+  "float32Divisions": [
+    {
+      "method": "SkillData.get_duration",
+      "instructionRva": 92943078,
+      "instructionHex": "f30f5e050e231f08",
+      "literalRva": 229201404,
+      "float32": 30.0,
+      "literalHex": "0000f041"
+    },
+    {
+      "method": "SkillData.get_exclusiveTime",
+      "instructionRva": 97669488,
+      "instructionHex": "f30f5e058404d707",
+      "literalRva": 229201404,
+      "float32": 30.0,
+      "literalHex": "0000f041"
+    },
+    {
+      "method": "SkillData.get_aiExclusiveTime",
+      "instructionRva": 149082704,
+      "instructionHex": "f30f5e05a483c604",
+      "literalRva": 229201404,
+      "float32": 30.0,
+      "literalHex": "0000f041"
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "instructionRva": 90879450,
+      "instructionHex": "f30f5e0d1aa03e08",
+      "literalRva": 229201404,
+      "float32": 30.0,
+      "literalHex": "0000f041"
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "instructionRva": 90879458,
+      "instructionHex": "f30f5e1512a03e08",
+      "literalRva": 229201404,
+      "float32": 30.0,
+      "literalHex": "0000f041"
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "instructionRva": 97669363,
+      "instructionHex": "f30f5e350105d707",
+      "literalRva": 229201404,
+      "literalHex": "0000f041",
+      "float32": 30.0
+    }
+  ],
+  "fieldReads": [
+    {
+      "method": "SkillData.get_duration",
+      "rva": 92943037,
+      "hex": "8b5950",
+      "field": "SkillData::durationFrame",
+      "displacementOffset": 2,
+      "displacementSize": 1
+    },
+    {
+      "method": "SkillData.get_exclusiveTime",
+      "rva": 97669480,
+      "hex": "660f6e4154",
+      "field": "SkillData::exclusiveFrame",
+      "displacementOffset": 4,
+      "displacementSize": 1
+    },
+    {
+      "method": "SkillData.get_aiExclusiveTime",
+      "rva": 149082695,
+      "hex": "66410f6e415c",
+      "field": "SkillData::aiExclusiveFrame",
+      "displacementOffset": 5,
+      "displacementSize": 1
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "rva": 90879407,
+      "hex": "8b4f10",
+      "field": "TimelineAction+TimelineActionData::_startFrame",
+      "displacementOffset": 2,
+      "displacementSize": 1
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "rva": 90879413,
+      "hex": "8b5714",
+      "field": "TimelineAction+TimelineActionData::_endFrame",
+      "displacementOffset": 2,
+      "displacementSize": 1
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669309,
+      "hex": "488b4350",
+      "field": "Skill::m_durationTimer",
+      "displacementOffset": 3,
+      "displacementSize": 1,
+      "cancelRole": "timerReference"
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669323,
+      "hex": "f30f107818",
+      "field": "PeriodicTimer::m_passedTime",
+      "displacementOffset": 4,
+      "displacementSize": 1,
+      "cancelRole": "timerElapsed"
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669328,
+      "hex": "488b4318",
+      "field": "Skill::m_data",
+      "displacementOffset": 3,
+      "displacementSize": 1,
+      "cancelRole": "dataReference"
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669355,
+      "hex": "660f6e7054",
+      "field": "SkillData::exclusiveFrame",
+      "displacementOffset": 4,
+      "displacementSize": 1,
+      "cancelRole": "exclusiveFrames"
+    },
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669405,
+      "hex": "0fb6838c000000",
+      "field": "Skill::m_markCanInterrupt",
+      "displacementOffset": 3,
+      "displacementSize": 4,
+      "cancelRole": "interruptMarker"
+    },
+    {
+      "method": "Skill.get_canDash",
+      "rva": 149086738,
+      "hex": "8a838d000000",
+      "field": "Skill::m_markCanDash",
+      "displacementOffset": 2,
+      "displacementSize": 4,
+      "cancelRole": "dashMarker"
+    }
+  ],
+  "fieldStores": [
+    {
+      "method": "Skill.MarkCanInterrupt",
+      "rva": 149083893,
+      "hex": "c6818c00000001",
+      "field": "Skill::m_markCanInterrupt",
+      "displacementOffset": 2,
+      "displacementSize": 4,
+      "storedByte": 1
+    }
+  ],
+  "directCalls": [
+    {
+      "method": "MarkCanInterrupt.ExecuteInternal",
+      "rva": 149508690,
+      "hex": "e86d84f9ff",
+      "target": [
+        58714,
+        "Beyond.Gameplay.Core.Skill",
+        "MarkCanInterrupt",
+        149083844
+      ]
+    },
+    {
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "rva": 90879353,
+      "hex": "e852010000",
+      "target": [
+        60255,
+        "Beyond.Gameplay.Core.AbilityActionUtils",
+        "CreateSequenceAction",
+        90879696
+      ]
+    },
+    {
+      "method": "Skill.get_canDash",
+      "rva": 149086727,
+      "hex": "e8946eeffc",
+      "target": [
+        58677,
+        "Beyond.Gameplay.Core.Skill",
+        "get_canInterrupt",
+        97669280
+      ]
+    }
+  ],
+  "facts": [
+    {
+      "id": "duration",
+      "evidence": "direct",
+      "method": "SkillData.get_duration",
+      "sourceField": "SkillData::durationFrame",
+      "conversion": "max(signedInt32Frames, 1) / float32(30)",
+      "boundary": "Authored duration conversion on original native path; not final player recovery time."
+    },
+    {
+      "id": "exclusive",
+      "evidence": "direct",
+      "method": "SkillData.get_exclusiveTime",
+      "sourceField": "SkillData::exclusiveFrame",
+      "conversion": "signedInt32Frames / float32(30)",
+      "boundary": "Authored exclusive conversion only; actual player recovery and all cancellation conditions remain unresolved."
+    },
+    {
+      "id": "aiExclusive",
+      "evidence": "direct",
+      "method": "SkillData.get_aiExclusiveTime",
+      "sourceField": "SkillData::aiExclusiveFrame",
+      "conversion": "signedInt32Frames / float32(30)",
+      "boundary": "Original getter reads aiExclusiveFrame directly; selection by useAIExclusiveFrame and downstream consumers remain separate."
+    },
+    {
+      "id": "timelineFrames",
+      "evidence": "direct",
+      "method": "TimelineAction+TimelineActionData.ToAction",
+      "sourceFields": [
+        "TimelineAction+TimelineActionData::_startFrame",
+        "TimelineAction+TimelineActionData::_endFrame"
+      ],
+      "conversion": "each signedInt32 frame / float32(30)",
+      "boundary": "Original successful sequence-creation path; converted values and original integers are stored on the returned allocation. Typed allocator ownership and all scheduling consumers remain conditional."
+    },
+    {
+      "id": "markInterruptFlag",
+      "evidence": "direct",
+      "method": "Skill.MarkCanInterrupt",
+      "field": "Skill::m_markCanInterrupt",
+      "value": true,
+      "boundary": "Original path sets the named Skill flag. This is not a proof of all cancel conditions."
+    },
+    {
+      "id": "markActionCall",
+      "evidence": "conditional",
+      "method": "MarkCanInterrupt.ExecuteInternal",
+      "calls": "Skill.MarkCanInterrupt",
+      "boundary": "Original non-null environment path calls the named Skill method. Cast/environment-to-Skill ownership is not independently proved here; no Data.priorityLevel read occurs in this reviewed fallback body, and no cancel rank is inferred."
+    },
+    {
+      "id": "conditionalCanInterruptGetter",
+      "evidence": "conditional",
+      "method": "Skill.get_canInterrupt",
+      "boundary": "Getter truth only under non-null timer/data and absent iFix interception; no player command acceptance, state restrictions, hit-stun, dash cast success or complete cancellation-window claim."
+    },
+    {
+      "id": "conditionalCanDashGetter",
+      "evidence": "conditional",
+      "method": "Skill.get_canDash",
+      "boundary": "Getter truth only under non-null timer/data and absent iFix interception; no player command acceptance, state restrictions, hit-stun, dash cast success or complete cancellation-window claim."
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native pair, method declarations/signatures/pointers, named field declarations/runtime offsets, reviewed original-path bytes and float32 division literals.",
+    "direct": "Reviewed getter conversions and original Skill flag store. Thirty authored frames convert to one second.",
+    "conditional": "Original fallback paths only. ToAction allocation typing and Mark action environment ownership remain conditional.",
+    "unresolved": "iFix interception, async timing, timeScale, final player recovery time, useAIExclusiveFrame selection, priorityLevel scheduling semantics and complete cancellation conditions."
+  },
+  "rules": {
+    "authoredFramesPerSecond": 30.0,
+    "durationClampMinimumFrames": 1,
+    "originalPathOnly": true
+  },
+  "durationClamp": {
+    "method": "SkillData.get_duration",
+    "rva": 92943056,
+    "hex": "b8010000003bd80f4ed8"
+  },
+  "epsilonAdditions": [
+    {
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669387,
+      "instructionHex": "f30f5835cd03d707",
+      "literalRva": 229201120,
+      "literalHex": "acc52737",
+      "float32": 9.999999747378752e-06
+    }
+  ],
+  "conditionalCancelRules": {
+    "originalPathOnly": true,
+    "epsilonFloat32": 9.999999747378752e-06,
+    "epsilonHex": "acc52737",
+    "canInterrupt": "PeriodicTimer.m_passedTime > Single(Single(exclusiveFrame) / Single(authoredFramesPerSecond) + Single(epsilon)) OR Skill.m_markCanInterrupt",
+    "canDash": "Skill.canInterrupt OR Skill.m_markCanDash",
+    "receiverChain": [
+      "Skill::m_durationTimer",
+      "PeriodicTimer::m_passedTime"
+    ],
+    "exclusiveSourceChain": [
+      "Skill::m_data",
+      "SkillData::exclusiveFrame"
+    ],
+    "boundary": "Getter truth only under non-null timer/data and absent iFix interception; no player command acceptance, state restrictions, hit-stun, dash cast success or complete cancellation-window claim.",
+    "comparison": "strictGreaterThan",
+    "singlePrecision": true,
+    "getterOnly": true,
+    "completePlayerCancelWindowProved": false
+  },
+  "cancelSources": {
+    "timerReference": "Skill::m_durationTimer",
+    "timerElapsed": "PeriodicTimer::m_passedTime",
+    "dataReference": "Skill::m_data",
+    "exclusiveFrames": "SkillData::exclusiveFrame",
+    "interruptMarker": "Skill::m_markCanInterrupt",
+    "dashMarker": "Skill::m_markCanDash"
+  },
+  "cancelControl": [
+    {
+      "role": "thresholdCompare",
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669395,
+      "hex": "0f2ffe0f287424307712"
+    },
+    {
+      "role": "thresholdTrueReturn",
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669423,
+      "hex": "0f287c2420b0014883c4405bc3"
+    },
+    {
+      "role": "interruptMarkerReturn",
+      "method": "Skill.get_canInterrupt",
+      "rva": 97669405,
+      "hex": "0fb6838c0000000f287c24204883c4405bc3"
+    },
+    {
+      "role": "dashFallback",
+      "method": "Skill.get_canDash",
+      "rva": 149086732,
+      "hex": "84c0b00175068a838d0000004883c4205bc3"
+    }
+  ]
+}

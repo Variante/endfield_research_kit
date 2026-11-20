@@ -1,0 +1,1330 @@
+{
+  "schema": "endfield.skill-cast-gate-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "conditional",
+  "methods": [
+    {
+      "identity": [
+        59178,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        149104232
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        }
+      ],
+      "id": "view"
+    },
+    {
+      "identity": [
+        59179,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CanCastSkill",
+        97669504
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "skillId",
+          "type": "string"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipInterruptCheck",
+          "type": "bool"
+        }
+      ],
+      "id": "core"
+    },
+    {
+      "identity": [
+        58707,
+        "Beyond.Gameplay.Core.Skill",
+        "CanCastToTarget",
+        97661152
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "skipDistance",
+          "type": "bool"
+        },
+        {
+          "name": "skipAngle",
+          "type": "bool"
+        }
+      ],
+      "id": "target"
+    },
+    {
+      "identity": [
+        58709,
+        "Beyond.Gameplay.Core.Skill",
+        "CheckCastDistance",
+        103081648
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "ignoreOutOfRangeStrategy",
+          "type": "bool"
+        }
+      ],
+      "id": "distance"
+    },
+    {
+      "identity": [
+        58708,
+        "Beyond.Gameplay.Core.Skill",
+        "CheckCastAngle",
+        97559616
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "id": "angle"
+    },
+    {
+      "identity": [
+        59199,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "CheckCanInterruptCurSkill",
+        97668656
+      ],
+      "returnType": "bool",
+      "parameters": [
+        {
+          "name": "newSkill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "id": "interrupt"
+    },
+    {
+      "identity": [
+        58724,
+        "Beyond.Gameplay.Core.Skill",
+        "CheckCost",
+        87396368
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "id": "cost"
+    },
+    {
+      "identity": [
+        58725,
+        "Beyond.Gameplay.Core.Skill",
+        "CheckTag",
+        87395136
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "id": "tag"
+    },
+    {
+      "identity": [
+        58727,
+        "Beyond.Gameplay.Core.Skill",
+        "CheckState",
+        89149712
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "id": "state"
+    }
+  ],
+  "fields": [
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "name": "m_activeSkillMap",
+      "valueType": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.Core.Skill>",
+      "offset": 656,
+      "ordinaryKind": 21,
+      "id": "activeMap"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill",
+      "name": "m_owner",
+      "valueType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+      "offset": 32,
+      "ordinaryKind": 21,
+      "id": "owner"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "skillId",
+      "valueType": "string",
+      "offset": 16,
+      "ordinaryKind": 14,
+      "id": "viewSkillId"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.SkillCastInputView",
+      "name": "targetHandleView",
+      "valueType": "Beyond.Gameplay.Core.TargetHandleView",
+      "offset": 24,
+      "ordinaryKind": 17,
+      "id": "viewTarget"
+    }
+  ],
+  "inputViewHeaderBytes": 16,
+  "codeWindows": [
+    {
+      "owner": "view",
+      "startRva": 149104232,
+      "endRva": 149104345,
+      "sha256": "68BC14092AFC6F5B45DF6E5ACBB727A65FD85AB3573DA5512BB50FB28625649C",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "core",
+      "startRva": 97669504,
+      "endRva": 97669718,
+      "sha256": "2C9B92A101734FDE1F8E410767EBAABA4B2B52E37BB7DC45A8F4B8D01359E23E",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "target",
+      "startRva": 97661152,
+      "endRva": 97661296,
+      "sha256": "560960010AFE624AB2AC370831F34AEF8DDC69AD58874A37951F51DB245EE39D",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "readiness",
+      "startRva": 87393680,
+      "endRva": 87393953,
+      "sha256": "C3C8E2C288AC4437DDBE220982F1E6F3BD0CA08AF9E6A01E911CBEB69C3E2C4F",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "missing",
+      "startRva": 123786613,
+      "endRva": 123786674,
+      "sha256": "4273996CD8B0BA43B708D917424B3D5D40CB740787E91696D614E6F5D786BD2C",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "local",
+      "startRva": 87394288,
+      "endRva": 87394624,
+      "sha256": "396EBAAFB2CCA4B6FCBAF0288201D776231E0975900A543E7D8BBB2F0134E708",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "ownerValid",
+      "startRva": 89464912,
+      "endRva": 89465007,
+      "sha256": "FAC7E8C4FFF4723EE47A50EF9046EF22BC91C28B85080D027A96067B5CA0ACBE",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    },
+    {
+      "owner": "typeCheck",
+      "startRva": 22528,
+      "endRva": 360880,
+      "sha256": "3FBB344E1DDE610CBF5BCC44ED119C79F566DDBDE97554D84173B0BF697C5C9D",
+      "boundary": "Reviewed selected ordinary path; normal helper return and original iFix selection required."
+    }
+  ],
+  "spans": [
+    {
+      "role": "saveCoreInputs",
+      "owner": "core",
+      "rva": 97669531,
+      "hex": "488bf1410fb6e9498bd8488bfa"
+    },
+    {
+      "role": "interruptForward",
+      "owner": "core",
+      "rva": 97669630,
+      "hex": "4533c0488bd0488bce"
+    },
+    {
+      "role": "preserveFoundSkill",
+      "owner": "core",
+      "rva": 97669625,
+      "hex": "488bf8"
+    },
+    {
+      "role": "saveViewInputs",
+      "owner": "view",
+      "rva": 149104243,
+      "hex": "4c8bd9"
+    },
+    {
+      "role": "viewForward",
+      "owner": "view",
+      "rva": 149104303,
+      "hex": "48c744243000000000498bcbc64424280044884c2420458ac84c8b4208488b12"
+    },
+    {
+      "role": "coreForward",
+      "owner": "core",
+      "rva": 97669653,
+      "hex": "4533c0440fb6cd4c89442420488bd3440fb6442470488bcf"
+    },
+    {
+      "role": "distanceForward",
+      "owner": "target",
+      "rva": 97661251,
+      "hex": "4533c941b001488bd3488bcd"
+    },
+    {
+      "role": "angleForward",
+      "owner": "target",
+      "rva": 97661274,
+      "hex": "4533c0488bd3488bcd"
+    },
+    {
+      "role": "readinessReceiver",
+      "owner": "target",
+      "rva": 97661206,
+      "hex": "488bcd"
+    },
+    {
+      "role": "ownerFirst",
+      "owner": "readiness",
+      "rva": 87393736,
+      "hex": "488d4b20488b90c0000000488b5208"
+    },
+    {
+      "role": "ownerSecond",
+      "owner": "readiness",
+      "rva": 87393813,
+      "hex": "488d4b20488b90c0000000488b5208"
+    },
+    {
+      "role": "ownerLoad",
+      "owner": "readiness",
+      "rva": 87393764,
+      "hex": "488b4320"
+    },
+    {
+      "role": "ownerResolve",
+      "owner": "readiness",
+      "rva": 87393837,
+      "hex": "488b7b20"
+    },
+    {
+      "role": "typeForward",
+      "owner": "readiness",
+      "rva": 87393846,
+      "hex": "b94e000000488bd7"
+    },
+    {
+      "role": "localForward",
+      "owner": "readiness",
+      "rva": 87393863,
+      "hex": "488bcb"
+    },
+    {
+      "role": "costForward",
+      "owner": "readiness",
+      "rva": 87393875,
+      "hex": "33d2488bcb"
+    },
+    {
+      "role": "tagForward",
+      "owner": "readiness",
+      "rva": 87393889,
+      "hex": "33d2488bcb"
+    },
+    {
+      "role": "stateForward",
+      "owner": "readiness",
+      "rva": 87393903,
+      "hex": "33d2488bcb"
+    },
+    {
+      "role": "targetTrue",
+      "owner": "target",
+      "rva": 97661228,
+      "hex": "b001"
+    },
+    {
+      "role": "targetFalse",
+      "owner": "target",
+      "rva": 97661292,
+      "hex": "32c0"
+    },
+    {
+      "role": "readinessTrue",
+      "owner": "readiness",
+      "rva": 87393917,
+      "hex": "b001"
+    },
+    {
+      "role": "readinessFalse",
+      "owner": "readiness",
+      "rva": 87393943,
+      "hex": "32c0"
+    },
+    {
+      "role": "coreFalse",
+      "owner": "core",
+      "rva": 97669714,
+      "hex": "32c0"
+    },
+    {
+      "role": "canonicalizeTarget",
+      "owner": "core",
+      "rva": 97669682,
+      "hex": "84c00f95c0"
+    },
+    {
+      "role": "saveTargetFlags",
+      "owner": "target",
+      "rva": 97661179,
+      "hex": "488be9410fb6f9410fb6f0488bda"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "viewCall",
+      "owner": "view",
+      "rva": 149104335,
+      "hex": "e8ac2aeffc"
+    },
+    {
+      "id": "targetCall",
+      "owner": "core",
+      "rva": 97669677,
+      "hex": "e8aedeffff"
+    },
+    {
+      "id": "interruptCall",
+      "owner": "core",
+      "rva": 97669639,
+      "hex": "e824fcffff"
+    },
+    {
+      "id": "readinessCall",
+      "owner": "target",
+      "rva": 97661209,
+      "hex": "e8725463ff"
+    },
+    {
+      "id": "distanceCall",
+      "owner": "target",
+      "rva": 97661263,
+      "hex": "e85cb55200"
+    },
+    {
+      "id": "angleCall",
+      "owner": "target",
+      "rva": 97661283,
+      "hex": "e8d872feff"
+    },
+    {
+      "id": "ownerFirstCall",
+      "owner": "readiness",
+      "rva": 87393751,
+      "hex": "e8749a1f00"
+    },
+    {
+      "id": "ownerSecondCall",
+      "owner": "readiness",
+      "rva": 87393828,
+      "hex": "e8279a1f00"
+    },
+    {
+      "id": "typeCall",
+      "owner": "readiness",
+      "rva": 87393854,
+      "hex": "e8bdd1cafa"
+    },
+    {
+      "id": "localCall",
+      "owner": "readiness",
+      "rva": 87393866,
+      "hex": "e8a1010000"
+    },
+    {
+      "id": "costCall",
+      "owner": "readiness",
+      "rva": 87393880,
+      "hex": "e8b3090000"
+    },
+    {
+      "id": "tagCall",
+      "owner": "readiness",
+      "rva": 87393894,
+      "hex": "e8d5040000"
+    },
+    {
+      "id": "stateCall",
+      "owner": "readiness",
+      "rva": 87393908,
+      "hex": "e897ca1a00"
+    },
+    {
+      "id": "mapNull",
+      "owner": "core",
+      "rva": 97669567,
+      "hex": "0f8487000000"
+    },
+    {
+      "id": "coreException",
+      "owner": "core",
+      "rva": 97669708,
+      "hex": "e8ef963bfa"
+    },
+    {
+      "id": "mapMissing",
+      "owner": "core",
+      "rva": 97669587,
+      "hex": "0f849c838e01"
+    },
+    {
+      "id": "missingStart",
+      "owner": "missing",
+      "rva": 123786613,
+      "hex": "4533c0"
+    },
+    {
+      "id": "mapSecondNull",
+      "owner": "core",
+      "rva": 97669603,
+      "hex": "7467"
+    },
+    {
+      "id": "skipInterrupt",
+      "owner": "core",
+      "rva": 97669628,
+      "hex": "7512"
+    },
+    {
+      "id": "skillTest",
+      "owner": "core",
+      "rva": 97669648,
+      "hex": "4885ff"
+    },
+    {
+      "id": "interruptFalse",
+      "owner": "core",
+      "rva": 97669646,
+      "hex": "7442"
+    },
+    {
+      "id": "coreFalse",
+      "owner": "core",
+      "rva": 97669714,
+      "hex": "32c0"
+    },
+    {
+      "id": "skillNull",
+      "owner": "core",
+      "rva": 97669651,
+      "hex": "7437"
+    },
+    {
+      "id": "missingReturn",
+      "owner": "missing",
+      "rva": 123786669,
+      "hex": "e9a07c71fe"
+    },
+    {
+      "id": "readinessFalse",
+      "owner": "target",
+      "rva": 97661216,
+      "hex": "744a"
+    },
+    {
+      "id": "targetFalse",
+      "owner": "target",
+      "rva": 97661292,
+      "hex": "32c0"
+    },
+    {
+      "id": "needsDistance",
+      "owner": "target",
+      "rva": 97661221,
+      "hex": "741c"
+    },
+    {
+      "id": "distanceStart",
+      "owner": "target",
+      "rva": 97661251,
+      "hex": "4533c9"
+    },
+    {
+      "id": "needsAngle",
+      "owner": "target",
+      "rva": 97661226,
+      "hex": "742e"
+    },
+    {
+      "id": "angleStart",
+      "owner": "target",
+      "rva": 97661274,
+      "hex": "4533c0"
+    },
+    {
+      "id": "distanceTrue",
+      "owner": "target",
+      "rva": 97661270,
+      "hex": "75cf"
+    },
+    {
+      "id": "angleSkipTest",
+      "owner": "target",
+      "rva": 97661223,
+      "hex": "4084ff"
+    },
+    {
+      "id": "distanceFalse",
+      "owner": "target",
+      "rva": 97661272,
+      "hex": "eb12"
+    },
+    {
+      "id": "angleTrue",
+      "owner": "target",
+      "rva": 97661290,
+      "hex": "75c0"
+    },
+    {
+      "id": "targetTrue",
+      "owner": "target",
+      "rva": 97661228,
+      "hex": "b001"
+    },
+    {
+      "id": "firstInvalid",
+      "owner": "readiness",
+      "rva": 87393758,
+      "hex": "0f84ab000000"
+    },
+    {
+      "id": "firstInvalidZero",
+      "owner": "readiness",
+      "rva": 87393935,
+      "hex": "488bc7"
+    },
+    {
+      "id": "firstPointerNull",
+      "owner": "readiness",
+      "rva": 87393771,
+      "hex": "0f84a6000000"
+    },
+    {
+      "id": "readyFalse",
+      "owner": "readiness",
+      "rva": 87393943,
+      "hex": "32c0"
+    },
+    {
+      "id": "secondInvalid",
+      "owner": "readiness",
+      "rva": 87393835,
+      "hex": "7404"
+    },
+    {
+      "id": "resolvedOwnerTest",
+      "owner": "readiness",
+      "rva": 87393841,
+      "hex": "4885ff"
+    },
+    {
+      "id": "resolvedNull",
+      "owner": "readiness",
+      "rva": 87393844,
+      "hex": "7465"
+    },
+    {
+      "id": "readyException",
+      "owner": "readiness",
+      "rva": 87393947,
+      "hex": "e8a062d8fa"
+    },
+    {
+      "id": "typeFalse",
+      "owner": "readiness",
+      "rva": 87393861,
+      "hex": "7450"
+    },
+    {
+      "id": "localFalse",
+      "owner": "readiness",
+      "rva": 87393873,
+      "hex": "7444"
+    },
+    {
+      "id": "costFalse",
+      "owner": "readiness",
+      "rva": 87393887,
+      "hex": "7436"
+    },
+    {
+      "id": "tagFalse",
+      "owner": "readiness",
+      "rva": 87393901,
+      "hex": "7428"
+    },
+    {
+      "id": "stateFalse",
+      "owner": "readiness",
+      "rva": 87393915,
+      "hex": "741a"
+    },
+    {
+      "id": "firstInvalidJoin",
+      "owner": "readiness",
+      "rva": 87393938,
+      "hex": "e951ffffff"
+    },
+    {
+      "id": "firstPointerTest",
+      "owner": "readiness",
+      "rva": 87393768,
+      "hex": "4885c0"
+    },
+    {
+      "id": "mapLoad",
+      "owner": "core",
+      "rva": 97669557,
+      "hex": "488b8e90020000"
+    },
+    {
+      "id": "containsCall",
+      "owner": "core",
+      "rva": 97669580,
+      "hex": "e8cf8f32ff"
+    },
+    {
+      "id": "getItemCall",
+      "owner": "core",
+      "rva": 97669615,
+      "hex": "e81c9032ff"
+    }
+  ],
+  "calls": [
+    {
+      "node": "viewCall",
+      "method": "core",
+      "setup": "viewForward"
+    },
+    {
+      "node": "targetCall",
+      "method": "target",
+      "setup": "coreForward"
+    },
+    {
+      "node": "interruptCall",
+      "method": "interrupt",
+      "setup": "interruptForward"
+    },
+    {
+      "node": "readinessCall",
+      "window": "readiness",
+      "setup": "readinessReceiver"
+    },
+    {
+      "node": "distanceCall",
+      "method": "distance",
+      "setup": "distanceForward"
+    },
+    {
+      "node": "angleCall",
+      "method": "angle",
+      "setup": "angleForward"
+    },
+    {
+      "node": "ownerFirstCall",
+      "window": "ownerValid",
+      "setup": "ownerFirst"
+    },
+    {
+      "node": "ownerSecondCall",
+      "window": "ownerValid",
+      "setup": "ownerSecond"
+    },
+    {
+      "node": "typeCall",
+      "window": "typeCheck",
+      "setup": "typeForward"
+    },
+    {
+      "node": "localCall",
+      "window": "local",
+      "setup": "localForward"
+    },
+    {
+      "node": "costCall",
+      "method": "cost",
+      "setup": "costForward"
+    },
+    {
+      "node": "tagCall",
+      "method": "tag",
+      "setup": "tagForward"
+    },
+    {
+      "node": "stateCall",
+      "method": "state",
+      "setup": "stateForward"
+    }
+  ],
+  "edges": [
+    {
+      "source": "mapNull",
+      "target": "coreException",
+      "opcode": "0f84"
+    },
+    {
+      "source": "mapMissing",
+      "target": "missingStart",
+      "opcode": "0f84"
+    },
+    {
+      "source": "mapSecondNull",
+      "target": "coreException",
+      "opcode": "74"
+    },
+    {
+      "source": "skipInterrupt",
+      "target": "skillTest",
+      "opcode": "75"
+    },
+    {
+      "source": "interruptFalse",
+      "target": "coreFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "skillNull",
+      "target": "coreException",
+      "opcode": "74"
+    },
+    {
+      "source": "missingReturn",
+      "target": "coreFalse",
+      "opcode": "e9"
+    },
+    {
+      "source": "readinessFalse",
+      "target": "targetFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "needsDistance",
+      "target": "distanceStart",
+      "opcode": "74"
+    },
+    {
+      "source": "needsAngle",
+      "target": "angleStart",
+      "opcode": "74"
+    },
+    {
+      "source": "distanceTrue",
+      "target": "angleSkipTest",
+      "opcode": "75"
+    },
+    {
+      "source": "distanceFalse",
+      "target": "targetFalse",
+      "opcode": "eb"
+    },
+    {
+      "source": "angleTrue",
+      "target": "targetTrue",
+      "opcode": "75"
+    },
+    {
+      "source": "firstInvalid",
+      "target": "firstInvalidZero",
+      "opcode": "0f84"
+    },
+    {
+      "source": "firstPointerNull",
+      "target": "readyFalse",
+      "opcode": "0f84"
+    },
+    {
+      "source": "secondInvalid",
+      "target": "resolvedOwnerTest",
+      "opcode": "74"
+    },
+    {
+      "source": "resolvedNull",
+      "target": "readyException",
+      "opcode": "74"
+    },
+    {
+      "source": "typeFalse",
+      "target": "readyFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "localFalse",
+      "target": "readyFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "costFalse",
+      "target": "readyFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "tagFalse",
+      "target": "readyFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "stateFalse",
+      "target": "readyFalse",
+      "opcode": "74"
+    },
+    {
+      "source": "firstInvalidJoin",
+      "target": "firstPointerTest",
+      "opcode": "e9"
+    }
+  ],
+  "typedContexts": [
+    {
+      "rva": 97669573,
+      "result": {
+        "instructionRva": 97669573,
+        "instructionHex": "4C8B057C939F0A",
+        "usageCellRva": 275899720,
+        "usageRawHex": "138811C000000000",
+        "tag": 6,
+        "methodSpecIndex": 574473,
+        "methodSpec": [
+          403977,
+          4022,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "ContainsKey",
+        "classArguments": [
+          "string",
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      },
+      "method": "ContainsKey",
+      "call": "containsCall",
+      "hex": "4c8b057c939f0ae8cf8f32ff"
+    },
+    {
+      "rva": 97669605,
+      "result": {
+        "instructionRva": 97669605,
+        "instructionHex": "4C8B05CC919F0A",
+        "usageCellRva": 275899320,
+        "usageRawHex": "2B8811C000000000",
+        "tag": 6,
+        "methodSpecIndex": 574485,
+        "methodSpec": [
+          403970,
+          4022,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "get_Item",
+        "classArguments": [
+          "string",
+          "Beyond.Gameplay.Core.Skill"
+        ],
+        "methodArguments": []
+      },
+      "method": "get_Item",
+      "call": "getItemCall",
+      "hex": "4c8b05cc919f0a488bd7e81c9032ff"
+    }
+  ],
+  "rules": {
+    "orderedPredicates": {
+      "core": [
+        "mapNonnull",
+        "containsKey",
+        "getItem",
+        "optionalInterrupt",
+        "skillNonnull",
+        "targetCheck"
+      ],
+      "target": [
+        "readiness",
+        "optionalDistance",
+        "optionalAngle"
+      ],
+      "readiness": [
+        "ownerValidFirst",
+        "ownerPointerNonnull",
+        "ownerResolveSecond",
+        "ownerResolvedNonnull",
+        "typeCheck",
+        "localCooldownPredicate",
+        "CheckCost",
+        "CheckTag",
+        "CheckState"
+      ]
+    },
+    "originalPathOnly": true,
+    "normalHelperReturnRequired": true,
+    "completePlayerInputAcceptanceProved": false,
+    "collectionEffectsProved": false,
+    "readinessManagedIdentityProved": false,
+    "distanceGeometryProved": false,
+    "angleGeometryProved": false,
+    "missingMapKeyNormalReturn": false,
+    "foundNullSkill": "exception",
+    "readinessOwnerSecondNull": "exception",
+    "typeCheckFalseRejects": true,
+    "viewSkipInterruptCheck": false,
+    "distanceIgnoreOutOfRangeStrategy": true,
+    "targetParameterOrder": [
+      "inputTarget",
+      "skipDistance",
+      "skipAngle"
+    ]
+  },
+  "facts": [
+    {
+      "id": "viewForwarding",
+      "evidence": "conditional",
+      "boundary": "Selected original native path and explicit helper outcomes; no runtime object selection, helper collection ABI, or complete player acceptance proved.",
+      "rules": {
+        "orderedPredicates": {
+          "core": [
+            "mapNonnull",
+            "containsKey",
+            "getItem",
+            "optionalInterrupt",
+            "skillNonnull",
+            "targetCheck"
+          ],
+          "target": [
+            "readiness",
+            "optionalDistance",
+            "optionalAngle"
+          ],
+          "readiness": [
+            "ownerValidFirst",
+            "ownerPointerNonnull",
+            "ownerResolveSecond",
+            "ownerResolvedNonnull",
+            "typeCheck",
+            "localCooldownPredicate",
+            "CheckCost",
+            "CheckTag",
+            "CheckState"
+          ]
+        },
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "completePlayerInputAcceptanceProved": false,
+        "collectionEffectsProved": false,
+        "readinessManagedIdentityProved": false,
+        "distanceGeometryProved": false,
+        "angleGeometryProved": false,
+        "missingMapKeyNormalReturn": false,
+        "foundNullSkill": "exception",
+        "readinessOwnerSecondNull": "exception",
+        "typeCheckFalseRejects": true,
+        "viewSkipInterruptCheck": false,
+        "distanceIgnoreOutOfRangeStrategy": true,
+        "targetParameterOrder": [
+          "inputTarget",
+          "skipDistance",
+          "skipAngle"
+        ]
+      }
+    },
+    {
+      "id": "castCore",
+      "evidence": "conditional",
+      "boundary": "Selected original native path and explicit helper outcomes; no runtime object selection, helper collection ABI, or complete player acceptance proved.",
+      "rules": {
+        "orderedPredicates": {
+          "core": [
+            "mapNonnull",
+            "containsKey",
+            "getItem",
+            "optionalInterrupt",
+            "skillNonnull",
+            "targetCheck"
+          ],
+          "target": [
+            "readiness",
+            "optionalDistance",
+            "optionalAngle"
+          ],
+          "readiness": [
+            "ownerValidFirst",
+            "ownerPointerNonnull",
+            "ownerResolveSecond",
+            "ownerResolvedNonnull",
+            "typeCheck",
+            "localCooldownPredicate",
+            "CheckCost",
+            "CheckTag",
+            "CheckState"
+          ]
+        },
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "completePlayerInputAcceptanceProved": false,
+        "collectionEffectsProved": false,
+        "readinessManagedIdentityProved": false,
+        "distanceGeometryProved": false,
+        "angleGeometryProved": false,
+        "missingMapKeyNormalReturn": false,
+        "foundNullSkill": "exception",
+        "readinessOwnerSecondNull": "exception",
+        "typeCheckFalseRejects": true,
+        "viewSkipInterruptCheck": false,
+        "distanceIgnoreOutOfRangeStrategy": true,
+        "targetParameterOrder": [
+          "inputTarget",
+          "skipDistance",
+          "skipAngle"
+        ]
+      }
+    },
+    {
+      "id": "castTarget",
+      "evidence": "conditional",
+      "boundary": "Selected original native path and explicit helper outcomes; no runtime object selection, helper collection ABI, or complete player acceptance proved.",
+      "rules": {
+        "orderedPredicates": {
+          "core": [
+            "mapNonnull",
+            "containsKey",
+            "getItem",
+            "optionalInterrupt",
+            "skillNonnull",
+            "targetCheck"
+          ],
+          "target": [
+            "readiness",
+            "optionalDistance",
+            "optionalAngle"
+          ],
+          "readiness": [
+            "ownerValidFirst",
+            "ownerPointerNonnull",
+            "ownerResolveSecond",
+            "ownerResolvedNonnull",
+            "typeCheck",
+            "localCooldownPredicate",
+            "CheckCost",
+            "CheckTag",
+            "CheckState"
+          ]
+        },
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "completePlayerInputAcceptanceProved": false,
+        "collectionEffectsProved": false,
+        "readinessManagedIdentityProved": false,
+        "distanceGeometryProved": false,
+        "angleGeometryProved": false,
+        "missingMapKeyNormalReturn": false,
+        "foundNullSkill": "exception",
+        "readinessOwnerSecondNull": "exception",
+        "typeCheckFalseRejects": true,
+        "viewSkipInterruptCheck": false,
+        "distanceIgnoreOutOfRangeStrategy": true,
+        "targetParameterOrder": [
+          "inputTarget",
+          "skipDistance",
+          "skipAngle"
+        ]
+      }
+    },
+    {
+      "id": "readiness",
+      "evidence": "conditional",
+      "boundary": "Selected original native path and explicit helper outcomes; no runtime object selection, helper collection ABI, or complete player acceptance proved.",
+      "rules": {
+        "orderedPredicates": {
+          "core": [
+            "mapNonnull",
+            "containsKey",
+            "getItem",
+            "optionalInterrupt",
+            "skillNonnull",
+            "targetCheck"
+          ],
+          "target": [
+            "readiness",
+            "optionalDistance",
+            "optionalAngle"
+          ],
+          "readiness": [
+            "ownerValidFirst",
+            "ownerPointerNonnull",
+            "ownerResolveSecond",
+            "ownerResolvedNonnull",
+            "typeCheck",
+            "localCooldownPredicate",
+            "CheckCost",
+            "CheckTag",
+            "CheckState"
+          ]
+        },
+        "originalPathOnly": true,
+        "normalHelperReturnRequired": true,
+        "completePlayerInputAcceptanceProved": false,
+        "collectionEffectsProved": false,
+        "readinessManagedIdentityProved": false,
+        "distanceGeometryProved": false,
+        "angleGeometryProved": false,
+        "missingMapKeyNormalReturn": false,
+        "foundNullSkill": "exception",
+        "readinessOwnerSecondNull": "exception",
+        "typeCheckFalseRejects": true,
+        "viewSkipInterruptCheck": false,
+        "distanceIgnoreOutOfRangeStrategy": true,
+        "targetParameterOrder": [
+          "inputTarget",
+          "skipDistance",
+          "skipAngle"
+        ]
+      }
+    }
+  ],
+  "unresolved": [
+    "Selected readiness native helper has no matched managed pointer entry; do not alias Skill.IsAvailable or CheckCd.",
+    "ObjectPtr owner valid/get metadata-context and lifetime coherence are conditional helper outcomes.",
+    "CheckCastDistance strategy, target-resolution and geometric helper results are not expanded.",
+    "CheckCastAngle target-resolution, vector metric and float threshold provenance are not expanded.",
+    "Request-cache eligibility, queueing, DoCast dispatch and final player acceptance remain outside this contract."
+  ],
+  "reviewedPrograms": {
+    "saveCoreInputs": "488bf1410fb6e9498bd8488bfa",
+    "interruptForward": "4533c0488bd0488bce",
+    "preserveFoundSkill": "488bf8",
+    "saveViewInputs": "4c8bd9",
+    "viewForward": "48c744243000000000498bcbc64424280044884c2420458ac84c8b4208488b12",
+    "coreForward": "4533c0440fb6cd4c89442420488bd3440fb6442470488bcf",
+    "distanceForward": "4533c941b001488bd3488bcd",
+    "angleForward": "4533c0488bd3488bcd",
+    "readinessReceiver": "488bcd",
+    "ownerFirst": "488d4b20488b90c0000000488b5208",
+    "ownerSecond": "488d4b20488b90c0000000488b5208",
+    "ownerLoad": "488b4320",
+    "ownerResolve": "488b7b20",
+    "typeForward": "b94e000000488bd7",
+    "localForward": "488bcb",
+    "costForward": "33d2488bcb",
+    "tagForward": "33d2488bcb",
+    "stateForward": "33d2488bcb",
+    "targetTrue": "b001",
+    "targetFalse": "32c0",
+    "readinessTrue": "b001",
+    "readinessFalse": "32c0",
+    "coreFalse": "32c0",
+    "canonicalizeTarget": "84c00f95c0",
+    "saveTargetFlags": "488be9410fb6f9410fb6f0488bda"
+  },
+  "operandBindings": {
+    "operand1": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 48
+    },
+    "operand2": {
+      "kind": "zero",
+      "value": 0
+    },
+    "operand3": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 40
+    },
+    "operand4": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 32
+    },
+    "operand5": {
+      "kind": "viewField",
+      "field": "viewTarget",
+      "value": 8
+    },
+    "operand6": {
+      "kind": "stackSlot",
+      "base": "rsp",
+      "value": 112
+    },
+    "operand7": {
+      "kind": "one",
+      "value": 1
+    },
+    "operand8": {
+      "kind": "field",
+      "field": "owner",
+      "value": 32
+    },
+    "operand9": {
+      "kind": "contextOffset",
+      "role": "ownerFirst",
+      "value": 192
+    },
+    "operand10": {
+      "kind": "contextOffset",
+      "role": "ownerFirst",
+      "value": 8
+    },
+    "operand11": {
+      "kind": "contextOffset",
+      "role": "ownerSecond",
+      "value": 192
+    },
+    "operand12": {
+      "kind": "contextOffset",
+      "role": "ownerSecond",
+      "value": 8
+    },
+    "operand13": {
+      "kind": "opaqueLiteral",
+      "role": "typeForward",
+      "value": 78
+    }
+  }
+}

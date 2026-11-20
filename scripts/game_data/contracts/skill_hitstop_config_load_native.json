@@ -1,0 +1,260 @@
+{
+  "schema": "endfield.skill-hitstop-config-load-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "methods": [
+    [
+      4696,
+      "Beyond.Gameplay.DataManager",
+      "_LoadConstConfigs",
+      110451216
+    ],
+    [
+      6856,
+      "Beyond.Gameplay.ResourceRouter",
+      "GetGameplayConfigFullPath",
+      107891232
+    ],
+    [
+      4382,
+      "Beyond.Gameplay.DataManager",
+      "get_hitStopConfig",
+      119783072
+    ],
+    [
+      4383,
+      "Beyond.Gameplay.DataManager",
+      "set_hitStopConfig",
+      148654084
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 110451216,
+      "endRva": 110453563,
+      "sha256": "9e3649d3c0f93a4b60816c2f67608d06f707417b504d61fc3d615d3837a80300",
+      "boundary": "Complete current DataManager._LoadConstConfigs unwind range; reachability/runtime selection conditional"
+    },
+    {
+      "startRva": 110453563,
+      "endRva": 110462510,
+      "sha256": "2621caa26dc359735cd137413b705c1c85ccb7f43135a613e45bed18762810f8",
+      "boundary": "Complete current DataManager._LoadConstConfigs unwind range; reachability/runtime selection conditional"
+    },
+    {
+      "startRva": 110462510,
+      "endRva": 110462516,
+      "sha256": "848ebd81ee669e84aea1ca32fdc89a35caef549756822a8cb841e9d7efe85e95",
+      "boundary": "Complete current DataManager._LoadConstConfigs unwind range; reachability/runtime selection conditional"
+    },
+    {
+      "startRva": 110462516,
+      "endRva": 110462534,
+      "sha256": "62f2f80d966e8efb53d87d868edf4bf63ed46d383e1217484be670fb8f496618",
+      "boundary": "Complete current DataManager._LoadConstConfigs unwind range; reachability/runtime selection conditional"
+    },
+    {
+      "startRva": 107891232,
+      "endRva": 107891361,
+      "sha256": "31B767F29F404B2C41B6FDC278D46676AD49EFFD13C735C0C7DAE0E3DCCDF34F",
+      "boundary": "Complete ResourceRouter.GetGameplayConfigFullPath primary pdata window; external three-string callee semantics unproved"
+    },
+    {
+      "startRva": 107890928,
+      "endRva": 107891228,
+      "sha256": "D7AB115CD2896F6CA7FE1F6861320A64AD470C2F93A3D41F9E6F32EBD7C34A7A",
+      "boundary": "Complete primary physical call target window only; closed generic declaration ownership and external cold fragments remain unproved"
+    },
+    {
+      "startRva": 119783072,
+      "endRva": 119783080,
+      "sha256": "63FB7A16952265C2F121170B4D1BCAF818295178DD1D839F957793AF5EC479DC",
+      "boundary": "Exact selected getter through RET; no invented extent"
+    },
+    {
+      "startRva": 148654084,
+      "endRva": 148654103,
+      "sha256": "928BCBFD10FB1258D4F754D12A4E86949AF93344D42584D6DE4AFB435D7A1FED",
+      "boundary": "Exact selected setter through barrier tail; no invented extent"
+    }
+  ],
+  "field": {
+    "owner": "Beyond.Gameplay.DataManager",
+    "name": "<hitStopConfig>k__BackingField",
+    "typeName": "Beyond.Gameplay.HitStopConfig",
+    "offset": 328
+  },
+  "selectedRequest": {
+    "instructionRva": 110454649,
+    "instructionHex": "4C8B05680CD409",
+    "usageCellRva": 275346408,
+    "usageRawHex": "53FE12C000000000",
+    "tag": 6,
+    "methodSpecIndex": 622377,
+    "methodSpec": [
+      4701,
+      -1,
+      63777
+    ],
+    "typeName": "Beyond.Gameplay.DataManager",
+    "methodName": "_LoadSingleConfig",
+    "classArguments": [],
+    "methodArguments": [
+      "Beyond.Gameplay.HitStopConfig"
+    ]
+  },
+  "literalLoads": [
+    {
+      "instructionRva": 110454659,
+      "instructionHex": "488b15ce09d409",
+      "cellRva": 275345752,
+      "usageRawHex": "596500a000000000",
+      "literalIndex": 12972,
+      "value": "HitStopConfig"
+    },
+    {
+      "instructionRva": 107891286,
+      "instructionHex": "4c8b05a3c8000a",
+      "cellRva": 275714816,
+      "literalIndex": 2006,
+      "value": ".asset"
+    },
+    {
+      "instructionRva": 107891293,
+      "instructionHex": "488b0d142c080a",
+      "cellRva": 276199032,
+      "literalIndex": 4100,
+      "value": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/"
+    }
+  ],
+  "localStoreSpan": {
+    "startRva": 110454649,
+    "rawHex": "4c8b05680cd409488bcb488b15ce09d409e861e1d8ff833d9a7cdc0a0048898348010000",
+    "argumentRoles": {
+      "rcx": "same DataManager receiver held in RBX",
+      "rdx": "literal config name",
+      "r8": "MethodInfo describing _LoadSingleConfig<HitStopConfig>; association with the physical call target is not proved"
+    },
+    "callSiteRva": 110454666,
+    "targetRva": 107890928,
+    "storeSiteRva": 110454678
+  },
+  "contextClaims": {
+    "definition": 4701,
+    "isMethod": true,
+    "typeName": "Beyond.Gameplay.DataManager",
+    "methodName": "_LoadSingleConfig",
+    "entries": [
+      {
+        "relativeSlot": 0,
+        "moduleEntryIndex": 67,
+        "entryVa": 6676661968,
+        "rawHex": "03000000000000005802758F01000000",
+        "kind": 3,
+        "index": 526615,
+        "methodSpec": [
+          4714,
+          -1,
+          54485
+        ],
+        "typeName": "Beyond.Gameplay.DataManager",
+        "methodName": "LoadAsset",
+        "classArguments": [],
+        "methodArguments": [
+          {
+            "name": "MVAR[28]",
+            "typePointerVa": 6718923488,
+            "rawHex": "1C0000000000000000001E0000000000",
+            "parameterOwner": {
+              "parameterIndex": 28,
+              "parameterOffset": 53844152,
+              "parameterRawHex": "18000000C83100000F00010000000000",
+              "containerIndex": 24,
+              "containerOffset": 54263292,
+              "containerRawHex": "5D12000001000000010000001C000000",
+              "methodIndex": 4701,
+              "ordinal": 0,
+              "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+              "typeName": "Beyond.Gameplay.DataManager",
+              "methodName": "_LoadSingleConfig"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "At the reached original DataManager._LoadConstConfigs site, the caller provides the literal HitStopConfig and a MethodInfo describing _LoadSingleConfig<HitStopConfig> to the recorded physical call, then stores returned RAX in the typed hitStopConfig field. That physical target calls the named ResourceRouter.GetGameplayConfigFullPath entry. The router passes a prefix, its input name, and .asset to an unresolved three-string callee. The provided MethodInfo declaration RGCTX slot0 names DataManager.LoadAsset<MVAR0> with reciprocal _LoadSingleConfig parameter ownership; this is metadata context evidence, not a compiled-body identity.",
+    "conditional": "Initialized selected MethodInfo/RGCTX, normal helper returns, no iFix interception and reached config-load site. This contract does not evaluate ResourceManager or asset overlay selection.",
+    "unresolved": "No matching registered closed _LoadSingleConfig<HitStopConfig> compiled pointer was found for the selected MethodSpec. Its association with the observed physical call target needs an IL2CPP MethodInfo warmup/registration join or independently checked callee semantics. The three-string helper, path-hash forwarding and selected ResourceManager result identity remain unproved, so the exported AssetMap object remains a candidate."
+  },
+  "unresolvedCalls": [
+    {
+      "role": "three-string-helper",
+      "targetRva": 104887760
+    },
+    {
+      "role": "path-forwarder",
+      "targetRva": 84982336
+    },
+    {
+      "role": "path-forwarder-tail",
+      "targetRva": 84982512
+    },
+    {
+      "role": "DataManager.LoadAsset shared physical entry",
+      "targetRva": 97484144
+    },
+    {
+      "role": "closed MethodSpec to compiled physical target association absent",
+      "targetRva": 107890928
+    }
+  ],
+  "assetCandidate": {
+    "constructedArgumentPattern": [
+      "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/",
+      "HitStopConfig",
+      ".asset"
+    ],
+    "mapContainer": "assets/beyond/dynamicassets/gamedata/gameplayconfig/hitstopconfig.asset",
+    "selectedLibraryProved": false
+  },
+  "callerMethod": [
+    4696,
+    "Beyond.Gameplay.DataManager",
+    "_LoadConstConfigs",
+    110451216
+  ],
+  "callerRanges": [
+    {
+      "startRva": 110451216,
+      "endRva": 110453563
+    },
+    {
+      "startRva": 110453563,
+      "endRva": 110462510
+    },
+    {
+      "startRva": 110462510,
+      "endRva": 110462516
+    },
+    {
+      "startRva": 110462516,
+      "endRva": 110462534
+    }
+  ],
+  "routerMethod": [
+    6856,
+    "Beyond.Gameplay.ResourceRouter",
+    "GetGameplayConfigFullPath",
+    107891232
+  ],
+  "routerCallSiteRva": 107891032,
+  "compiledTargetJoinRequired": false,
+  "proofTier": "direct-caller-and-physical-target-links-only",
+  "compiledTargetClosedDeclarationProved": false
+}

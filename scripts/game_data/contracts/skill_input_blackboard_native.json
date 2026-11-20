@@ -1,0 +1,201 @@
+{
+  "schema": "endfield.skill-input-blackboard-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "evidenceBoundary": "Typed CenterBlackboard.skillInputData destination conditional on each independently supplied getter result actually being that type. Provided closed MethodInfo is not compiled getter identity; no dynamic same-instance or state-consumer delivery proof.",
+  "methods": {
+    "owner": {
+      "identity": [
+        49685,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+        "_ToSkill",
+        89282864
+      ],
+      "returnType": "bool",
+      "parameters": [],
+      "isStatic": false,
+      "slot": 65535
+    },
+    "copy": {
+      "identity": [
+        58908,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "CopyFrom",
+        89316080
+      ],
+      "returnType": "Beyond.Gameplay.Core.SkillCastInputData",
+      "parameters": [
+        {
+          "name": "inputView",
+          "type": "Beyond.Gameplay.Core.SkillCastInputView"
+        }
+      ],
+      "slot": 65535,
+      "isStatic": true,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.CopyFrom"
+    },
+    "dispose": {
+      "identity": [
+        58909,
+        "Beyond.Gameplay.Core.SkillCastInputData",
+        "Dispose",
+        98088288
+      ],
+      "returnType": "void",
+      "parameters": [],
+      "slot": 4,
+      "isStatic": false,
+      "id": "Beyond.Gameplay.Core.SkillCastInputData.Dispose"
+    }
+  },
+  "field": {
+    "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard",
+    "name": "skillInputData",
+    "offset": 16,
+    "valueType": "Beyond.Gameplay.Core.SkillCastInputData",
+    "ordinaryKind": 17,
+    "static": false,
+    "id": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard::skillInputData"
+  },
+  "typeSize": {
+    "type": "Beyond.Gameplay.Core.SkillCastInputData",
+    "hex": "68000000ffffffff0000000000000000",
+    "parent": "System.ValueType",
+    "valueType": true
+  },
+  "contexts": [
+    {
+      "rva": 89283587,
+      "result": {
+        "instructionRva": 89283587,
+        "instructionHex": "488B150669120B",
+        "usageCellRva": 275039504,
+        "usageRawHex": "EDC912C000000000",
+        "tag": 6,
+        "methodSpecIndex": 615670,
+        "methodSpec": [
+          6903,
+          28791,
+          -1
+        ],
+        "typeName": "Beyond.Gameplay.StateMachine`2",
+        "methodName": "get_stateBlackboard",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+          "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "rva": 89283622,
+      "result": {
+        "instructionRva": 89283622,
+        "instructionHex": "488B15E368120B",
+        "usageCellRva": 275039504,
+        "usageRawHex": "EDC912C000000000",
+        "tag": 6,
+        "methodSpecIndex": 615670,
+        "methodSpec": [
+          6903,
+          28791,
+          -1
+        ],
+        "typeName": "Beyond.Gameplay.StateMachine`2",
+        "methodName": "get_stateBlackboard",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterState",
+          "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard"
+        ],
+        "methodArguments": []
+      }
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "writer",
+      "startRva": 89283576,
+      "endRva": 89283795,
+      "sha256": "4FB9FC3BFA724056F66FCC0A663D0F9A3BB688D6F2FFD40E0817339041741A36",
+      "hex": "0fb6f884c00f84cb000000488b150669120b488bcee81efd90004885c00f8496feffff488d481033d2e83a598600488b15e368120b488bcee8fbfc90000f1045a04533c0488d5424400f104db0488d4df0488bd80f294424400f1045c00f294c24500f104dd00f294424600f1045e00f294c2470f20f108d100100000f294580f20f114d90e86e7e0000f20f1068500f10000f1048100f1050200f1058300f1060404885db0f840efeffff0f114310488d4b100f114b200f1153300f115b400f116350f20f116b60e89be6bdfa400fb6c7e90bfdffff4032ffebf2",
+      "boundary": "Finite selected successful-admission writer and normal return CFG, with explicit receiver type/instance premises."
+    },
+    {
+      "role": "return",
+      "startRva": 89283033,
+      "endRva": 89283083,
+      "sha256": "8E7619BCBB8BFA7F33D41147FABD0747595CD3C08292D8F10BAD7661A405033E",
+      "hex": "4c8bb424d80100004c8ba424e0010000488bbc2408020000488b9c24000200004c8bbc24d00100004881c4e80100005e5dc3",
+      "boundary": "Finite selected successful-admission writer and normal return CFG, with explicit receiver type/instance premises."
+    }
+  ],
+  "sites": {
+    "getter1Call": 89283597,
+    "disposeCall": 89283617,
+    "getter2Call": 89283632,
+    "copyCall": 89283709,
+    "barrierCall": 89283776,
+    "canCastFalseBranch": 89283581,
+    "falseNode": 89283790,
+    "returnCapture": 89283781,
+    "bb2Capture": 89283657,
+    "bb2NullCheck": 89283738,
+    "firstStore": 89283747,
+    "getter1Return": 89283602,
+    "getter2Return": 89283637,
+    "copyReturn": 89283714,
+    "disposeReturn": 89283622,
+    "barrierReturn": 89283781,
+    "copyViewLea": 89283644,
+    "copyOutputLea": 89283653
+  },
+  "physicalGetterRva": 98785584,
+  "barrierRva": 1065824,
+  "flow": {
+    "exceptionalExitRva": 89283249,
+    "epilogueRva": 89283033,
+    "writerNormalEnd": 89283795
+  },
+  "operands": {
+    "fieldBytes": 88,
+    "boxedHeaderBytes": 16,
+    "copyOutRbp": -16,
+    "viewStack": 64,
+    "methodInfoStack": 32
+  },
+  "rules": {
+    "originalPathOnly": true,
+    "canCastFalseSkipsBlackboardCallsAndWrites": true,
+    "firstGetterRequestsDispose": true,
+    "secondGetterIndependent": true,
+    "secondGetterNullCheckedAfterCopyFrom": true,
+    "copyResultBytes": 88,
+    "typedDestination": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterBlackboard::skillInputData",
+    "destinationTypePremiseRequired": true,
+    "normalWin64CallsRequired": true,
+    "coherentObjectsAndLocalMemoryRequired": true,
+    "originalCanCastBoolReturned": true,
+    "providedClosedGetterMethodInfoProved": true,
+    "compiledGetterClosedDeclarationProved": false,
+    "reviewedClosedGetterCandidateCount": 0,
+    "blackboardGetterInstanceTypeProved": false,
+    "sameBlackboardInstanceProved": false,
+    "stateConsumerDeliveryProved": false,
+    "disposeIndirectEffectsProved": false,
+    "normalReturnedWriterPathOnly": true,
+    "helperOrder": [
+      "get-blackboard-1",
+      "dispose-field-1",
+      "get-blackboard-2",
+      "copy-from-view",
+      "require-destination-nonnull",
+      "store-field-2",
+      "write-barrier"
+    ],
+    "barrierEffectsProved": false,
+    "viewSourceLocalsPremiseRequired": true
+  }
+}

@@ -17,7 +17,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 
 CONTRACT = CONTRACTS_DIR / "damage_process_formula_native.json"
-SCHEMA = "endfield.damage-process-formula-native-contract.v2"
+SCHEMA = "endfield.damage-process-formula-native-contract.v3"
 
 
 def validate_windows(image, contract):
@@ -83,6 +83,7 @@ def load_damage_process_formula(*, gameassembly=None, metadata=None,
                                      expected=spec["rva"], actual=hex(actual)))
             rows.append(dict(symbol=body.symbol, rva=hex(actual)))
         failures.extend(validate_declarations(image, contract))
+        failures.extend(validate_callback_identity(image, contract))
     except (OSError, ValueError, RuntimeError, KeyError, IndexError, struct.error) as exc:
         return reject("pendingReview", "damage_process_formula_evaluation", exc)
     after = check_installed_native_inputs(pins["gameAssemblySha256"], pins["metadataSha256"],
@@ -130,6 +131,55 @@ def validate_declarations(image, contract):
             failures.append(dict(check="classinfo_declaration", symbol=spec["type"],
                                  expected=dict(bits=spec["bits"], type=spec["type"]),
                                  actual=dict(bits=raw.hex(), type=actual)))
+    return failures
+
+
+def validate_callback_identity(image, contract):
+    """Join the bounded multiplier selector to the named getter's patch slot.
+
+    This proves selector identity, not runtime null selection or replacement
+    behavior. Whole-caller arithmetic and receiver continuity stay conditional.
+    """
+    spec = contract.get("branchEvidence", {}).get("callbackSelection", {}).get("identityWitness")
+    if spec is None:
+        return []
+    from scripts.game_data.il2cpp.patch_table_guard import check_entry_guard
+    from scripts.game_data.il2cpp.context import rip_qword_load_target
+    index = image.body_index
+    body = index.body(spec["type"], spec["method"])
+    rows = index._decode(body.pointer, spec["getterEntryBytes"])
+    guard = check_entry_guard(rows, spec["guardRow"], pe=image.pe, decode=index._decode)
+    expected_aliases = spec["aliases"]
+    if guard["aliases"] != expected_aliases:
+        raise ValueError(f"callback getter aliases: expected {expected_aliases}, actual {guard['aliases']}")
+    literal_instruction = body.pointer + spec["defaultLoadOffset"]
+    raw = image.pe.bytes_at_va(literal_instruction, 8)
+    if raw[:4] != bytes.fromhex("f20f1005"):
+        raise ValueError("callback getter default must be RIP-relative MOVSD XMM0")
+    target = literal_instruction + 8 + struct.unpack_from("<i", raw, 4)[0]
+    bits = image.pe.bytes_at_va(target, 8)
+    if bits.hex() != spec["defaultBits"] or struct.unpack("<d", bits)[0] != 1.0:
+        raise ValueError(f"callback getter default differs: actual {bits.hex()}")
+    failures = []
+    for caller in spec["selectors"]:
+        address = image.pe.image_base + int(caller["rva"], 16)
+        raw = image.pe.bytes_at_va(address, 28)
+        if (raw[:3] != bytes.fromhex("488b05") or raw[7:10] != bytes.fromhex("488b48")
+                or raw[11:14] != bytes.fromhex("4885c9") or raw[14] != 0x74
+                or raw[16:19] != bytes.fromhex("488b81")
+                or raw[23:26] != bytes.fromhex("4885c0") or raw[26] != 0x74):
+            raise ValueError(f"callback selector instruction grammar differs: {caller['name']}")
+        root = rip_qword_load_target(raw[:7], address, source="damageProcessCallback")
+        actual = dict(rootCell=hex(root), tableDisplacement=raw[10],
+                      slotDisplacement=struct.unpack_from("<i", raw, 19)[0])
+        expected = {key: guard[key] for key in actual}
+        default = image.pe.image_base + int(caller["defaultRva"], 16)
+        edges = [address + position + 2 + struct.unpack_from("<b", raw, position + 1)[0]
+                 for position in (14, 26)]
+        if actual != expected or edges != [default, default]:
+            failures.append(dict(check="callback_slot_identity", symbol=caller["name"],
+                                 expected=dict(selector=expected, nullEdges=[hex(default)] * 2),
+                                 actual=dict(selector=actual, nullEdges=[hex(v) for v in edges])))
     return failures
 
 

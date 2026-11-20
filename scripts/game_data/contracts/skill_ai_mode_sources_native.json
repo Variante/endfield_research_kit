@@ -1,0 +1,1154 @@
+{
+  "schema": "endfield.skill-ai-mode-sources-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "caller": {
+    "identity": [
+      45745,
+      "Beyond.Gameplay.AI.CharacterAIBrain",
+      "InitData",
+      100071952
+    ],
+    "returnType": "void",
+    "parameters": [
+      {
+        "name": "aiComp",
+        "type": "Beyond.Gameplay.AI.CharacterAIComponent"
+      }
+    ]
+  },
+  "codeWindows": [
+    {
+      "startRva": 100071952,
+      "endRva": 100079628,
+      "sha256": "BF557CBCB9A2106447992F9F837DFFE83A4579966465F54C8F1DBE5B41F207A4",
+      "boundary": "complete selected InitData unwind family; inactive replacements, not already initialized, normal helper returns"
+    }
+  ],
+  "blocks": {
+    "capture": {
+      "startRva": 100071980,
+      "endRva": 100071989,
+      "instructions": [
+        {
+          "rva": 100071980,
+          "hex": "498bd8",
+          "review": "mov rbx, r8"
+        },
+        {
+          "rva": 100071983,
+          "hex": "4c8bea",
+          "review": "mov r13, rdx"
+        },
+        {
+          "rva": 100071986,
+          "hex": "488bf1",
+          "review": "mov rsi, rcx"
+        }
+      ]
+    },
+    "configAndProviders": {
+      "startRva": 100072396,
+      "endRva": 100072645,
+      "instructions": [
+        {
+          "rva": 100072396,
+          "hex": "4d85ed",
+          "review": "test r13, r13"
+        },
+        {
+          "rva": 100072399,
+          "hex": "0f84ae1a0000",
+          "review": "je 0x185f71683"
+        },
+        {
+          "rva": 100072405,
+          "hex": "498b4550",
+          "review": "mov rax, qword ptr"
+        },
+        {
+          "rva": 100072409,
+          "hex": "48894610",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072413,
+          "hex": "488d4e10",
+          "review": "lea rcx,"
+        },
+        {
+          "rva": 100072417,
+          "hex": "e87a4719fa",
+          "review": "call 0x180104360"
+        },
+        {
+          "rva": 100072422,
+          "hex": "498b9d28020000",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072429,
+          "hex": "4885db",
+          "review": "test rbx, rbx"
+        },
+        {
+          "rva": 100072432,
+          "hex": "0f84931a0000",
+          "review": "je 0x185f71689"
+        },
+        {
+          "rva": 100072438,
+          "hex": "488b5b10",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072442,
+          "hex": "4885db",
+          "review": "test rbx, rbx"
+        },
+        {
+          "rva": 100072445,
+          "hex": "0f848c1a0000",
+          "review": "je 0x185f7168f"
+        },
+        {
+          "rva": 100072451,
+          "hex": "4c8b0d6676700a",
+          "review": "mov r9, qword ptr"
+        },
+        {
+          "rva": 100072458,
+          "hex": "4c8b05ef16780a",
+          "review": "mov r8, qword ptr"
+        },
+        {
+          "rva": 100072465,
+          "hex": "488b5368",
+          "review": "mov rdx, qword ptr"
+        },
+        {
+          "rva": 100072469,
+          "hex": "488b0d8c6c760a",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100072476,
+          "hex": "e8af794900",
+          "review": "call 0x1864075d0"
+        },
+        {
+          "rva": 100072481,
+          "hex": "488bd8",
+          "review": "mov rbx, rax"
+        },
+        {
+          "rva": 100072484,
+          "hex": "488b0d4d7b700a",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100072491,
+          "hex": "39b9e0000000",
+          "review": "cmp dword ptr"
+        },
+        {
+          "rva": 100072497,
+          "hex": "7505",
+          "review": "jne 0x185f6fc38"
+        },
+        {
+          "rva": 100072499,
+          "hex": "e8a8690afa",
+          "review": "call 0x1800165e0"
+        },
+        {
+          "rva": 100072504,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 100072507,
+          "hex": "e8b0be19ff",
+          "review": "call 0x18510baf0"
+        },
+        {
+          "rva": 100072512,
+          "hex": "488bd8",
+          "review": "mov rbx, rax"
+        },
+        {
+          "rva": 100072515,
+          "hex": "488b0d6650780a",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100072522,
+          "hex": "39b9e0000000",
+          "review": "cmp dword ptr"
+        },
+        {
+          "rva": 100072528,
+          "hex": "7505",
+          "review": "jne 0x185f6fc57"
+        },
+        {
+          "rva": 100072530,
+          "hex": "e889690afa",
+          "review": "call 0x1800165e0"
+        },
+        {
+          "rva": 100072535,
+          "hex": "488b055a6c760a",
+          "review": "mov rax, qword ptr"
+        },
+        {
+          "rva": 100072542,
+          "hex": "488d5658",
+          "review": "lea rdx,"
+        },
+        {
+          "rva": 100072546,
+          "hex": "4889442420",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072551,
+          "hex": "41b90a000000",
+          "review": "mov r9d, 0xa"
+        },
+        {
+          "rva": 100072557,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 100072560,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 100072563,
+          "hex": "e8b855d8ff",
+          "review": "call 0x185cf5230"
+        },
+        {
+          "rva": 100072568,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 100072570,
+          "hex": "7449",
+          "review": "je 0x185f6fcc5"
+        },
+        {
+          "rva": 100072572,
+          "hex": "488d4e58",
+          "review": "lea rcx,"
+        },
+        {
+          "rva": 100072576,
+          "hex": "488b15096b760a",
+          "review": "mov rdx, qword ptr"
+        },
+        {
+          "rva": 100072583,
+          "hex": "e8142f0300",
+          "review": "call 0x185fa2ba0"
+        },
+        {
+          "rva": 100072588,
+          "hex": "488bd8",
+          "review": "mov rbx, rax"
+        },
+        {
+          "rva": 100072591,
+          "hex": "4885c0",
+          "review": "test rax, rax"
+        },
+        {
+          "rva": 100072594,
+          "hex": "0f84fd190000",
+          "review": "je 0x185f71695"
+        },
+        {
+          "rva": 100072600,
+          "hex": "488d5640",
+          "review": "lea rdx,"
+        },
+        {
+          "rva": 100072604,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 100072607,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 100072610,
+          "hex": "e8691b0000",
+          "review": "call 0x185f71810"
+        },
+        {
+          "rva": 100072615,
+          "hex": "488d5648",
+          "review": "lea rdx,"
+        },
+        {
+          "rva": 100072619,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 100072622,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 100072625,
+          "hex": "e88adfffff",
+          "review": "call 0x185f6dc40"
+        },
+        {
+          "rva": 100072630,
+          "hex": "488d5650",
+          "review": "lea rdx,"
+        },
+        {
+          "rva": 100072634,
+          "hex": "4533c0",
+          "review": "xor r8d, r8d"
+        },
+        {
+          "rva": 100072637,
+          "hex": "488bcb",
+          "review": "mov rcx, rbx"
+        },
+        {
+          "rva": 100072640,
+          "hex": "e88be3ffff",
+          "review": "call 0x185f6e050"
+        }
+      ]
+    },
+    "configModeEnumeration": {
+      "startRva": 100072645,
+      "endRva": 100072862,
+      "instructions": [
+        {
+          "rva": 100072645,
+          "hex": "498b9d28020000",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072652,
+          "hex": "4885db",
+          "review": "test rbx, rbx"
+        },
+        {
+          "rva": 100072655,
+          "hex": "0f84c6190000",
+          "review": "je 0x185f7169b"
+        },
+        {
+          "rva": 100072661,
+          "hex": "488b5b10",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072665,
+          "hex": "4885db",
+          "review": "test rbx, rbx"
+        },
+        {
+          "rva": 100072668,
+          "hex": "0f84bf190000",
+          "review": "je 0x185f716a1"
+        },
+        {
+          "rva": 100072674,
+          "hex": "488b5b60",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072678,
+          "hex": "4885db",
+          "review": "test rbx, rbx"
+        },
+        {
+          "rva": 100072681,
+          "hex": "0f84b8190000",
+          "review": "je 0x185f716a7"
+        },
+        {
+          "rva": 100072687,
+          "hex": "4c8b4b20",
+          "review": "mov r9, qword ptr"
+        },
+        {
+          "rva": 100072691,
+          "hex": "4d85c9",
+          "review": "test r9, r9"
+        },
+        {
+          "rva": 100072694,
+          "hex": "0f8437020000",
+          "review": "je 0x185f6ff33"
+        },
+        {
+          "rva": 100072700,
+          "hex": "0f57c0",
+          "review": "xorps xmm0, xmm0"
+        },
+        {
+          "rva": 100072703,
+          "hex": "f30f7f442460",
+          "review": "movdqu xmmword ptr"
+        },
+        {
+          "rva": 100072709,
+          "hex": "48897c2470",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072714,
+          "hex": "4c894c2458",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072719,
+          "hex": "488d4c2458",
+          "review": "lea rcx,"
+        },
+        {
+          "rva": 100072724,
+          "hex": "e8474619fa",
+          "review": "call 0x180104360"
+        },
+        {
+          "rva": 100072729,
+          "hex": "458b492c",
+          "review": "mov r9d, dword ptr"
+        },
+        {
+          "rva": 100072733,
+          "hex": "44894c2460",
+          "review": "mov dword ptr"
+        },
+        {
+          "rva": 100072738,
+          "hex": "897c2464",
+          "review": "mov dword ptr"
+        },
+        {
+          "rva": 100072742,
+          "hex": "c744247002000000",
+          "review": "mov dword ptr"
+        },
+        {
+          "rva": 100072750,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 100072752,
+          "hex": "4889442468",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072757,
+          "hex": "0f10442458",
+          "review": "movups xmm0, xmmword ptr"
+        },
+        {
+          "rva": 100072762,
+          "hex": "0f11442478",
+          "review": "movups xmmword ptr"
+        },
+        {
+          "rva": 100072767,
+          "hex": "0f104c2468",
+          "review": "movups xmm1, xmmword ptr"
+        },
+        {
+          "rva": 100072772,
+          "hex": "0f118c2488000000",
+          "review": "movups xmmword ptr"
+        },
+        {
+          "rva": 100072780,
+          "hex": "48897c2458",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072785,
+          "hex": "488d442478",
+          "review": "lea rax,"
+        },
+        {
+          "rva": 100072790,
+          "hex": "4889442460",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072795,
+          "hex": "4c8d3d9e0209fa",
+          "review": "lea r15,"
+        },
+        {
+          "rva": 100072802,
+          "hex": "488b15076a760a",
+          "review": "mov rdx, qword ptr"
+        },
+        {
+          "rva": 100072809,
+          "hex": "488d4c2478",
+          "review": "lea rcx,"
+        },
+        {
+          "rva": 100072814,
+          "hex": "e8adc70300",
+          "review": "call 0x185fac520"
+        },
+        {
+          "rva": 100072819,
+          "hex": "84c0",
+          "review": "test al, al"
+        },
+        {
+          "rva": 100072821,
+          "hex": "0f8496010000",
+          "review": "je 0x185f6ff11"
+        },
+        {
+          "rva": 100072827,
+          "hex": "488b9c2488000000",
+          "review": "mov rbx, qword ptr"
+        },
+        {
+          "rva": 100072835,
+          "hex": "4c8b7640",
+          "review": "mov r14, qword ptr"
+        },
+        {
+          "rva": 100072839,
+          "hex": "4d85f6",
+          "review": "test r14, r14"
+        },
+        {
+          "rva": 100072842,
+          "hex": "0f843c190000",
+          "review": "je 0x185f716cc"
+        },
+        {
+          "rva": 100072848,
+          "hex": "4c8b3d314e7a0a",
+          "review": "mov r15, qword ptr"
+        },
+        {
+          "rva": 100072855,
+          "hex": "4c8be3",
+          "review": "mov r12, rbx"
+        },
+        {
+          "rva": 100072858,
+          "hex": "49c1ec20",
+          "review": "shr r12, 0x20"
+        }
+      ]
+    },
+    "cacheSelection": {
+      "startRva": 100072925,
+      "endRva": 100072999,
+      "instructions": [
+        {
+          "rva": 100072925,
+          "hex": "418bd4",
+          "review": "mov edx, r12d"
+        },
+        {
+          "rva": 100072928,
+          "hex": "498bce",
+          "review": "mov rcx, r14"
+        },
+        {
+          "rva": 100072931,
+          "hex": "e8d8f12a00",
+          "review": "call 0x18621efc0"
+        },
+        {
+          "rva": 100072936,
+          "hex": "85c0",
+          "review": "test eax, eax"
+        },
+        {
+          "rva": 100072938,
+          "hex": "790f",
+          "review": "jns 0x185f6fdfb"
+        },
+        {
+          "rva": 100072940,
+          "hex": "33c0",
+          "review": "xor eax, eax"
+        },
+        {
+          "rva": 100072942,
+          "hex": "48898424f8000000",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100072950,
+          "hex": "e960ffffff",
+          "review": "jmp 0x185f6fd5b"
+        },
+        {
+          "rva": 100072955,
+          "hex": "498b4e18",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100072959,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 100072962,
+          "hex": "0f84bf180000",
+          "review": "je 0x185f716c7"
+        },
+        {
+          "rva": 100072968,
+          "hex": "3b4118",
+          "review": "cmp eax, dword ptr"
+        },
+        {
+          "rva": 100072971,
+          "hex": "0f839c180000",
+          "review": "jae 0x185f716ad"
+        },
+        {
+          "rva": 100072977,
+          "hex": "4898",
+          "review": "cdqe "
+        },
+        {
+          "rva": 100072979,
+          "hex": "4883c002",
+          "review": "add rax, 2"
+        },
+        {
+          "rva": 100072983,
+          "hex": "488d0440",
+          "review": "lea rax,"
+        },
+        {
+          "rva": 100072987,
+          "hex": "488b0cc1",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100072991,
+          "hex": "48898c24f8000000",
+          "review": "mov qword ptr"
+        }
+      ]
+    },
+    "modeInitAndAdd": {
+      "startRva": 100073143,
+      "endRva": 100073228,
+      "instructions": [
+        {
+          "rva": 100073143,
+          "hex": "488b4648",
+          "review": "mov rax, qword ptr"
+        },
+        {
+          "rva": 100073147,
+          "hex": "488b4e50",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100073151,
+          "hex": "4d85f6",
+          "review": "test r14, r14"
+        },
+        {
+          "rva": 100073154,
+          "hex": "0f84f0170000",
+          "review": "je 0x185f716b8"
+        },
+        {
+          "rva": 100073160,
+          "hex": "48897c2430",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100073165,
+          "hex": "48894c2428",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100073170,
+          "hex": "4889442420",
+          "review": "mov qword ptr"
+        },
+        {
+          "rva": 100073175,
+          "hex": "4c8b8c24f8000000",
+          "review": "mov r9, qword ptr"
+        },
+        {
+          "rva": 100073183,
+          "hex": "448bc3",
+          "review": "mov r8d, ebx"
+        },
+        {
+          "rva": 100073186,
+          "hex": "498b5550",
+          "review": "mov rdx, qword ptr"
+        },
+        {
+          "rva": 100073190,
+          "hex": "498bce",
+          "review": "mov rcx, r14"
+        },
+        {
+          "rva": 100073193,
+          "hex": "e872e5ffff",
+          "review": "call 0x185f6e460"
+        },
+        {
+          "rva": 100073198,
+          "hex": "488b4e18",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100073202,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 100073205,
+          "hex": "0f84b8170000",
+          "review": "je 0x185f716b3"
+        },
+        {
+          "rva": 100073211,
+          "hex": "4c8b0d4e68760a",
+          "review": "mov r9, qword ptr"
+        },
+        {
+          "rva": 100073218,
+          "hex": "4d8bc6",
+          "review": "mov r8, r14"
+        },
+        {
+          "rva": 100073221,
+          "hex": "8bd3",
+          "review": "mov edx, ebx"
+        },
+        {
+          "rva": 100073223,
+          "hex": "e8d4b4f6ff",
+          "review": "call 0x185edb3e0"
+        }
+      ]
+    },
+    "poolProvider": {
+      "startRva": 100073089,
+      "endRva": 100073131,
+      "instructions": [
+        {
+          "rva": 100073089,
+          "hex": "488b057816780a",
+          "review": "mov rax, qword ptr"
+        },
+        {
+          "rva": 100073096,
+          "hex": "488b88b8000000",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100073103,
+          "hex": "488b89e0000000",
+          "review": "mov rcx, qword ptr"
+        },
+        {
+          "rva": 100073110,
+          "hex": "4885c9",
+          "review": "test rcx, rcx"
+        },
+        {
+          "rva": 100073113,
+          "hex": "0f8423180000",
+          "review": "je 0x185f716c2"
+        },
+        {
+          "rva": 100073119,
+          "hex": "488b158a69760a",
+          "review": "mov rdx, qword ptr"
+        },
+        {
+          "rva": 100073126,
+          "hex": "e8d588e2ff",
+          "review": "call 0x185d98780"
+        }
+      ]
+    }
+  },
+  "calls": [
+    {
+      "siteRva": 100072610,
+      "target": [
+        50950,
+        "Beyond.Gameplay.AI.Config.CharacterAIBlackboard",
+        "GetMode",
+        100079632
+      ]
+    },
+    {
+      "siteRva": 100072625,
+      "target": [
+        50951,
+        "Beyond.Gameplay.AI.Config.CharacterAIBlackboard",
+        "GetGraph",
+        100064320
+      ]
+    },
+    {
+      "siteRva": 100072640,
+      "target": [
+        50952,
+        "Beyond.Gameplay.AI.Config.CharacterAIBlackboard",
+        "GetBehavior",
+        100065360
+      ]
+    },
+    {
+      "siteRva": 100073193,
+      "target": [
+        45892,
+        "Beyond.Gameplay.AI.CharacterAIMode",
+        "InitData",
+        100066400
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "name": "<data>k__BackingField",
+      "typeName": "Beyond.Gameplay.AI.CharacterAIComponentData",
+      "offset": 552,
+      "static": false,
+      "ordinaryKind": 18
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.Config.CharacterAIBrainConfigData",
+      "name": "mode",
+      "typeName": "Beyond.SerializeFieldDictionary`2<Beyond.Gameplay.AI.CharacterAIModeType,Beyond.Gameplay.AI.Config.CharBBTag>",
+      "offset": 32,
+      "static": false,
+      "ordinaryKind": 21
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIComponentData",
+      "name": "aiCfg",
+      "typeName": "Beyond.Gameplay.AI.Config.CharacterAIConfigData",
+      "offset": 16,
+      "static": false,
+      "ordinaryKind": 18
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.Config.CharacterAIConfigData",
+      "name": "brainConfig",
+      "typeName": "Beyond.Gameplay.AI.Config.CharacterAIBrainConfigData",
+      "offset": 96,
+      "static": false,
+      "ordinaryKind": 18
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.Config.CharacterAIConfigData",
+      "name": "aiBBPath",
+      "typeName": "string",
+      "offset": 104,
+      "static": false,
+      "ordinaryKind": 14
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_modeData",
+      "typeName": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.CharacterAIModeType,Beyond.Gameplay.AI.CharacterAIMode>",
+      "offset": 24,
+      "static": false,
+      "ordinaryKind": 21
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_modeDataCache",
+      "typeName": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.Config.CharBBTag,Beyond.Gameplay.AI.Config.CharacterAIModeData>",
+      "offset": 64,
+      "static": false,
+      "ordinaryKind": 21
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_graphDataCache",
+      "typeName": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.Config.CharBBTag,Beyond.Gameplay.AI.CharacterAIGraphConfig>",
+      "offset": 72,
+      "static": false,
+      "ordinaryKind": 21
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_behaviorDataCache",
+      "typeName": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.Config.CharBBTag,Beyond.Gameplay.AI.CharacterAIBehaviorConfig>",
+      "offset": 80,
+      "static": false,
+      "ordinaryKind": 21
+    },
+    {
+      "owner": "Beyond.Gameplay.AI.CharacterAIBrain",
+      "name": "m_aiBBHandle",
+      "typeName": "Beyond.Resource.FAssetProxyHandle",
+      "offset": 88,
+      "static": false,
+      "ordinaryKind": 17
+    }
+  ],
+  "typedRequests": [
+    {
+      "instructionRva": 100072451,
+      "result": {
+        "instructionRva": 100072451,
+        "instructionHex": "4C8B0D6676700A",
+        "usageCellRva": 275214960,
+        "usageRawHex": "611F14C000000000",
+        "tag": 6,
+        "methodSpecIndex": 659376,
+        "methodSpec": [
+          571601,
+          -1,
+          1193
+        ],
+        "typeName": "Beyond.StringUtils",
+        "methodName": "ZConcat",
+        "classArguments": [],
+        "methodArguments": [
+          "string",
+          "string",
+          "string"
+        ]
+      }
+    },
+    {
+      "instructionRva": 100072535,
+      "result": {
+        "instructionRva": 100072535,
+        "instructionHex": "488B055A6C760A",
+        "usageCellRva": 275605688,
+        "usageRawHex": "DB1C14C000000000",
+        "tag": 6,
+        "methodSpecIndex": 659053,
+        "methodSpec": [
+          358489,
+          -1,
+          64112
+        ],
+        "typeName": "Beyond.Resource.ResourceManager",
+        "methodName": "TryLoad",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.AI.Config.CharacterAIBlackboard"
+        ]
+      }
+    },
+    {
+      "instructionRva": 100072576,
+      "result": {
+        "instructionRva": 100072576,
+        "instructionHex": "488B15096B760A",
+        "usageCellRva": 275605392,
+        "usageRawHex": "DF0713C000000000",
+        "tag": 6,
+        "methodSpecIndex": 623599,
+        "methodSpec": [
+          358218,
+          -1,
+          64112
+        ],
+        "typeName": "Beyond.Resource.FAssetProxyHandle",
+        "methodName": "Get",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.AI.Config.CharacterAIBlackboard"
+        ]
+      }
+    },
+    {
+      "instructionRva": 100072802,
+      "result": {
+        "instructionRva": 100072802,
+        "instructionHex": "488B15076A760A",
+        "usageCellRva": 275605360,
+        "usageRawHex": "77C511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 582331,
+        "methodSpec": [
+          404014,
+          28394,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2+Enumerator",
+        "methodName": "MoveNext",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterAIModeType",
+          "Beyond.Gameplay.AI.Config.CharBBTag"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "instructionRva": 100073119,
+      "result": {
+        "instructionRva": 100073119,
+        "instructionHex": "488B158A69760A",
+        "usageCellRva": 275605552,
+        "usageRawHex": "95D712C000000000",
+        "tag": 6,
+        "methodSpecIndex": 617418,
+        "methodSpec": [
+          7791,
+          -1,
+          61198
+        ],
+        "typeName": "Beyond.Gameplay.AIManager",
+        "methodName": "GetClassFromPool",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.AI.CharacterAIMode"
+        ]
+      }
+    },
+    {
+      "instructionRva": 100073211,
+      "result": {
+        "instructionRva": 100073211,
+        "instructionHex": "4C8B0D4E68760A",
+        "usageCellRva": 275605328,
+        "usageRawHex": "655E11C000000000",
+        "tag": 6,
+        "methodSpecIndex": 569138,
+        "methodSpec": [
+          403972,
+          2887,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.Dictionary`2",
+        "methodName": "Add",
+        "classArguments": [
+          "Beyond.Gameplay.AI.CharacterAIModeType",
+          "Beyond.Gameplay.AI.CharacterAIMode"
+        ],
+        "methodArguments": []
+      }
+    }
+  ],
+  "literalLoads": [
+    {
+      "instructionRva": 100072458,
+      "instructionHex": "4c8b05ef16780a",
+      "cellRva": 275714816,
+      "literalIndex": 2006,
+      "value": ".asset"
+    },
+    {
+      "instructionRva": 100072469,
+      "instructionHex": "488b0d8c6c760a",
+      "cellRva": 275605672,
+      "literalIndex": 4148,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/AI/Character/Blackboard/"
+    }
+  ],
+  "rules": {
+    "originalPathOnly": true,
+    "activeEntityConfigSelected": false,
+    "configuredBlackboardAssetPathProved": false,
+    "compiledGenericLoadEntryProved": false,
+    "runtimeSelectionProved": false,
+    "modeEntryInitializationAndAddBridge": true
+  },
+  "evidenceBoundary": {
+    "exact": "selected InitData complete native family, typed source fields, literal arguments, named direct entries and contiguous parameter bridges",
+    "conditional": "noninitialized original implementation under explicit AI component/config, normal resource provider and dictionary/pooled-object behavior; cache selected data and mode pair physical carriers retain their observed ABI",
+    "unresolved": "actual resource-loader closed compiled entry, path transformation/resolution to exported blackboard object, active entity configuration, graph/behavior factories and live scheduling are separate joins"
+  },
+  "stackSlots": {
+    "selectedModeData": 248,
+    "loadMethodInfoArgument": 32
+  },
+  "sourceOperands": {
+    "initEntityArgument": {
+      "prefix": "498b55",
+      "displacement": 80,
+      "width": 1,
+      "boundary": "physical aiComp receiver read, not a new inherited-field ownership proof"
+    }
+  },
+  "transfers": [
+    {
+      "loadRva": 100072451,
+      "callRva": 100072476,
+      "argument": "r9",
+      "physicalTargetRva": 104887760
+    },
+    {
+      "loadRva": 100072535,
+      "callRva": 100072563,
+      "argument": "loadMethodInfoArgument",
+      "physicalTargetRva": 97473072
+    },
+    {
+      "loadRva": 100072576,
+      "callRva": 100072583,
+      "argument": "rdx",
+      "physicalTargetRva": 100281248
+    },
+    {
+      "loadRva": 100072802,
+      "callRva": 100072814,
+      "argument": "rdx",
+      "physicalTargetRva": 100320544
+    },
+    {
+      "loadRva": 100073119,
+      "callRva": 100073126,
+      "argument": "rdx",
+      "physicalTargetRva": 98142080
+    },
+    {
+      "loadRva": 100073211,
+      "callRva": 100073223,
+      "argument": "r9",
+      "physicalTargetRva": 99464160
+    },
+    {
+      "loadRva": 100072458,
+      "callRva": 100072476,
+      "argument": "r8",
+      "physicalTargetRva": 104887760
+    },
+    {
+      "loadRva": 100072469,
+      "callRva": 100072476,
+      "argument": "rcx",
+      "physicalTargetRva": 104887760
+    }
+  ]
+}

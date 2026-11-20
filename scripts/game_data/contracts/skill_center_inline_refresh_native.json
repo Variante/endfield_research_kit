@@ -1,0 +1,1179 @@
+{
+  "schema": "endfield.skill-center-inline-refresh-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "methods": [
+    {
+      "identity": [
+        49677,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+        "RefreshData",
+        98086448
+      ],
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        }
+      ]
+    },
+    {
+      "identity": [
+        49617,
+        "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+        "RefreshData",
+        98087216
+      ],
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "aiCom",
+          "type": "Beyond.Gameplay.AI.CharacterAIComponent"
+        }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "id": "ai",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_aiCom",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "ordinaryKind": 18,
+      "offset": 64
+    },
+    {
+      "id": "entity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateBase",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 72
+    },
+    {
+      "id": "aiEntity",
+      "type": "Beyond.Gameplay.Core.BaseComponent",
+      "name": "<entity>k__BackingField",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 80
+    },
+    {
+      "id": "entityAi",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "name": "<charAICom>k__BackingField",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "ordinaryKind": 18,
+      "offset": 336
+    },
+    {
+      "id": "machineAi",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+      "name": "m_aiCom",
+      "valueType": "Beyond.Gameplay.AI.CharacterAIComponent",
+      "ordinaryKind": 18,
+      "offset": 88
+    },
+    {
+      "id": "machineEntity",
+      "type": "Beyond.Gameplay.AI.CharacterMainCtrlSystem+CenterStateMachine",
+      "name": "m_entity",
+      "valueType": "Beyond.Gameplay.Core.Entity",
+      "ordinaryKind": 18,
+      "offset": 96
+    }
+  ],
+  "spans": [
+    {
+      "id": "source",
+      "rva": 98086656,
+      "hex": "488b835001000048894658488d4e58e84c9437fa48895e60488d4e60e83f9437fa"
+    },
+    {
+      "id": "current",
+      "rva": 98086857,
+      "hex": "488b5c2450488b7e58"
+    },
+    {
+      "id": "dispatch",
+      "rva": 98086919,
+      "hex": "488b054242990b488b48384885c97423488b8130c100004885c074174533c94c8bc7488bd3488b8938c10000ffd0e976ffffff"
+    },
+    {
+      "id": "aiStore",
+      "rva": 98086970,
+      "hex": "48897b40"
+    },
+    {
+      "id": "aiBarrier",
+      "rva": 98086974,
+      "hex": "8b0dec33990b85c974474c8d434049c1e80c4181e0ffff1f00418bc048c1e806498d14c64183e03f0f0d8af86e04000f1f00488b82f86e0400488bc84c0fabc1f0480fb18af86e040075e78b0da133990b"
+    },
+    {
+      "id": "entityStore",
+      "rva": 98087055,
+      "hex": "4885ff0f8487000000488b475048894348"
+    },
+    {
+      "id": "entityBarrier",
+      "rva": 98087072,
+      "hex": "85c90f8408ffffff4883c34848c1eb0c81e3ffff1f008bc348c1e806498d14c683e33f0f0d8af86e0400660f1f440000488b82f86e0400488bc8480fabd9f0480fb18af86e040075e7e9c2feffff"
+    },
+    {
+      "id": "baseDispatch",
+      "rva": 98087220,
+      "hex": "488b051541990b4c8bd14c8bda488b48384885c90f8538f08801"
+    },
+    {
+      "id": "baseReplacement",
+      "rva": 123838854,
+      "hex": "488b8130c100004885c00f84b80f77fe488b8938c100004d8bc84d8bc3498bd2ffd0"
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 98086656,
+      "endRva": 98086689,
+      "sha256": "9ba7f4433214c6ead90a8d5a4f03ef9f7522c728d03ec7328dee4fde9d64fc61",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98086857,
+      "endRva": 98086866,
+      "sha256": "b9049b7d255196488ce48c9483d5f8181bfad1719a21c15d6073f67b4b2bce58",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98086919,
+      "endRva": 98086970,
+      "sha256": "cfa1782fcbbd89baafb55ff2fb20faa42b12cb39f65be5f83a365637b842d5b4",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98086970,
+      "endRva": 98086974,
+      "sha256": "578cb5d874eb88359ba8cbc4dea60516273a4bd9729089e24d9c467dc270d4e5",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98086974,
+      "endRva": 98087055,
+      "sha256": "31456c79f06ba34bca7d72ec0c1d63d2c570ab3416d20f2a3a74131620682c95",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98087055,
+      "endRva": 98087072,
+      "sha256": "cc534530e3d92b6ba8055b9a935d6bfeaae7d36c6e2994bc2d9b3a98835f28e0",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98087072,
+      "endRva": 98087150,
+      "sha256": "37f714a31962572c428d99cc8289f275f4ec6fada66220196b4e57c69b14319a",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 98087220,
+      "endRva": 98087246,
+      "sha256": "24da18e91144cd055635ecf522e79f7d7de71ace09c25c60fa28929534f6d458",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    },
+    {
+      "startRva": 123838854,
+      "endRva": 123838888,
+      "sha256": "f4106ac7ef988f0586ad50415ee00aefc0d1ed6b10ad7326c745c656c8f927b0",
+      "boundary": "selected local fragment only; no complete CFG claim"
+    }
+  ],
+  "operands": {
+    "typeInfoCell": 292680272,
+    "dispatchOffset": 56,
+    "functionOffset": 49456,
+    "contextOffset": 49464,
+    "barrier": 1065824,
+    "ordinary": 98086970,
+    "nextIteration": 98086832,
+    "nullFailure": 98087199,
+    "bitmapFlag": 292676656,
+    "baseReplacement": 123838854,
+    "baseOriginal": 98087246
+  },
+  "evidenceBoundary": {
+    "exact": "Nominal fields, selected complete contiguous machine body instruction schedule, branch destinations, argument carriers, iterator stack slots, and original inline writes; shared base replacement cell and slots.",
+    "conditional": "Selected normal CFG follows declared helper results under normal Win64 ABI. Dictionary implementation, helper internals, exceptions, replacement effects and GC completion are premises. Cold failure and cleanup bytes covered without claiming exception CFG.",
+    "unresolved": "Runtime writer attribution, object lifetime, blackboard identity, complete writer census, Dictionary internals, replacement effects, exception/unwind execution."
+  },
+  "selectedFlow": {
+    "instructions": [
+      {
+        "rva": 98086448,
+        "hex": "48895c2408",
+        "assembly": "mov qword ptr [rsp + 8], rbx"
+      },
+      {
+        "rva": 98086453,
+        "hex": "4889742410",
+        "assembly": "mov qword ptr [rsp + 0x10], rsi"
+      },
+      {
+        "rva": 98086458,
+        "hex": "57",
+        "assembly": "push rdi"
+      },
+      {
+        "rva": 98086459,
+        "hex": "4156",
+        "assembly": "push r14"
+      },
+      {
+        "rva": 98086461,
+        "hex": "4157",
+        "assembly": "push r15"
+      },
+      {
+        "rva": 98086463,
+        "hex": "4883ec60",
+        "assembly": "sub rsp, 0x60"
+      },
+      {
+        "rva": 98086467,
+        "hex": "498bf8",
+        "assembly": "mov rdi, r8"
+      },
+      {
+        "rva": 98086470,
+        "hex": "488bda",
+        "assembly": "mov rbx, rdx"
+      },
+      {
+        "rva": 98086473,
+        "hex": "488bf1",
+        "assembly": "mov rsi, rcx"
+      },
+      {
+        "rva": 98086476,
+        "hex": "803dbbdc990b00",
+        "assembly": "cmp byte ptr [rip + 0xb99dcbb], 0"
+      },
+      {
+        "rva": 98086483,
+        "hex": "754f",
+        "assembly": "jne 0x185d8aea4"
+      },
+      {
+        "rva": 98086485,
+        "hex": "488d0ddc168c0a",
+        "assembly": "lea rcx, [rip + 0xa8c16dc]"
+      },
+      {
+        "rva": 98086492,
+        "hex": "e83f662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086497,
+        "hex": "488d0d80158c0a",
+        "assembly": "lea rcx, [rip + 0xa8c1580]"
+      },
+      {
+        "rva": 98086504,
+        "hex": "e833662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086509,
+        "hex": "488d0d6c158c0a",
+        "assembly": "lea rcx, [rip + 0xa8c156c]"
+      },
+      {
+        "rva": 98086516,
+        "hex": "e827662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086521,
+        "hex": "488d0db8158c0a",
+        "assembly": "lea rcx, [rip + 0xa8c15b8]"
+      },
+      {
+        "rva": 98086528,
+        "hex": "e81b662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086533,
+        "hex": "488d0db4158c0a",
+        "assembly": "lea rcx, [rip + 0xa8c15b4]"
+      },
+      {
+        "rva": 98086540,
+        "hex": "e80f662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086545,
+        "hex": "488d0db0158c0a",
+        "assembly": "lea rcx, [rip + 0xa8c15b0]"
+      },
+      {
+        "rva": 98086552,
+        "hex": "e803662bfa",
+        "assembly": "call 0x1800414a0"
+      },
+      {
+        "rva": 98086557,
+        "hex": "c6056adc990b01",
+        "assembly": "mov byte ptr [rip + 0xb99dc6a], 1"
+      },
+      {
+        "rva": 98086564,
+        "hex": "488b05a543990b",
+        "assembly": "mov rax, qword ptr [rip + 0xb9943a5]"
+      },
+      {
+        "rva": 98086571,
+        "hex": "488b4838",
+        "assembly": "mov rcx, qword ptr [rax + 0x38]"
+      },
+      {
+        "rva": 98086575,
+        "hex": "4885c9",
+        "assembly": "test rcx, rcx"
+      },
+      {
+        "rva": 98086578,
+        "hex": "7434",
+        "assembly": "je 0x185d8aee8"
+      },
+      {
+        "rva": 98086580,
+        "hex": "488b81c0c30000",
+        "assembly": "mov rax, qword ptr [rcx + 0xc3c0]"
+      },
+      {
+        "rva": 98086587,
+        "hex": "4885c0",
+        "assembly": "test rax, rax"
+      },
+      {
+        "rva": 98086590,
+        "hex": "7428",
+        "assembly": "je 0x185d8aee8"
+      },
+      {
+        "rva": 98086592,
+        "hex": "4c8bcf",
+        "assembly": "mov r9, rdi"
+      },
+      {
+        "rva": 98086595,
+        "hex": "4c8bc3",
+        "assembly": "mov r8, rbx"
+      },
+      {
+        "rva": 98086598,
+        "hex": "488bd6",
+        "assembly": "mov rdx, rsi"
+      },
+      {
+        "rva": 98086601,
+        "hex": "488b89c8c30000",
+        "assembly": "mov rcx, qword ptr [rcx + 0xc3c8]"
+      },
+      {
+        "rva": 98086608,
+        "hex": "ffd0",
+        "assembly": "call rax"
+      },
+      {
+        "rva": 98086610,
+        "hex": "4c8d5c2460",
+        "assembly": "lea r11, [rsp + 0x60]"
+      },
+      {
+        "rva": 98086615,
+        "hex": "498b5b20",
+        "assembly": "mov rbx, qword ptr [r11 + 0x20]"
+      },
+      {
+        "rva": 98086619,
+        "hex": "498b7328",
+        "assembly": "mov rsi, qword ptr [r11 + 0x28]"
+      },
+      {
+        "rva": 98086623,
+        "hex": "498be3",
+        "assembly": "mov rsp, r11"
+      },
+      {
+        "rva": 98086626,
+        "hex": "415f",
+        "assembly": "pop r15"
+      },
+      {
+        "rva": 98086628,
+        "hex": "415e",
+        "assembly": "pop r14"
+      },
+      {
+        "rva": 98086630,
+        "hex": "5f",
+        "assembly": "pop rdi"
+      },
+      {
+        "rva": 98086631,
+        "hex": "c3",
+        "assembly": "ret "
+      },
+      {
+        "rva": 98086632,
+        "hex": "0f57c0",
+        "assembly": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 98086635,
+        "hex": "33c0",
+        "assembly": "xor eax, eax"
+      },
+      {
+        "rva": 98086637,
+        "hex": "0f11442440",
+        "assembly": "movups xmmword ptr [rsp + 0x40], xmm0"
+      },
+      {
+        "rva": 98086642,
+        "hex": "4889442450",
+        "assembly": "mov qword ptr [rsp + 0x50], rax"
+      },
+      {
+        "rva": 98086647,
+        "hex": "4885db",
+        "assembly": "test rbx, rbx"
+      },
+      {
+        "rva": 98086650,
+        "hex": "0f8407020000",
+        "assembly": "je 0x185d8b107"
+      },
+      {
+        "rva": 98086656,
+        "hex": "488b8350010000",
+        "assembly": "mov rax, qword ptr [rbx + 0x150]"
+      },
+      {
+        "rva": 98086663,
+        "hex": "48894658",
+        "assembly": "mov qword ptr [rsi + 0x58], rax"
+      },
+      {
+        "rva": 98086667,
+        "hex": "488d4e58",
+        "assembly": "lea rcx, [rsi + 0x58]"
+      },
+      {
+        "rva": 98086671,
+        "hex": "e84c9437fa",
+        "assembly": "call 0x180104360"
+      },
+      {
+        "rva": 98086676,
+        "hex": "48895e60",
+        "assembly": "mov qword ptr [rsi + 0x60], rbx"
+      },
+      {
+        "rva": 98086680,
+        "hex": "488d4e60",
+        "assembly": "lea rcx, [rsi + 0x60]"
+      },
+      {
+        "rva": 98086684,
+        "hex": "e83f9437fa",
+        "assembly": "call 0x180104360"
+      },
+      {
+        "rva": 98086689,
+        "hex": "488b5e28",
+        "assembly": "mov rbx, qword ptr [rsi + 0x28]"
+      },
+      {
+        "rva": 98086693,
+        "hex": "4885db",
+        "assembly": "test rbx, rbx"
+      },
+      {
+        "rva": 98086696,
+        "hex": "0f84df010000",
+        "assembly": "je 0x185d8b10d"
+      },
+      {
+        "rva": 98086702,
+        "hex": "488b15b3148c0a",
+        "assembly": "mov rdx, qword ptr [rip + 0xa8c14b3]"
+      },
+      {
+        "rva": 98086709,
+        "hex": "488bcb",
+        "assembly": "mov rcx, rbx"
+      },
+      {
+        "rva": 98086712,
+        "hex": "e8f3b92400",
+        "assembly": "call 0x185fd6930"
+      },
+      {
+        "rva": 98086717,
+        "hex": "4885c0",
+        "assembly": "test rax, rax"
+      },
+      {
+        "rva": 98086720,
+        "hex": "0f84cd010000",
+        "assembly": "je 0x185d8b113"
+      },
+      {
+        "rva": 98086726,
+        "hex": "488b5810",
+        "assembly": "mov rbx, qword ptr [rax + 0x10]"
+      },
+      {
+        "rva": 98086730,
+        "hex": "0f57c0",
+        "assembly": "xorps xmm0, xmm0"
+      },
+      {
+        "rva": 98086733,
+        "hex": "f30f7f442430",
+        "assembly": "movdqu xmmword ptr [rsp + 0x30], xmm0"
+      },
+      {
+        "rva": 98086739,
+        "hex": "48895c2428",
+        "assembly": "mov qword ptr [rsp + 0x28], rbx"
+      },
+      {
+        "rva": 98086744,
+        "hex": "488d4c2428",
+        "assembly": "lea rcx, [rsp + 0x28]"
+      },
+      {
+        "rva": 98086749,
+        "hex": "e8fe9337fa",
+        "assembly": "call 0x180104360"
+      },
+      {
+        "rva": 98086754,
+        "hex": "4885db",
+        "assembly": "test rbx, rbx"
+      },
+      {
+        "rva": 98086757,
+        "hex": "0f84ae010000",
+        "assembly": "je 0x185d8b119"
+      },
+      {
+        "rva": 98086763,
+        "hex": "8b432c",
+        "assembly": "mov eax, dword ptr [rbx + 0x2c]"
+      },
+      {
+        "rva": 98086766,
+        "hex": "89442434",
+        "assembly": "mov dword ptr [rsp + 0x34], eax"
+      },
+      {
+        "rva": 98086770,
+        "hex": "4533ff",
+        "assembly": "xor r15d, r15d"
+      },
+      {
+        "rva": 98086773,
+        "hex": "44897c2430",
+        "assembly": "mov dword ptr [rsp + 0x30], r15d"
+      },
+      {
+        "rva": 98086778,
+        "hex": "33c0",
+        "assembly": "xor eax, eax"
+      },
+      {
+        "rva": 98086780,
+        "hex": "4889442438",
+        "assembly": "mov qword ptr [rsp + 0x38], rax"
+      },
+      {
+        "rva": 98086785,
+        "hex": "0f10442428",
+        "assembly": "movups xmm0, xmmword ptr [rsp + 0x28]"
+      },
+      {
+        "rva": 98086790,
+        "hex": "0f11442440",
+        "assembly": "movups xmmword ptr [rsp + 0x40], xmm0"
+      },
+      {
+        "rva": 98086795,
+        "hex": "f20f104c2438",
+        "assembly": "movsd xmm1, qword ptr [rsp + 0x38]"
+      },
+      {
+        "rva": 98086801,
+        "hex": "f20f114c2450",
+        "assembly": "movsd qword ptr [rsp + 0x50], xmm1"
+      },
+      {
+        "rva": 98086807,
+        "hex": "4c897c2428",
+        "assembly": "mov qword ptr [rsp + 0x28], r15"
+      },
+      {
+        "rva": 98086812,
+        "hex": "488d442440",
+        "assembly": "lea rax, [rsp + 0x40]"
+      },
+      {
+        "rva": 98086817,
+        "hex": "4889442430",
+        "assembly": "mov qword ptr [rsp + 0x30], rax"
+      },
+      {
+        "rva": 98086822,
+        "hex": "4c8d3573fb6e0b",
+        "assembly": "lea r14, [rip + 0xb6efb73]"
+      },
+      {
+        "rva": 98086829,
+        "hex": "0f1f00",
+        "assembly": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 98086832,
+        "hex": "488b1581148c0a",
+        "assembly": "mov rdx, qword ptr [rip + 0xa8c1481]"
+      },
+      {
+        "rva": 98086839,
+        "hex": "488d4c2440",
+        "assembly": "lea rcx, [rsp + 0x40]"
+      },
+      {
+        "rva": 98086844,
+        "hex": "e8ef2d2cff",
+        "assembly": "call 0x18504ddb0"
+      },
+      {
+        "rva": 98086849,
+        "hex": "84c0",
+        "assembly": "test al, al"
+      },
+      {
+        "rva": 98086851,
+        "hex": "0f8425010000",
+        "assembly": "je 0x185d8b0ee"
+      },
+      {
+        "rva": 98086857,
+        "hex": "488b5c2450",
+        "assembly": "mov rbx, qword ptr [rsp + 0x50]"
+      },
+      {
+        "rva": 98086862,
+        "hex": "488b7e58",
+        "assembly": "mov rdi, qword ptr [rsi + 0x58]"
+      },
+      {
+        "rva": 98086866,
+        "hex": "4885db",
+        "assembly": "test rbx, rbx"
+      },
+      {
+        "rva": 98086869,
+        "hex": "0f8449010000",
+        "assembly": "je 0x185d8b124"
+      },
+      {
+        "rva": 98086875,
+        "hex": "488b1556158c0a",
+        "assembly": "mov rdx, qword ptr [rip + 0xa8c1556]"
+      },
+      {
+        "rva": 98086882,
+        "hex": "488b0b",
+        "assembly": "mov rcx, qword ptr [rbx]"
+      },
+      {
+        "rva": 98086885,
+        "hex": "e8d69927fa",
+        "assembly": "call 0x1800049c0"
+      },
+      {
+        "rva": 98086890,
+        "hex": "84c0",
+        "assembly": "test al, al"
+      },
+      {
+        "rva": 98086892,
+        "hex": "0f8432010000",
+        "assembly": "je 0x185d8b124"
+      },
+      {
+        "rva": 98086898,
+        "hex": "488b153f158c0a",
+        "assembly": "mov rdx, qword ptr [rip + 0xa8c153f]"
+      },
+      {
+        "rva": 98086905,
+        "hex": "488b0b",
+        "assembly": "mov rcx, qword ptr [rbx]"
+      },
+      {
+        "rva": 98086908,
+        "hex": "e8bf9927fa",
+        "assembly": "call 0x1800049c0"
+      },
+      {
+        "rva": 98086913,
+        "hex": "84c0",
+        "assembly": "test al, al"
+      },
+      {
+        "rva": 98086915,
+        "hex": "490f44df",
+        "assembly": "cmove rbx, r15"
+      },
+      {
+        "rva": 98086919,
+        "hex": "488b054242990b",
+        "assembly": "mov rax, qword ptr [rip + 0xb994242]"
+      },
+      {
+        "rva": 98086926,
+        "hex": "488b4838",
+        "assembly": "mov rcx, qword ptr [rax + 0x38]"
+      },
+      {
+        "rva": 98086930,
+        "hex": "4885c9",
+        "assembly": "test rcx, rcx"
+      },
+      {
+        "rva": 98086933,
+        "hex": "7423",
+        "assembly": "je 0x185d8b03a"
+      },
+      {
+        "rva": 98086935,
+        "hex": "488b8130c10000",
+        "assembly": "mov rax, qword ptr [rcx + 0xc130]"
+      },
+      {
+        "rva": 98086942,
+        "hex": "4885c0",
+        "assembly": "test rax, rax"
+      },
+      {
+        "rva": 98086945,
+        "hex": "7417",
+        "assembly": "je 0x185d8b03a"
+      },
+      {
+        "rva": 98086947,
+        "hex": "4533c9",
+        "assembly": "xor r9d, r9d"
+      },
+      {
+        "rva": 98086950,
+        "hex": "4c8bc7",
+        "assembly": "mov r8, rdi"
+      },
+      {
+        "rva": 98086953,
+        "hex": "488bd3",
+        "assembly": "mov rdx, rbx"
+      },
+      {
+        "rva": 98086956,
+        "hex": "488b8938c10000",
+        "assembly": "mov rcx, qword ptr [rcx + 0xc138]"
+      },
+      {
+        "rva": 98086963,
+        "hex": "ffd0",
+        "assembly": "call rax"
+      },
+      {
+        "rva": 98086965,
+        "hex": "e976ffffff",
+        "assembly": "jmp 0x185d8afb0"
+      },
+      {
+        "rva": 98086970,
+        "hex": "48897b40",
+        "assembly": "mov qword ptr [rbx + 0x40], rdi"
+      },
+      {
+        "rva": 98086974,
+        "hex": "8b0dec33990b",
+        "assembly": "mov ecx, dword ptr [rip + 0xb9933ec]"
+      },
+      {
+        "rva": 98086980,
+        "hex": "85c9",
+        "assembly": "test ecx, ecx"
+      },
+      {
+        "rva": 98086982,
+        "hex": "7447",
+        "assembly": "je 0x185d8b08f"
+      },
+      {
+        "rva": 98086984,
+        "hex": "4c8d4340",
+        "assembly": "lea r8, [rbx + 0x40]"
+      },
+      {
+        "rva": 98086988,
+        "hex": "49c1e80c",
+        "assembly": "shr r8, 0xc"
+      },
+      {
+        "rva": 98086992,
+        "hex": "4181e0ffff1f00",
+        "assembly": "and r8d, 0x1fffff"
+      },
+      {
+        "rva": 98086999,
+        "hex": "418bc0",
+        "assembly": "mov eax, r8d"
+      },
+      {
+        "rva": 98087002,
+        "hex": "48c1e806",
+        "assembly": "shr rax, 6"
+      },
+      {
+        "rva": 98087006,
+        "hex": "498d14c6",
+        "assembly": "lea rdx, [r14 + rax*8]"
+      },
+      {
+        "rva": 98087010,
+        "hex": "4183e03f",
+        "assembly": "and r8d, 0x3f"
+      },
+      {
+        "rva": 98087014,
+        "hex": "0f0d8af86e0400",
+        "assembly": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 98087021,
+        "hex": "0f1f00",
+        "assembly": "nop dword ptr [rax]"
+      },
+      {
+        "rva": 98087024,
+        "hex": "488b82f86e0400",
+        "assembly": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 98087031,
+        "hex": "488bc8",
+        "assembly": "mov rcx, rax"
+      },
+      {
+        "rva": 98087034,
+        "hex": "4c0fabc1",
+        "assembly": "bts rcx, r8"
+      },
+      {
+        "rva": 98087038,
+        "hex": "f0480fb18af86e0400",
+        "assembly": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 98087047,
+        "hex": "75e7",
+        "assembly": "jne 0x185d8b070"
+      },
+      {
+        "rva": 98087049,
+        "hex": "8b0da133990b",
+        "assembly": "mov ecx, dword ptr [rip + 0xb9933a1]"
+      },
+      {
+        "rva": 98087055,
+        "hex": "4885ff",
+        "assembly": "test rdi, rdi"
+      },
+      {
+        "rva": 98087058,
+        "hex": "0f8487000000",
+        "assembly": "je 0x185d8b11f"
+      },
+      {
+        "rva": 98087064,
+        "hex": "488b4750",
+        "assembly": "mov rax, qword ptr [rdi + 0x50]"
+      },
+      {
+        "rva": 98087068,
+        "hex": "48894348",
+        "assembly": "mov qword ptr [rbx + 0x48], rax"
+      },
+      {
+        "rva": 98087072,
+        "hex": "85c9",
+        "assembly": "test ecx, ecx"
+      },
+      {
+        "rva": 98087074,
+        "hex": "0f8408ffffff",
+        "assembly": "je 0x185d8afb0"
+      },
+      {
+        "rva": 98087080,
+        "hex": "4883c348",
+        "assembly": "add rbx, 0x48"
+      },
+      {
+        "rva": 98087084,
+        "hex": "48c1eb0c",
+        "assembly": "shr rbx, 0xc"
+      },
+      {
+        "rva": 98087088,
+        "hex": "81e3ffff1f00",
+        "assembly": "and ebx, 0x1fffff"
+      },
+      {
+        "rva": 98087094,
+        "hex": "8bc3",
+        "assembly": "mov eax, ebx"
+      },
+      {
+        "rva": 98087096,
+        "hex": "48c1e806",
+        "assembly": "shr rax, 6"
+      },
+      {
+        "rva": 98087100,
+        "hex": "498d14c6",
+        "assembly": "lea rdx, [r14 + rax*8]"
+      },
+      {
+        "rva": 98087104,
+        "hex": "83e33f",
+        "assembly": "and ebx, 0x3f"
+      },
+      {
+        "rva": 98087107,
+        "hex": "0f0d8af86e0400",
+        "assembly": "prefetchw byte ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 98087114,
+        "hex": "660f1f440000",
+        "assembly": "nop word ptr [rax + rax]"
+      },
+      {
+        "rva": 98087120,
+        "hex": "488b82f86e0400",
+        "assembly": "mov rax, qword ptr [rdx + 0x46ef8]"
+      },
+      {
+        "rva": 98087127,
+        "hex": "488bc8",
+        "assembly": "mov rcx, rax"
+      },
+      {
+        "rva": 98087130,
+        "hex": "480fabd9",
+        "assembly": "bts rcx, rbx"
+      },
+      {
+        "rva": 98087134,
+        "hex": "f0480fb18af86e0400",
+        "assembly": "lock cmpxchg qword ptr [rdx + 0x46ef8], rcx"
+      },
+      {
+        "rva": 98087143,
+        "hex": "75e7",
+        "assembly": "jne 0x185d8b0d0"
+      },
+      {
+        "rva": 98087145,
+        "hex": "e9c2feffff",
+        "assembly": "jmp 0x185d8afb0"
+      },
+      {
+        "rva": 98087150,
+        "hex": "e9dffdffff",
+        "assembly": "jmp 0x185d8aed2"
+      },
+      {
+        "rva": 98087155,
+        "hex": "488b4c2428",
+        "assembly": "mov rcx, qword ptr [rsp + 0x28]"
+      },
+      {
+        "rva": 98087160,
+        "hex": "4885c9",
+        "assembly": "test rcx, rcx"
+      },
+      {
+        "rva": 98087163,
+        "hex": "0f84d1fdffff",
+        "assembly": "je 0x185d8aed2"
+      },
+      {
+        "rva": 98087169,
+        "hex": "e8aaeb2efa",
+        "assembly": "call 0x180079cb0"
+      },
+      {
+        "rva": 98087174,
+        "hex": "cc",
+        "assembly": "int3 "
+      },
+      {
+        "rva": 98087175,
+        "hex": "e8343835fa",
+        "assembly": "call 0x1800de940"
+      },
+      {
+        "rva": 98087180,
+        "hex": "cc",
+        "assembly": "int3 "
+      },
+      {
+        "rva": 98087181,
+        "hex": "e82e3835fa",
+        "assembly": "call 0x1800de940"
+      },
+      {
+        "rva": 98087186,
+        "hex": "cc",
+        "assembly": "int3 "
+      },
+      {
+        "rva": 98087187,
+        "hex": "e8283835fa",
+        "assembly": "call 0x1800de940"
+      },
+      {
+        "rva": 98087192,
+        "hex": "cc",
+        "assembly": "int3 "
+      },
+      {
+        "rva": 98087193,
+        "hex": "e8223835fa",
+        "assembly": "call 0x1800de940"
+      },
+      {
+        "rva": 98087198,
+        "hex": "90",
+        "assembly": "nop "
+      },
+      {
+        "rva": 98087199,
+        "hex": "e80c3835fa",
+        "assembly": "call 0x1800de930"
+      },
+      {
+        "rva": 98087204,
+        "hex": "e8073835fa",
+        "assembly": "call 0x1800de930"
+      },
+      {
+        "rva": 98087209,
+        "hex": "cc",
+        "assembly": "int3 "
+      },
+      {
+        "rva": 98087210,
+        "hex": "cc",
+        "assembly": "int3 "
+      }
+    ],
+    "entry": 98086448,
+    "end": 98087211,
+    "conditions": [
+      "normal Win64 ABI and opaque calls return normally",
+      "iterator helper results and current slot are explicit inputs; helper internals not proved",
+      "type predicate results are explicit inputs",
+      "bitmap memory valid and compare-exchange retries eventually complete"
+    ],
+    "coldBoundary": "In-family null/type failure calls and cleanup landing pad bytes are covered; exception personality/unwind selection and failure helper internals are unresolved.",
+    "references": {
+      "9": 292719374,
+      "10": 98086564,
+      "11": 275039544,
+      "12": 267424,
+      "13": 275039208,
+      "14": 267424,
+      "15": 275039200,
+      "16": 267424,
+      "17": 275039288,
+      "18": 267424,
+      "19": 275039296,
+      "20": 267424,
+      "21": 275039304,
+      "22": 267424,
+      "23": 292719374,
+      "24": 292680272,
+      "27": 98086632,
+      "30": 98086632,
+      "49": 98087175,
+      "53": 1065824,
+      "56": 1065824,
+      "59": 98087181,
+      "60": 275039208,
+      "62": 100493616,
+      "64": 98087187,
+      "70": 1065824,
+      "72": 98087193,
+      "86": 289909536,
+      "88": 275039288,
+      "90": 84204976,
+      "92": 98087150,
+      "96": 98087204,
+      "97": 275039544,
+      "99": 18880,
+      "101": 98087204,
+      "102": 275039544,
+      "104": 18880,
+      "107": 292680272,
+      "110": 98086970,
+      "113": 98086970,
+      "119": 98086832,
+      "121": 292676656,
+      "123": 98087055,
+      "137": 98087024,
+      "138": 292676656,
+      "140": 98087199,
+      "144": 98086832,
+      "158": 98087120,
+      "159": 98086832,
+      "160": 98086610,
+      "163": 98086610,
+      "164": 498864,
+      "166": 911680,
+      "168": 911680,
+      "170": 911680,
+      "172": 911680,
+      "174": 911664,
+      "175": 911664
+    }
+  },
+  "flowWindow": {
+    "startRva": 98086448,
+    "endRva": 98087211,
+    "sha256": "3e62e2e9d0e7925f1620d416d8a8bd8bf7404e0543f4f92b21f3ca7ab3f90a4e",
+    "boundary": "complete contiguous selected machine body including local cold paths; helper bodies excluded"
+  }
+}

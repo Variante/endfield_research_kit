@@ -44,6 +44,557 @@ runtime validation separate. A supported scenario is ready only when missing
 rules affecting its outputs are resolved or exposed as explicit assumptions;
 no claim of whole-game or whole-character parity follows from a partial model.
 
+The simulator's retained joint execution now composes source-zero skill clocks,
+authored Find/Damage dispatch and calculated HP in the same reusable component.
+Later timer/HP endpoints compare only; they do not reseed state. Cast-start,
+retirement, physical targets and arithmetic intermediate ports remain explicit.
+Only consecutive original cast epochs count as a complete combo; excluding an
+unproved action must not manufacture a handoff, a miss or an uninterrupted cycle.
+
+The simulator subproject now executes a conditional first-normal-attack slice:
+local input admission, authored timeline timer, target query, calculated Pack,
+selected damage/HP arithmetic and a recovery-gate probe share one state machine
+and Gym adapter. It remains separate from whole-battle admission. Historical
+Pack/Modifier/HP results are comparison targets, not assigned outcomes; captured
+initial attributes and selected skill rank are explicit state premises. A fresh
+current-source decode was obtained with the retained authenticated reader;
+neither an older source digest nor a failed current reader was promoted.
+
+For the selected attack, the source Box geometry is constant rather than
+runtime-blackboard-dependent. The ordinary scalar getter widens stored Single
+to Double, and Vector3 construction narrows components to Single. The Box
+consumer passes half-size to OverlapBox; its position reference is the owner's
+mount point and its direction reference is owner forward. GetRayBox is used
+for contact reporting, not an additional BoxCast candidate query. This recovers
+local query geometry, not the actor's world pose, root motion, final rotations,
+target collider or subsequent candidate filters.
+The selected Win64 query ABI also distinguishes an inline TargetHandleView
+reference word from indirect Vector3/Quaternion aggregates. DoFindEntity's owner
+is an ordinary AbilitySystem reference, not an ObjectPtr aggregate; sampling it
+as an ObjectPtr would be an invalid cast. The used non-results-array overlap
+helper invokes its native query directly, bypassing the other managed overload.
+A hook on the latter would not observe these queries. The proved argument-root
+indexed sampler reads the Find action's input TargetHandle, even when sampled
+after return; that timing does not make it the selector's output. The ordinary
+Find consumer passes the selector result to Context.UpdateTargetGroup. Damage
+obtains its actual target carrier through GetTargets_Dispose, whereas its
+GetFirst(input) call selects a separate attacker/effect-source operand. Equal
+input wrappers and later Process targets therefore do not prove the blackboard
+write/read join. A nonempty input GetFirst and nonzero physics candidate counts
+can coexist with a Damage action that returns false without Process. The native
+zero-actual-target-count branch is one possible cause, not an observed cause
+until that actual carrier/count is sampled or otherwise proved.
+The ordinary GetTargets_Dispose body supplies an argument-root observation
+alternative: it obtains a source handle, obtains a destination, calls
+TargetHandle.CopyFrom(destination, source), and returns that destination. A
+CopyFrom return sample can read the actual destination list without casting a
+saved return register as a sampler argument. Runtime joins must still match the
+exact caller, parent invocation and returned pointer; the copy, blackboard
+publication and later consumer read keep their own lifetime/writer premises.
+The target-group dictionary is owned by IActionEnvironment.Context, separately
+from Beyond.ActionBlackboard and CenterBlackboard.skillInputData. A publication
+endpoint cannot substitute for a later successful dictionary lookup/out-view.
+The selected TryGetTarget observer keeps its out-view as raw bytes and interprets
+it only after a true return; false does not itself prove a null or empty list.
+The successful out-view can join CopyFrom's source handle, whose complete bounded
+list is sampled independently. Lists exceeding the sampled item limit stay partial,
+and Damage's persistent hit-count field is not presumed written by every call.
+
+The retained target-results observation now joins the actual publication,
+successful lookup, clone source and returned destination within independently
+identified Skill/cast/Find-index domains. Logical counts and complete wrapper
+payloads compare; clone source and destination have distinct container identities.
+Empty results and singleton results are both observed. Every selected empty
+normal-action Find still had physical query candidates, so overlap counts cannot
+replace accepted-target counts. Source-binding success is not a Process census:
+all raw Process ancestors must be checked before an action is classified as having
+no Process. Matching endpoints retain ordinary forwarding, no extra writer/pool
+reuse and allocation-lifetime conditions; they do not prove all writer histories.
+Associating world queries by actual Find identity also preserves queries from an
+earlier Skill Tick than their Damage consumer, which a Damage-Tick-only view omits.
+
+Current native immunity cancellation has a separately checked bounded suffix:
+after selecting the immune branch, ordinary Cancel marks the modifier cancelled
+with the DamageImmune reason and the outer method returns Cancelled before the
+ordinary HP tail. Cancel does not initialize realDelta. The simulator's conditional
+settlement therefore preserves both entry HP and entry realDelta, requiring no
+other prefix/callback/helper/external writer and ordinary execution; a zero entry
+is a separate input fact. Typed cancellation outcomes can supply an external
+policy port for regression, but do not predict the immunity predicate or timing.
+
+The current immunity predicate has distinct predefined query and tag inputs:
+IsDamageImmuneByLevel, DamageImmuneBySkill and DamageImmuneByDodge are not
+interchangeable. Its direct compiled query/tag helpers differ from similarly
+named registered wrappers; hook selection cannot use the wrapper name alone.
+The tag lookup can consult entity, global and player/controller containers.
+The shared nullable accessor at the mask callsite is selected through its actual
+DamageDecorateMask generic context, not by a shared-code address match. Retained
+identity spans preserve tag-container pointers, but pointer observation alone
+neither supplies set/bitset contents nor establishes membership or mutation
+history. A zero optional-mask snapshot does not make the other predicate inputs
+converge. Existing source/provider/writer recovery should precede another capture.
+
+The complete stored Endminf Dodge graph has no explicit Add/RemoveTag action;
+its skillTags and tagDuringAttach lists are empty. PlayPerfectDodgeAnim and the
+authored AllowNextSkill/visual/audio windows remain distinct from runtime dodge
+immunity. Neither the animation action's authored span nor the root exclusive
+or duration field establishes DamageImmuneByDodge membership. Trace the native
+controller state and effective tag-container writers instead.
+
+The current actor-data source candidate names common_character_perfect_dodge
+and buff_common_dash, while retained Endminf request text independently names
+the common Dodge. The request follows the completed immune cancellation. This
+supports following the dash-buff/provider route; it does not select the immune
+cause from temporal order, equate requested text with a live Data object, or
+prove static managed-reference configuration is the effective actor provider.
+
+A source-clock control replay can now own lazy successor clocks and retain every
+retired call in the same checkpointed state. Handoffs use computed source
+mapping/AllowNext time, an independent target predicate and selected ordinary
+Stop effects. Unlinked starts remain external scheduling ports. Getter regression
+locates the last completed computed timer through actual Skill, timer and call
+sequence identities; observed timer values compare only. In-flight candidates
+must converge or remain unresolved. This establishes selected kernel continuity,
+not hardware-input ownership, global writer histories or every permission
+transition. Runtime row order and invocation identifiers are not interchangeable.
+
+Current HitStop source validation now covers the initializer as well as Tick:
+Reset writes a zero elapsed value and the supplied duration/curve, then ordinary
+successful registration forwards the same instance to the selected OnTick slot
+with zero delta. Runtime setup callers agree with that source route, while the
+Reset invocation itself remains unobserved. Owner construction, registration
+selection and helper noninterference remain conditional. Instance elapsed must
+use its own manager delta, not the Ability or Skill delta. A source interval
+explains scheduling frequency but does not replace the actual manager TF/stamp
+binding or justify equating those different deltas.
+
+Attack-command regression now carries source Reset state through ordered update,
+execution and Tick operations. The force Consume in this sample is nested in
+active-instant Command.Tick, not in OnExecute. Game command storage, actual
+callback helpers and selected dictionary entry remain separate from a controller
+receiver or a similarly timed Skill request. No later Tick endpoint resets the
+command state. Cache Refresh can reset permission false before its zero-delta
+success tail recomputes it; omitting that tail creates a false delivery gap.
+
+The shared FSM ManualTransit selected source chain checks transitions before
+reading running, enumerates registered transitions in order and accepts the
+first true checker; a missing checker is the explicit true path. Transit requests
+Leave before storing current state and requests Enter afterwards. A model-owned
+pending callback can retain these phases across a checkpoint. This establishes
+ordered control, not complete CenterFSM registration/sort, live initial state,
+predicate values or the actual virtual callback target. A computed request ID
+can feed a conditional source-zero startup without reading BeforeCast as a
+state or scheduling seed; held-driver callback attribution alone does not prove
+the full input-acceptance filter.
+
+The AbilitySystem current-Skill backing field and its posted cast-request field
+are different typed carriers. A nearby request field must not stand in for the
+current Skill, and SkillData castType must not replace runtime SkillType when
+checking interruption priority. The provider's default-cache getter is reached
+from mapping creation, while the request-time cache helper can instead reuse a
+selected modifier or read movement/perfect-dodge overrides. A capture scoped to
+the wrong parent helper can therefore be healthy yet never observe the default
+getter; absent calls do not establish an empty provider.
+
+Player command type and ComboController mapping command type are different
+enums. In the selected ordinary path, Dash's player command selects the Dash
+mapping key. A fresh source controller whose real map lacks that key takes the
+invalid-selection return without clearing or rewriting an existing request.
+This does not prove that the remainder of the Dash callback cannot change
+controller state. Its owned body can update an existing offset modifier pack.
+That pack's lifecycle can add a higher-priority attack mapping or remove its
+handle and clear a request, so a disjoint direct request-field write is not a
+noninterference proof. An absent offset pack with no external creator is a
+sufficient selected source premise for skipping those writes; it is not an
+observed runtime initial state. Dash-buff refresh and state-transition callbacks
+remain additional effect boundaries. A later normal Refresh must establish its
+whole constructor and permission tail before a preceding Dash can be excluded
+from the request's writer cone; header ordering alone is insufficient. A
+normal-input projection must remain distinct from a complete runtime cache
+history.
+
+The Skill-command request path has a separate residual constructor: after a
+successful input-view lookup, unequal current normal/combo/ultimate skill IDs
+select a temporary modifier with source short-cache duration and zero priority.
+This is a stack construction, not registration into the real mapping queue.
+The simulator can explicitly select that source branch for the configured
+perfect-dodge ID; matching returned duration, payload presence or skill text
+cannot prove the actual input dictionary entry or live slot values. A fresh
+model-owned allocation label is not a prediction of the game's counter. If a
+later source Tick expires both possible permission values to the same owned
+request state, only that common endpoint may be used; intermediate visibility,
+helper side effects and external CopyFrom/Dispose lifetimes remain unresolved.
+Invalid source or typed-input validation must not be treated as an unknown
+permission candidate.
+
+Fresh stored dash-related sources include a Limited base buff which creates an
+Infinity immune buff during enable; its nested weak-immune buff supplies the
+DodgeDamageImmune tag, and a separate listener can request perfect-dodge effects.
+The action auto-finish flag and limited duration alone do not establish removal
+time: action-end reachability, MarkFinish processing, enable/disable and tag
+storage effects remain separate joins. Request/event ordering does not select
+the reason of a cancelled modifier. An existing string payload beside an enum
+field is not proof of an active string assignment when its mode or direct-value
+selection does not choose that payload.
+
+Tag handles are value storage, so local validity and global ownership cannot be
+collapsed. Candidate lower paths preserve duplicate direct tags and remove one
+matching occurrence; parent membership must reflect remaining tags. The source
+MultiTagHandle cleanup invalidates its own storage and requests pooled-list
+disposal, without proving that every copied handle value becomes invalid or
+that a retained list pointer was cleared. A future model may choose linear
+opaque handles only with explicit no-copy/foreign-removal conditions; it must
+not attribute native allocator identity or runtime immunity intervals to them.
+
+The first-normal-attack motion projection now binds animation and root-motion
+keys through the selected current StringPool. Its MoveTo uses RootMotion, so a
+stored zero speed does not define zero movement. Step/snap distances, animation
+keys and authored windows still need their actual displacement/target-gap and
+collision consumers before producing a pose. Optional AnimationConfig decoding
+has a bounded child/stage diagnostic; a partial or interrupted decoder result
+is not source admission.
+
+Rodin shape recovery must distinguish movement proxy and ability-detection
+fields from combat colliders. The selected EnemyData's registry contains typed
+source candidates while its EnemyTemplateData root remains undecoded, preventing
+component-ownership admission. This is a Unity serialized managed-reference
+payload, not a missing MemoryPack schema. The current MonoScript lookup can
+resolve TemplateDataConfig despite exporter-time unresolved status. A legacy
+inferred exporter branch is not an exact root reader. Model/render-helper joins
+and an export omitting GameObject/Transform/collider classes do not establish an
+installed collider or its absence; raw-root decoding and hierarchy availability
+are offline gaps before shape/filter/activation binding.
+
+The conditional HitStop port samples old elapsed/duration and keeps delayed
+expiry, Clear-token effects, list/cache recomputation and actual Skill-group
+reads separate. Each visit needs a fresh handle read because ordinary Tick can
+replace it; post-Tick unknown handles are not carried forward from construction.
+The source curve has weighted segments. The ordinary internal-call resolver
+first searches the full signature, then on a miss can strip the parenthesized
+suffix and search the same registration tree. Registration and resolution use
+the same callback value storage under the selected ordinary string/map helper
+conditions. This establishes a source binding path, not the actual runtime
+cache or curve-object identity. The selected attack curve uses an unweighted
+Hermite first segment and a weighted later segment with an inverse Bezier
+parameter solver. CPU dispatch, floating-point narrowing and math-helper
+semantics remain necessary before replacing supplied factors.
+
+A narrower source-evaluated path now has a reviewed
+[curve math declaration](../../scripts/game_data/contracts/skill_hitstop_curve_math_native.json).
+It pins the selected native trio, instruction framing and literal tables for a
+finite source-order transcription. Its consumer and arithmetic owner remain in
+`tools/endfield_battle_sim/scripts/single_attack_hitstop_source.py` and
+`tools/endfield_battle_sim/src/endfield_battle_sim/hitstop_rules.py`; the parent
+curve-source reader has not been replaced. The bounded model evaluates both
+CPU arithmetic variants and rejects differing final Single results. Unsupported
+one-sided weighted segments and solver domains fail closed. This is conditional
+source evaluation, not a general exact Unity curve implementation.
+
+Actual Action-to-Start ancestry plus Data key-pointer equality can bind a key;
+Reset arguments and first Stop then bound that specific lifecycle. Factor
+agreement cannot supply that identity. Scoped source factors have now been
+propagated through the simulator's group products, Ability arguments and owned
+Skill-clock input histories without reading measured factors as inputs.
+Library asset selection, ordinary callback/cache and floating-point premises,
+unscoped lifetimes, allocation labels and incoming instance delta remain explicit.
+A pooled pointer must not extend a closed lifecycle across unobserved reuse.
+
+The dash before-damage listener also stores a direct inline Unity curve in an
+entity-layer TimeDilationAction, distinct from the HitStopConfig key path.
+Source event/action selection and the live Data/curve/listener binding remain
+explicit premises; endpoint agreement does not select the node. Duration is a
+BlackboardDouble reference, not an inline runtime Single: the selected literal
+helper widens the serialized scalar to Double before the consumer narrows it.
+Both slot and priority are GameplayTag values with a single four-byte tagId;
+raw equality is not an ordinal priority comparison. The shared source evaluator
+can admit inline action data with separate binding conditions while preserving
+the original library-key premise set and arithmetic. This source/native
+candidate does not itself prove a runtime owner resolver, actual Reset event
+or complete instance effects. A partial simulator replay now advances elapsed
+from the selected source-zero rule and independently computed Manager deltas,
+evaluates supported inline samples, and preserves explicit ports where the
+native inverse cubic takes its negative-discriminant angle/cosine helper path.
+Neither observed factors nor Python transcendental formulas select that path.
+Complete downstream input-history equivalence can reuse prior execution without
+claiming that those helper implementations or runtime node identities are proved.
+The remaining helper work is offline; repeating a healthy capture does not
+recover its mathematical implementation.
+
+Runtime HitStop lifetimes contain distinct curve pointers with different
+factors even at computed sample position zero. A library key cannot be assigned
+to one of those pointers by factor equality or temporal proximity. Actual curve
+selection and lifetime continuity must join independently to source keys;
+supplied curve samples and independently supplied cache reads remain explicit
+conditions, including when they drive a simulator's Skill delta and its
+same-cast-frame zeroing rule.
+
+A complete selected AnimationConfig operation now exposes the Attack01
+ClipMontageData root position and rotation curve fields as stored
+Beyond.FAnimationCurve values. Their FKeyframe records retain named fields,
+raw bits, exact spans and wrap words. The position domain is montage seconds,
+not normalized HitStop time; empty rotation channels do not imply an effective
+identity rotation. Independent Beyond curve evaluation, live montage selection,
+movement time, start offset, scaling, step blending and collision remain joins.
+The Beyond evaluator has its own time-solving control, so an unweighted flag
+alone cannot authorize replacing it with a Unity/Hermite evaluator.
+
+The simulator now has a separately qualified ordinary unweighted Beyond
+curve evaluator, preserving its source Single arithmetic, Newton acceptance,
+monotonic residual, old-parameter bounds and bounded bisection/limit return.
+Its outer wrapper retains native count and exact-key/endpoint selection under
+explicit initialized-context and Array fast-path/rank/storage premises; these
+are not observed runtime interface-slot contents. The source library supplies
+key data and counts, never measured curve returns. Scalar evaluation still does
+not bind an animation clock or apply movement. Runtime patch selection retains
+the separate boundary in [IFix recovery](ifix_patch.md).
+
+The Charge Z consumer has selected arithmetic fragments which evaluate new
+movement time before old movement time, subtract in Single, multiply by the
+effective Z scale, then multiply each selected basis component separately.
+Movement times, evaluated scale and world-Z basis remain explicit ports;
+Nullable presence and intervening parameter/intermediate preservation are
+separate conditions. Stored PosZ does not prove live Nullable.HasValue, and
+normal Win64 alone does not prevent the caller from overwriting an intermediate.
+This yields a Z-direction contribution, not a complete owner displacement or a
+collision result. A separate cached-parameter clock path computes local
+elapsed as Single global-minus-begin, applies scaled offset and the type-selected
+curve divisor, and adds the selected movement delta only to the new sample.
+PreLate chooses incoming versus cached Tick delta and advances global time after
+Calculate. Those field seeds, active stack/parameter choice, stable repeated
+reads and preserved advance state remain conditions; the Skill timer does not
+supply them. Existing RootMotionData observations describe animation blending
+and motion output, with a leading weight field, rather than the Charge clock.
+For a selected ordinary MoveTo RootMotion path, disabled XY axes explicitly
+supply null extra-speed references and absent XY curve values; the request
+consumer copies these into ChargeParam. The selected no-speed caller paths
+preserve the Z intermediate across the bounded direction/callback sequence.
+Delivery identity and copied-selector retention still require an explicit
+premise. This does not freeze arbitrary Param contents or replace the independent
+clock, scale and basis conditions. The ChargeParam constructor's constant writes
+alone cannot establish those nulls; the proved request writes/copies supply them.
+Later complete Charge observations bind the actual cached parameter and clock
+arguments to local-return and curve-sample times, with separately observed
+scale/basis operands. These support conditional Z arithmetic without treating
+Evaluate results as recovered asset keys or the Z contribution as the full
+CalculateDelta vector. The ordinary native writer accumulates the full vector
+into MoveInput's nullable charge delta; a selected charge consumer divides it
+by its delivered delta subject to its near-zero gate. Actual input alias and
+pipeline selection remain independent of matching the final Movement Tick
+output. FixedTick's selected Reset projection preserves nullable presence while
+zeroing XYZ when present, and preserves absence otherwise. Same-scope observed
+resets support that projection; between-scope presence changes do not identify
+the writer or establish object lifetime. Curve identity still requires actual
+lookup/library and source-copy binding, rather than matching key counts or
+sampled values.
+The selected Z vector multiply is a complete leaf whose missing unwind entry
+can be qualified by its bounded body, typed method pointer and exact caller;
+this is not a general exception to unwind qualification. At that call point
+the caller still carries the selected parameter pointer in saved RAX. The
+hidden output buffer is distinct from the vector input and does not contain a
+valid returned vector at entry. Capturing the parameter and scale at this use
+point avoids treating an earlier parameter snapshot as proof of stability.
+Unboxed curve headers and their Array length still do not expose key contents
+or prove authored source identity. Charge-local elapsed and curve returns need
+the actual Charge parent and caller, not a nearest-in-time skill association.
+Normal attack motion sources differ: the first and fifth use
+MoveTo RootMotion, the second FixedSpeed, and the third/fourth CustomRootMotion;
+the fourth also contains a disable action. A node/field inventory must not be
+promoted to a complete decoder for the Custom action's nested scalar payload.
+
+The complete-reader cost was localized to recursively repeated native copy
+proof validation before payload decoding. A successful isolated source cohort
+uses operation-local reuse of the pure proof with its full immutable byte,
+address, instruction and table inputs, returning detached results. Native,
+source, pool and physical-EOF exits remain mandatory. Canonical shared source
+files were locked by another operation and were not changed; this is not a
+claim that ordinary export uses the isolated optimization or report artifacts.
+
+The later single-attack recording now binds same-cast Skill/Ability endpoints,
+delivered clock arguments, world Box query parameters, target endpoints and
+Pack/Modifier/HP scopes. A bounded large-log streaming adapter retains the frozen
+exact row semantics and all health/source gates; a short-budget refusal is not
+evidence corruption or a reason to repeat a healthy recording. The simulator's
+original kernel consumes variable observed clocks and explicit physics-result
+boundaries while computing timer, Pack, damage and HP independently of outcome
+targets. Query return counts do not identify individual colliders or establish
+a standalone collision backend.
+
+The same admitted recording now supplies attack2's own delivered clock prefix,
+query geometry, attributes and settlement scopes. The child simulator composes
+two existing Skill components, carries computed HP across preparation, and
+coalesces the shared PreLate world frame instead of adding two world deltas.
+The successor starts from its explicit preparation descriptor; no extra player
+press is invented. This proves a conditional two-hit numerical prefix, while
+the later frozen timer suffix, independent collision and full control recovery
+remain unresolved. Current source decoding also shows multiple Find/Damage
+pairs in attack3, so single-hit logic must reject it rather than silently omit
+the later hit.
+
+The child's reviewed input and Combo-offset contracts distinguish continuous
+attack command generation from spatial movement. The selected held reader
+subtracts positive Single timers without clamping. Nonzero movement clears
+keep timers but still reaches the command-permission request. Combo offset is
+a command mapping: a record threshold advances the normal-attack target;
+replacement requests add the new mapping, remove the old handle, then publish
+the new pack. Priority ordering is descending and stable for ties under the
+original comparer/List helper premises. Neither these native rules nor
+separate Start/End/Command roots prove the live controller-to-cache identity,
+actual offset pack, selected mapping winner or original path selection.
+
+A later scoped observation contains nonempty offset packs, so an earlier
+no-offset projection cannot be generalized to complete input history. The
+selected original CenterDashState entry reaches Skill.Interrupt with reason
+six; for normal SkillType it requests CreateComboOffset with the Dash trigger
+before its CastEnd request. Source normal-attack ordering and record thresholds
+can then produce an offset target without reading the observed target as input.
+The Dash offset lifetime comes from its own mapping configuration field, not
+the request-time attack-cache override used while moving in Dash mode.
+
+The simulator's existing offset owner now carries empty initialization,
+source-computed normal timing, Dash creation, expiry/reduction and cleanup;
+observed pack fields and later getter targets compare against that state.
+Opaque allocation labels, source base-versus-skin selection and ordinary
+helper/dispatcher premises remain explicit. A matching offset target does not
+by itself prove the complete competing mapping queue, actual winner or every
+external input origin. These contracts live with the independent simulator,
+and do not widen the parent's stored-data reader into runtime simulation.
+
+The later driver recording supplies controller/main-character/command-controller
+endpoints, an actual scoped dictionary index and a directly nested
+Execute/OnExecute/Refresh chain. Its CommandBase cache value is distinct from
+OnExecute's CharacterMainCtrlSystem receiver. Matching those as one object is
+a type error, even within a single synchronous scope. Multiple earlier Create
+endpoints are compatible with the selected cached value; nearest-time matching
+does not identify a unique producer.
+
+The simulator's semantic request component now uses an actual Combo Tick delta
+and a permission return from the same recorded PreLate parent. The native
+allow-tail forwards that Boolean unchanged on its selected original path;
+computed Single remaining/allow match the independent following request
+sample. Original-path/storage-continuity premises remain explicit, and the
+request string reference is an opaque identity token, not observed contents.
+The later Clear entry is already empty, so its empty-to-empty return cannot be
+used as the actual consumption point. Timeline modifier cleanup is a concrete
+source candidate; request.modifierInstId alone does not identify the missing
+owning Handle or establish that this candidate executed.
+
+Current source/native projection also closes a useful simulator route without
+another instance-identity capture. ComboCache creates an owned mapping Handle
+per source modifier, forwards cacheEndByAction to request-clear-on-remove, and
+preserves override=false as a missing override rather than a default duration.
+Its end removes those owned handles. AllowNext creates one pack for its whole
+source list; Init AddRange preserves source members/duplicates, while configured
+always-allowed entries only append. A positive membership already present in
+the source therefore does not need the unknown full configuration. The child
+simulator now derives that predicate inside the authenticated authored window
+at its computed Skill passed time, while retaining actual dispatch/lifetime
+premises and same-frame end-order gaps.
+
+The player command cache likewise reuses a CommandBase on a hit and resets its
+time/state/delay/blocked storage; it does not enqueue one event per Create.
+Controller update can consume or block before activation/Execute, and the
+following Tick can consume an instant command or expire a cached command.
+Those source rules require effective configuration and predicate operands.
+The driver capture did not observe this state/Tick path, so aggregate input
+and execution counts cannot select those missing operands.
+
+Delivered delta is not equivalent to timer consumption: the selected prefix
+includes an unchanged initial timer and a later unchanged suffix despite
+normal delivered values. First-frame/other gates and continuous lifetime remain
+conditions; temporal dilation correlations do not bind HitStop ownership.
+Observed runtime duration/exclusive declarations agree with the stored source,
+and a later Skill can prepare under Delivery.Tick without a true sampled
+interrupt getter. An adjacent completed Command does not own that preparation
+by proximity. These observations narrow the remaining ordinary-attack cache /
+continuation join and must not be converted into a universal rejection rule
+for false interrupt predicates.
+
+The selected CenterAttack update requests direct TryCast only after an initial
+nonempty attack-ID guard and a selected target branch. A later independent ID
+read supplies the cast request. Its selected options ignore distance/angle but
+do not force interruption: the original TryCast still checks interrupt
+permission. Earlier allowed-pack and other predicate branches can permit before
+the old canInterrupt getter; force true is a separate bypass. Request clearing
+after normal TryCast return does not consume its Boolean or prove player-input
+acceptance. A generic Delivery.Tick endpoint does not identify its live state
+or these nullable options by name alone.
+
+The checked ordinary replacement tail requests old Skill.Interrupt before its
+new-current store. The selected reason's nonnull-owner/false-dontInterruptCombo
+route requests CastEnd; a reached processor-clear block writes isCasting false.
+The same later processor then skips duration update, subject to the earlier
+entry/cooldown gates and no intervening casting write. This field differs from
+Skill initialization, applied-cost and executed-exclusive flags. A conditional
+simulation can compose this rule with source-bound delivery observations and
+match frozen timer storage while keeping the old interrupt getter false. It
+does not prove the actual old-current slot, cleanup traversal, state selection,
+allowed-pack membership or full control recovery. These remain explicit runtime
+binding gaps rather than conclusions inferred from the unchanged timer.
+
+Passive string observations require a different terminal address from scalar
+field observations: the selected producer's string sampler consumes an actual
+managed string object after all pointer dereferences, not the address of a
+string-reference slot. A current-Skill-to-skill-ID sample therefore must chase
+both reference slots before reading the string at zero final offset. A null
+current Skill can hide an incorrect terminal recipe until the first nonnull
+instance. Production sampler tests need nonempty, empty and null strings plus
+unreadable storage; decoding fabricated event rows is not such a test. Failed
+capture endpoints can remain diagnostic observations but never satisfy healthy
+runtime admission, and a missing collection inventory must not be fabricated.
+
+The corrected control capture now binds one same-Delivery CenterAttack update,
+its initial attack-ID query, the direct attempt's two further ID queries, actual
+TryCast entry context, successful permission, old Interrupt/CastEnd and next
+BeforeCast. Returned string pointers are forwarded consistently; their contents
+are not sampled at those query returns, and the prepared name instead comes
+from CheckCost and current-Skill snapshots. Same-session Skill/instance/Ability
+and cast endpoints distinguish attack1 from attack2. A Skill object can be
+recast, so pointer equality alone must not define a cast epoch or lifetime.
+
+Observed CastEnd pairs change the same processor's casting flag from true to
+false while leaving timer storage unchanged through Interrupt return. The live
+combo-flag getters in these selected normal replacements are true. The complete
+reason-seven original normal-return control flow still converges on CastEnd:
+context presence, old skill type, offset presence, typed next-Skill lookup and
+next data flag can select a prior CreateComboOffset request, but that helper's
+normal return rejoins the same ending call. Its first parameter is an enum,
+not an override Boolean. Null/invalid-context traps, original-path selection
+and normal-helper premises remain explicit, and lookup/data-flag observations
+or offset internals have not been supplied by the stored configuration.
+
+These direct stop/delivery endpoints calibrate the simulator's shared stopping
+rule. They do not supply later old-Skill OnTick reads, every cross-root input
+cause or full control recovery. General rules can transfer between admitted
+captures; concrete pointers, cast epochs, clocks and damage operands cannot be
+spliced between them to create an apparently complete historical battle.
+
+The selected physical Pack merged-zone arithmetic adds the defender and
+attacker sides before subtracting Double one, then applies the ordered product
+to base attack. Reassociation can change one ULP. The selected HP interior uses
+the Minus modifier's negative nonnegative value, Double HP addition, virtual
+setter dispatch and a final HP reread for realDelta. Setter guards, shield/death
+branches and callback side effects remain explicit prerequisites, not removed
+by a matching final HP observation. The child contracts and implementations own
+these reusable rules; their generated reports are not their sole definition.
+
+The executable slice exposes missing effective time and world bindings instead
+of substituting render time or a guessed target. In particular, ordinary
+Skill.OnTick inlines PeriodicTimer.Update after target selection: a hook on the
+timer leaf would not observe that duration path. Capture preparation must check
+physical call sites and supported ABI before requesting another recording.
+
+For an explicitly selected character profile, existing CharacterTable attributes
+can be joined by the stored level attribute and breakStage; CharGrowthTable's
+skillGroupMap supplies exact SkillPatchTable skill IDs and rank rows. Keep
+selection explicit, reject duplicate/missing rows and retain numeric attribute
+IDs until their consumer meanings are independently proved. This is a stored
+parameter projection, not final equipped attributes or live rank selection.
+For Endminf, the third and fourth normal attacks' `atk_scale` and
+`display_atk_scale` differ. Both fields must be retained: display data alone
+does not establish hit multiplicity or the parameter consumed by an individual
+DamageAction. This lane can advance offline while SkillData timeline decoding
+and runtime factor evidence remain unresolved.
+
 ## Shared combat model and completion boundary
 
 The existing configuration, native-consumer and retained-runtime evidence is
@@ -74,6 +625,20 @@ The prepared healing observer remains available for a future discriminating
 experiment or necessary numerical/timing validation. Further healing capture
 and observer expansion are deferred while higher-value combat rules can be
 recovered from existing data and code.
+
+The battle simulator independently rechecks the selected ordinary Normal-heal
+consumer on its retained cohort and preserves separate Binary64 stages:
+healer output increase plus one, then receiver taken increase, then multiplication
+by the actual GetFinalHealValue result. Replacing this sum with two separate
+multiplicative bonuses changes the rule. Damage-time snapshots cannot substitute
+for heal-time snapshots. A HealPack is a value carrier and may be copied across
+calls, so different `this` addresses are not evidence of different healing
+events. Bind actual GetValue children to their Dump invocation, and bind the
+resulting snapshot array identities and action epoch to the formula pack;
+do not select an association by amount fit or nearest timestamp. No unguarded
+array-cell observer is needed merely to obtain the existing getter results.
+Buff configuration can independently expose periodic timing and blackboard
+references, but does not identify the actual item or creation-time parameters.
 
 ## Tables and authored joins
 
@@ -257,6 +822,1773 @@ Null wrappers and null child values remain independent, and every decoded
 action must end at the next authenticated source boundary. Whole SkillData
 publication still requires the complete current family receipt and the
 source-bound prior cursor selection.
+
+## Skill frame conversion and interrupt marker
+
+The independent [Skill timing consumer contract](../../scripts/game_data/contracts/skill_timing_runtime_native.json)
+and [validator](../../scripts/game_data/skill_timing_runtime_native.py) authenticate
+the selected native pair, method signatures and pointers, ordinary field types
+and offsets, reviewed original-path windows, source operands and referenced
+float literals. A missing or mismatched build, changed field or changed window
+withholds every timing fact, conversion rule and conditional getter rule.
+
+On the original native paths, `SkillData.duration` converts
+`max(durationFrame, 1)` to Single and divides by 30; `exclusiveTime` and
+`aiExclusiveTime` convert their corresponding signed frame fields and divide
+by 30 without that clamp. `TimelineActionData.ToAction` converts both authored
+start and end frames by the same divisor on the successful sequence-creation
+path, retaining the integer frames alongside the converted values. This proves
+30 authored frames per second for these conversions. It does not establish
+the game's complete update cadence, asynchronous timing, timeScale handling,
+or execution of a particular decoded timeline. Allocation ownership in
+`ToAction` remains conditional.
+
+The successful audit exposes `authoredFramesPerSecond`,
+`durationClampMinimumFrames` and `originalPathOnly` with its authenticated
+native identities. A consumer may project conditional seconds only when those
+identities match the decoded source's native evidence. `exclusiveTime` is an
+authored conversion, not a proved player recovery or animation-lock duration;
+downstream selection and actual recovery conditions still need their own
+consumer evidence. Selection through `useAIExclusiveFrame` is also separate
+from the AI-exclusive getter's conversion.
+
+The v2 consumer contract also authenticates the typed chain from
+`Skill.m_durationTimer` to `PeriodicTimer.m_passedTime`, and from `Skill.m_data`
+to `SkillData.exclusiveFrame`. On the original path with non-null timer and
+data, `Skill.canInterrupt` returns true when passed time is **strictly greater
+than** the exclusive-frame conversion plus epsilon; otherwise it returns
+`m_markCanInterrupt`. Division and threshold addition use Single precision.
+The epsilon comes from the native ADDSS instruction's referenced float literal,
+approximately `1e-5` seconds; the audit retains its exact Single value and bits.
+Equality with the threshold therefore falls through to the marker flag.
+`Skill.canDash` calls `canInterrupt` and returns true on a true result;
+otherwise it returns `m_markCanDash`.
+
+The audit publishes these predicates as `conditionalCancelRules`, with
+`getterOnly` and `originalPathOnly` boundaries and matching getter fact rows.
+They describe the getters for explicit timer/marker inputs. They do not prove
+which player commands reach them, timer advancement under all states, skill
+priority or bypass branches, hit-stun, successful dodge casting, or a complete
+cancellation acceptance window. A consumer must keep those gaps visible when
+using the conditional threshold.
+
+`Skill.MarkCanInterrupt` sets the named `m_markCanInterrupt` flag on its
+original path. The reviewed `MarkCanInterrupt.ExecuteInternal` fallback calls
+that method on its non-null environment path, but the cast and environment-to-
+Skill ownership remain conditional. The reviewed fallback does not read the
+action's `Data.priorityLevel`; no cancellation rank is inferred from that
+inherited field. Setting the flag does not prove a complete cancellation
+acceptance window or all command/skill transition conditions. iFix
+interception remains outside every original-path conclusion above.
+
+### Reading authored normal-attack windows
+
+The admitted Endminf normal-attack SkillData sources separate target-selection,
+damage-request, command-cache and allowed-next-skill declarations. A containing
+TimelineAction interval is an authored scheduling candidate; it does not prove
+that a target was selected, DamageAction settled damage, or a HitStop branch
+executed. The third and fourth normal attacks contain multiple DamageAction
+declarations, and the fourth's serialized windows are not chronological. Keep
+source order and authored frame order separate rather than treating the action
+array as a hit sequence or a duration as repeated damage every frame.
+
+HitStop actions may sit inside IfElse child sequences, and an authored action
+may be explicitly disabled. Preserve the stored duration, enable state and
+physical parent path together; do not sum the durations into mandatory elapsed
+pause time. The existing [HitStop consumer claims](../../scripts/game_data/contracts/buff_action_consumers_native.json)
+separate named `StartHitStop` sinks and owned attacker/target reads from actual
+sink operands, branch selection and effects. Complete time-dilation behavior
+still requires its own selected-build proof.
+
+The independent [action timing consumer contract](../../scripts/game_data/contracts/skill_action_timing_consumers_native.json)
+and [validator](../../scripts/game_data/skill_action_timing_consumers_native.py)
+now bind the original HitStop call block's closed Data slot, ordinary Single
+`duration` field and named `StartHitStop.duration` argument. The later
+`StartEntityTimeDilation.duration` call is a conditional continuation: the
+incoming duration stack slot must remain unchanged through intervening callee
+paths, the key-curve lookup must succeed, and iFix interception must remain
+inactive. Stack preservation across those paths and actual original-path
+selection are not observed. This proves a request operand and a conditional
+reload/call, not the actual duration of freezing, suspended timer progression
+or control recovery.
+
+The same gate joins every selected call role to its nominal owner, exact named
+method declaration and actual compiled target; signature and call-target checks
+are not independent evidence. It authenticates the `OnlyAttacker`, `OnlyTarget`
+and `Both` enum identities, but withholds an executable affect-selection rule:
+temporary-list ownership, target normalization/filtering and complete loops
+remain open. An authored `Both` request does not prove simultaneous actual
+freezing of both sides.
+
+ComboCache and AllowNextSkill authored windows differ from the root exclusive
+threshold. Their command mappings and allowed skill IDs must be followed through
+ComboController consumers and actual input acceptance; their action names alone
+do not establish an effective buffer or cancel window.
+The action consumer gate authenticates AllowNextSkill's named add sink and its
+OnEnd-to-helper-to-remove edge, and ComboCache's selected add-mapping sink. Its
+rows retain the joined caller/callee identities. That initial action gate alone
+does not close AllowNextSkill's concrete Data/ObjectPtr layout or live ownership.
+The independent combo contract below supplies a dedicated closed-layout and
+argument/return-copy proof, without broadening the shared generic layout helper.
+ComboCache's closed Data prefix and complete concrete suffix are proved, while
+its cache expression, complete operand binding and effective cache duration
+remain separate. Selected mapping and cleanup requests below still do not
+establish complete input acceptance.
+The simulator's `skill_timing.summarize_authored_skill_timing` retains these
+declarations, source offsets, conditional containers and declared enable states,
+with conditional seconds only from the authenticated timing rules. Per-source
+windows and duration values remain generated report data.
+
+### HitStop clocks and ordered interruption
+
+The [HitStop clock contract](../../scripts/game_data/contracts/skill_hitstop_clock_native.json)
+and its [validator](../../scripts/game_data/skill_hitstop_clock_native.py) separate
+the original timer leaf from conditional local time-dilation fragments.
+`PeriodicTimer.Update` performs Single remaining-minus-delta and
+passed-plus-delta; when remaining becomes nonpositive, it writes zero remaining,
+period into passed, and returns true. Skill's supported default duration leaf
+uses the first named deltaTime argument. It does not establish the upstream
+delta provider, earlier suppression, replacement selection or scheduling.
+
+Entity time-dilation validity additionally requires a valid owner and nonzero
+UInt32 scale handle. Its ordinary duration predicate accepts equality at
+Single(duration + epsilon), with a separate negative-duration branch. The
+normalization fragment divides old elapsed by duration in Single precision and
+clamps to [0,1]. The curve result is the second operand of MAXSS against positive
+zero; finite negative results become zero, while negative zero is preserved.
+The reviewed OnTick fragments order sampling/scale request before elapsed
+increment, optionally multiplying the increment by global scale. Treat their
+composition as conditional on intervening ownership and control/dataflow, not
+a complete OnTick closure. The ordinary manager checks validity before tick;
+OnTick overshoot alone does not establish same-call removal or control recovery.
+
+The selected Skill delta fragment has two Single multiplications, global scale
+then entity self scale, with an explicit ignore-global selection. That fragment
+does not prove its incoming value, complete delivery to Skill or the effective
+scale's modifier merge. Thus HitStop elapsed, Skill passed time and wall time
+must remain separate quantities. Neither timer completion nor a true cancel
+getter alone restores player control.
+
+The battle-simulator subproject's reviewed Stop bridge separates instance
+handle clearing from group-cache effects. The selected ordinary Stop fragment
+skips Clear and Sync on a zero handle; after a normal Clear return it requests
+Sync. Clear reads the owner's typed group, requests physical removal with the
+old handle, then clears the instance handle. The selected removal scan requests
+RemoveAt, recomputation and propagation only for a registered group's first
+matching handle. Clearing the instance handle therefore does not imply a
+modifier was removed or the cache returned to one. Recalculation starts at
+Single one, snapshots count, and rereads the list and cache before each Single
+product. List helper effects and propagation remain opaque. The physical
+removal target is distinct from the named metadata method; selected-fragment
+grammar is not complete entry-to-fragment continuity or whole-method dataflow.
+
+Admitted input records also support a local control-delivery distinction:
+a current normal skill can have positive remaining time and a true interrupt
+getter, followed in the same Command/Transit by another Skill reference's
+Cost/Tag/State checks and BeforeCast. Preserve exact call ancestry, same-reference
+guard endpoints and every candidate. This proves observed preparation after
+an interrupt check, not HitStop ownership, OS-input acceptance, complete control
+recovery, completed casting or a hit. These rules and observation consumers
+are maintained in `tools/endfield_battle_sim`; generated reports are not the
+sole definition of the evidence boundary.
+
+The simulator's separate propagation contract now checks selected cache-to-scale
+fragments: Single cache/external-register multiplication, negative-only clamp,
+conditional `m_timeScale` store, then a member-specific scale argument request.
+The original adapter keeps the tolerance decision explicit; a separate checked
+tolerance contract now derives it from supplied reads. A member chooses
+its supplied unscaled register or rereads its own group's effective field,
+then multiplies `m_additionalTimeScale` before requesting its owner's setter.
+Do not replace that read with the originating group's cached value or invent a
+constant-one unscaled register. Entry continuity, external register provenance,
+complete list traversal and setter effects are still unproved. Recorded paired
+OnTick endpoints include both zero-delta zero-to-nonzero handles and nonzero
+ticks replacing one nonzero handle with another. Handle stability therefore
+cannot establish HitStop ownership or lifetime; repeated receiver pointers are
+also only endpoint equality until reset/reuse and intervening writes are proved.
+
+The selected tolerance program compares an absolute rounded Single difference
+against the larger of relative magnitude and a runtime `Mathf.Epsilon` floor.
+Strictly smaller differences skip the store; equality admits it. Literal inputs,
+mask and typed static-read source are checked, while runtime Epsilon and FP state
+remain explicit. The complete item scale helper independently proves unscaled
+Single one versus its own group's effective value, then additional-scale
+multiplication. Its named OnTimeScaleChange wrapper evaluates the helper before
+checking owner nonnull and requests notification dispatch; this is not a proved
+callback field write. That helper's constant-one proof does not establish the
+separate inline propagation register's source.
+
+The independent Ability clock-prefix proof connects ordinary PreLateTick entry
+delta to its first scaled-result stack store. It validates the inherited
+BaseComponent entity field and complete original nonnull prefix. The first group
+read supplies self-cache, a later entity/group reload supplies ignore-global,
+and TimeManager supplies global scale. These reads do not establish identical
+group instances or a notification-to-Skill causal chain. Subsequent stack
+delivery to Skill.OnTick, concrete notification dispatch and scheduling remain
+open. Durable simulator contracts preserve these separate proof scopes.
+
+The simulator's callback contract independently proves one selected dispatcher
+equality branch and the complete TickComponent.OnTimeScaleChange callback.
+Its ordinary branch requests Object.GetType and opaque formatting/metadata/emission
+helpers without using the incoming scale or directly storing an instance-scale
+field. This does not prove absence of helper side effects. The replacement branch
+forwards the scale. Exhaustive declared-method inspection finds no same-name or
+same-slot AbilitySystem override, but metadata inheritance does not prove the
+live class discriminator, vtable or selected inherited callback.
+
+A separate Ability delivery contract proves selected stack reloads through
+normal nonvolatile preservation to the two float arguments of Skill.OnTick;
+the zero hidden MethodInfo argument is not a gameplay Boolean. The caller
+selects replacement pause AL or the typed entity pause field, checks the opaque
+enumerator step and supplies its nonnull current as receiver. A checked local
+predecessor bypasses reload, while the adjacent token-zero path enters reload.
+Whole-method ownership/reachability and initial scaled-store-to-reload continuity
+remain open, as do live Skill identity and later timer effects. Equal stack
+offsets or metadata method names cannot close those joins.
+
+The separate Skill entry proof checks initialization and cast-type return gates,
+then compares the requested frame-count result with the cast-start field. Equal
+values zero both retained delta arguments before continuing; unequal values
+retain them. The cached function and named frame-count resolver request are
+distinct from proof of the runtime target or returned frame. This rule is not
+an early return and does not show that all skill processing stops. Conditional
+regressions preserve these boundaries and do not admit a complete battle clock.
+
+The simulator's ordinary Ability extension now proves selected register
+preservation without relying on later stack reload: the primary scaled delta
+has no intervening destination in the complete selected local CFG before the
+Skill call. The second delta has a closed set of two Single product origins,
+using either one or an earlier manager-scale read with the incoming delta.
+The later manager-reason read and opaque alternative selector remain separate
+inputs. Exact instruction boundaries, external exits and normal call sites are
+checked; prefix bindings, normal ABI/frame preservation and actual selection
+are conditions. This does not prove the entire method or exception path.
+
+A separate continuation proof joins Skill entry to duration updates when the
+cooldown list is null, replacement/readiness gates admit the ordinary path,
+the processor is casting and the Skill is not paused. The matched PeriodicTimer
+target's inline update uses the primary delta and normalizes expired timers;
+its body and the named Update body are independently checked. Timer operands
+are reads after the initialization helper. Same-frame zeroing therefore does
+not imply no subsequent writes: an already-expired timer still normalizes.
+Conditional composition rejects overrides of the derived delta and requires
+explicit path and carrier continuity. Present cooldown-list paths, opaque
+initializer effects, live scheduling/identity and later Skill behavior stay open.
+
+The simulator's present cooldown-list extension proves the count request,
+per-iteration list/count/array/element reloads, independent unsigned bounds and
+opaque selector-four predicate request. The signed helper result bounds the
+loop; it is not identified with any independently reloaded count. All true
+iterations reach the common ability gate, while the first false result exits
+to a separate route. Conditional replay consumes exactly the visited sample
+prefix and never forges a null-list premise. Generic helper semantics, collection
+stability and actual cooldown effects remain unresolved.
+
+The post-duration extension distinguishes completion requests from incomplete
+threshold checks. Completion reloads timer/ability and requests Ability Tick,
+exclusive callback and CastEnd. Incompletion compares fresh passed time against
+Single frame-to-seconds thresholds with subtractive epsilon for inclusive cost
+selection and additive epsilon for strict exclusive selection; an interrupt
+marker can also select the exclusive callback. Post-cost reads stay independent.
+These are ordered requests, not proven helper effects or player control recovery.
+Composition derives the completion Boolean and primary delta without allowing
+caller overrides, while requiring explicit carrier continuity and later reads.
+
+The simulator's helper-effect extensions now prove pointwise stores. Exclusive
+callback invocation precedes setting its executed flag, so the flag is not a
+pre-call reentry lock; later owner reads remain independent. ApplyCost's checked
+low-query path writes the applied marker even when debit requests are bypassed.
+Its positive-query out-store path separately preserves an initial comparison
+sample while a post-initializer sample can supply the stored Ability amount.
+Neither store establishes the resource helper's actual debit or final state.
+
+Selected CastEnd paths prove an initial casting early return, finish-dependent
+executing-state stores and processor cleanup: clear target/jump storage, set
+processor casting false and clear a freshly read context after an earlier payload
+copy. The nonnull raw-action path enumerates TimelineAction entries and invokes
+SequenceAction.End when its sequence is present. That method requests virtual
+AbilityAction.OnEnd for states one or two, then stores ended state three for
+each nonnull action. Stable storage, count/helper dispatch and ordinary callback
+returns remain explicit conditions; callback effects are not supplied by an
+enumeration proof. A separate ordinary tail in AbilitySystem._OnCastEnd clears
+its current-Skill reference. TryCastSkill's selected local windows supply either
+the direct system callback method or a wrapper closure; the Skill callback field
+is written and later loaded by CastEnd. The complete wrapper invokes the system
+callback before an optional external callback. These local operands and typed
+stores do not prove continuous register/object identity between windows, ordinary
+delegate-constructor effects or external-callback noninterference. Reaching the
+selected owner therefore remains conditional, and a clear does not establish
+idle control. Ordinary no-current-Skill request admission has no Center-idle
+operand: request availability and physical control restoration are separate
+boundaries. The simulator connects computed completion, owned handle cleanup,
+selected clear and a later source-cache request under explicit completion ports;
+its synthetic nonnull-inventory regression is not a runtime inventory witness.
+The reviewed declarations live in the battle simulator's
+[cleanup](../../tools/endfield_battle_sim/contracts/cast_end_cleanup_native.json)
+and [callback-tail](../../tools/endfield_battle_sim/contracts/cast_end_prefix_native.json)
+contracts. Existing perfect-dodge natural-completion samples show casting clear
+and a null current slot at the same parent-call return. Retired pooled Skill
+ticks can continue after that slot is null; object lifetime is not slot ownership,
+and these samples do not by themselves prove normal-attack completion.
+Context identity, cross-window/live callback binding and control restoration remain
+unresolved. Cooldown readiness
+uses absolute remaining versus epsilon; false-predicate updates use the second
+Skill delta and the second independently returned timer, then rejoin the ability
+gate. Candidate selection keeps a strictly smaller remaining value and replaces
+ties. Index helper bounds are checked, while live interface targets and coherent
+repeated reads remain conditions.
+
+Special-type cooldown recovery now has a checked clean-cache path: request
+attribute 93, read Double, narrow to Single, multiply the second Skill delta and
+join the common timer update. Dirty recomputation and live owner selection stay
+open. Count interface dispatch and shared List body registration are checked
+separately from actual closed runtime class/slot binding.
+
+The CostAtb core additionally proves the epsilon availability check, initial out
+zero, fresh ATB subtraction and ordered setter clamp/store. Setter callbacks
+precede a fresh returned-ATB read; returned remainder and net out amount use
+explicit Single stages. Its following pause branch copies the configured skill
+recovery interval, then requests consume recording with the original source and
+Single widened to Double. Final balances, recorder effects and live source/manager
+identity are not established by those pointwise stores.
+
+The [existing-export curve reader](../../scripts/game_data/skill_hitstop_curve_sources.py)
+joins admitted HitStop field byte ranges to current StringPool pages and the
+named HitStopConfig object, retaining its serialized-object identity and read
+bookends. Its explicit asset-map join compares source path, offset, PathID and
+Unity type against the exported header, with complete map-input hash bookends;
+the header's source-file identity is independently checked against the store.
+An absent or unmatched map remains unresolved. This exported physical join does
+not identify the object actually returned by the runtime resource loader.
+Referenced curves have nonzero keys, tangents, weights and wrap modes;
+they are not constant-zero freeze curves. Current pool resolution is not an
+independent historical pool authentication when an older intake omitted page
+hashes. Runtime configuration selection and Unity weighted-curve evaluation
+are separate evidence joins. Do not substitute linear interpolation or integrate
+stored duration into a claimed wall-clock pause.
+
+The [configuration-load contract](../../scripts/game_data/contracts/skill_hitstop_config_load_native.json)
+and [validator](../../scripts/game_data/skill_hitstop_config_load_native.py)
+authenticate a narrower bridge: the reviewed `_LoadConstConfigs` callsite
+supplies the HitStopConfig key and closed MethodInfo, then stores the returned
+reference in the typed hitStopConfig field. Its physical call target contains
+an authenticated call to the named ResourceRouter path helper. The selected
+generic-entry lookup did not join that closed MethodSpec to this physical
+target; supplying a MethodInfo does not by itself identify the callee's closed
+implementation. Keep `compiledTargetClosedDeclarationProved` false. This is a
+missing registration/warmup join, not proof the request never executes.
+The three-string composition helper, path-hash forwarding and selected resource
+result still need their own joins to the exported asset. Neither the exact
+load key nor the exact exported asset-map match establishes runtime selection.
+
+The [combo consumer contract](../../scripts/game_data/contracts/skill_combo_acceptance_native.json)
+and [validator](../../scripts/game_data/skill_combo_acceptance_native.py) follow
+the original `CheckCanInterruptCurSkill` predicate in order: no current skill,
+membership in an allowed pack, plunging-start equality, plunging-end equality,
+new skill priority signed-Int32 strictly greater than current priority, then
+current canInterrupt. Equal priority falls through. An allowed-pack hit bypasses
+the later priority/getter branches of this gate; it does not bypass every cast
+guard or prove that a player input was accepted. Collection receiver, normal
+returns, selected originals and live operands remain explicit conditions.
+
+AllowNextSkill's dedicated closed-layout witness binds the inherited Data
+reference, query-handle field and entire returned ObjectPtr suffix. Selected
+normal ObjectPtr output writes and controller/action copies cover its reference
+and identity fields together; open-generic zero offsets/sizes are not used as a
+closed value layout. The action's allowed-list argument reaches the selected
+AddAllowedNextSkillPack request, and the returned carrier is retained for
+cleanup. Init requests AddRange on the existing pack list, then adds an
+always-allowed string only when Contains is false. No clearing or pool reset is
+inferred. Live ownership, handle lifetime, collection callback ABI and original
+path selection remain separate from this closed storage proof.
+
+Combo mapping refresh clears the effective map and visits command slots in the
+reviewed order. A nonempty runtime queue supplies item zero; an existing empty
+queue supplies the base GetValueOrDefault result; an absent queue copies a base
+value only when TryGetValue succeeds. The copied value is the complete selected
+MappingModifier carrier, not only its skill string. This does not prove queue
+priority ordering or the default helper's returned bits. Removal searches
+backwards by exact UInt64 instance ID, requests Remove(value) on the first
+match, and refreshes even without a match. Do not infer Remove's actual removed
+index without its comparer semantics. Handle cleanup re-Locks the owner for
+each requested stage; a failed Lock skips that request, and request/offset
+cleanup flags remain explicit operands rather than inferred runtime settings.
+
+### Input predicates, caching and pending casts
+
+Whole-fight acquisition must cover the known input/control, clock, movement,
+numeric, Buff/resource and enemy-behavior lanes together. A short command-only
+profile is not a complete battle observer. Full paired cast returns and Skill,
+Combo and Buff deltas require their actual physical signatures; an entry context
+under Delivery does not cover every action path. Keep by-value indirect
+aggregates distinct from explicit byrefs, and derive string roots from the
+actual argument representation (unboxed storage has no object header).
+
+Acquisition audits keep three important distinctions explicit. Byte reads have
+one-byte storage even when projected from a larger raw span. AbilitySystem AP/SP
+snapshots do not substitute for BattleManager's shared ATB or its recovery
+clock; an exact cost caller filter on SetAtb excludes other writers. Finally,
+TimeManager's managed frame counter is not automatically Unity's frame counter
+used by the Skill first-frame condition. Qualified field snapshots and actual
+branch results remain separate claims.
+
+The simulator's maintained roadmap owns the next combined recording procedure.
+Static collider hierarchy/animation curve decoding, retained-log joins and
+general metadata/vtable/manager writer-history proofs continue offline; their
+unfinished state alone is not a reason for another recording. A further capture
+request must identify a material numerical, spatial or control ambiguity that
+the retained evidence cannot distinguish, and prepare all known additions
+together before asking the user to record.
+
+The [cast gate](../../scripts/game_data/contracts/skill_cast_gate_native.json)
+joins active-map ContainsKey/get_Item, optional interruption, the nonnull Skill
+guard and CanCastToTarget. Missing keys return false after normal logging;
+null selected Skills do not become a false geometry result. CanCastSkill's
+skipAngle/skipDistance parameter order differs from CanCastToTarget's
+skipDistance/skipAngle order, and the actual forwarding is checked. The view
+overload explicitly sets skipInterruptCheck false. Target admission evaluates
+readiness, optional CheckCastDistance with ignoreOutOfRangeStrategy true, then
+optional CheckCastAngle, preserving short-circuit behavior.
+
+Readiness reaches an independently checked native helper, not an invented
+alias for IsAvailable or CheckCd. Its first invalid/null owner returns false;
+its repeated owner lookup must yield a nonnull owner or take the exceptional
+path. A selected type-check result is followed by the local cooldown helper,
+CheckCost, CheckTag and CheckState in order. Helper internals, owner lifetime,
+distance/angle geometry and replacement selection remain explicit inputs.
+Repeated reads/calls must not be folded into one observation without a stability
+premise.
+
+The [request-cache contract](../../scripts/game_data/contracts/skill_request_cache_native.json)
+binds CmdType.Attack to the real-map BattleCommandType.Attack request and copies
+the actual received MappingModifier carrier into construction; this route has
+no new input view. The provided closed MethodInfo is checked, while the
+physical helper's closed compiled identity and collection effects remain open.
+An empty selected skill ID leaves the previous request unchanged. A nonempty
+ID requests disposal of any previous owned-input copy, then installs the new
+request with selected ID, instance ID, cache time and allow=false. There is no
+old/new priority comparison in that construction. Optional input CopyFrom uses
+the original view, which must not be conflated with a possibly overridden
+request skill ID. The selected Nullable byte propagation is authenticated;
+pool allocation, GC preservation and target-handle lifetime retain their stated
+conditions.
+
+Cache-time selection uses the supplied modifier value except for Attack's
+selected movement-mode override, then the current-skill/perfect-dodge override.
+The override values come from the actual configuration provider, not guessed
+durations. The [dispatch contract](../../scripts/game_data/contracts/skill_cast_dispatch_native.json)
+proves that request Tick first recalculates allow, subtracts allScaledTime in
+Single precision and retains the request only when the result is strictly
+greater than its native epsilon. Equality expires it. Expiry disposes the
+retained input when present and clears the whole Nullable. Tick does not cast.
+Visibility getters only inspect HasValue and stored allow; they do not recompute
+readiness, check remaining time or consume the request.
+
+The [player-command contract](../../scripts/game_data/contracts/skill_player_command_native.json)
+connects PlayerCommandController.Execute through the typed GameWorld/AIManager
+receiver to CharacterMainCtrlSystem.OnExecutePlayerCommand and Refresh. Refresh's
+Boolean controls command-specific fallback branches; it is not propagated as
+a universal command-accepted result. The selected cache read reaches
+CenterStateMachine._ToSkill or CharacterSkillSystem._TickToCastSkill. The latter
+checks CanCastSkill with angle skipped and distance checked, then CastComboSkill
+checks again through the view overload with both geometry checks enabled.
+Passing the earlier check does not guarantee passing the later one. CastComboSkill
+prepares a pending record with castType and casting fields and requests an AI
+mode switch; it does not itself call TryCastSkill or DoCast.
+
+TryCastNormalAttack is a separate first-normal-Skill-list path, not a proved
+consumer of the cached request. TryCastSkill's true result also has a
+switch-to-buff shortcut distinct from its ordinary current-Skill/state writes.
+DoCast returns void, and some callers inline cast initialization instead of
+calling that method. Do not turn every true TryCastSkill result or a method
+named CastComboSkill into evidence of a new skill start.
+
+The [pending-cast contract](../../scripts/game_data/contracts/skill_pending_cast_native.json)
+closes a conditional consumer definition path through
+CharacterCastSkillBehavior.OnEnter/OnTick, CharacterAIBrain.GetComboSkillData and
+the selected pending selector. OnEnter resets timer/success and stores the
+returned record. OnTick replaces it only for a nonnull newly returned record
+whose casting flag is false, then permits retry. A null current record returns
+without inventing success; failed TryGetSkill writes success=false without a
+pending casting write.
+
+The direct attempt rotates, obtains the pending input's named getters and
+calls AbilitySystem.TryCastSkill with authenticated argument transfer. The
+switchToCenterBeforeCast branch may instead request PlayerController.CastSkill
+after a successful center switch; it is not a synchronous success claim.
+The air-check receiver comes from a global provider chain, so its result must
+not silently be substituted with the pending entity's movement state.
+The direct TryCastSkill result always updates behavior success. Only true
+causes a fresh read of behavior.m_skillData and a casting=true write when that
+post-call reference is nonnull. Callbacks can replace the field; a claim about
+the original record requires an explicit identity-stability premise.
+
+The unresolved join is now specific: the requested AI mode must be bound to its
+CharacterAIModeData/config entry, configured graph/behavior tags and actual
+callback dispatch. Class names and a numeric mode do not establish selection.
+Pending selection also depends on collection/ObjectPtr coherence. The inherited
+entity carrier is now a named, directly authenticated AIBehavior.m_entity field:
+the empty CharacterAIBehavior intermediate class has no offset table because it
+declares no fields. It is not the declaring owner. The pending consumer contract
+checks every parent edge from CharacterCastSkillBehavior through its selected
+closed generic parent to AIBehavior, and binds the native loads to that owner's
+Entity reference field. The independent `skill_behavior_entity_native` contract
+accounts for the complete concrete layout, including necessary alignment gaps,
+and checks inherited-layout stores in the concrete constructor, the consumer's
+entity read, and the original AIBehavior.Init argument store before its barrier
+call. The generic
+data slot is proved only for this closed reference instantiation; no open generic
+placeholder offset is used. This proves layout and the selected original write,
+not that a live instance was initialized or remained unchanged.
+Cost/tag/state internals, geometry, runtime replacements and
+callback/scheduler ordering remain separate. This is a connected conditional
+definition chain, not observed end-to-end player acceptance.
+
+The [input execution carrier contract](../../scripts/game_data/contracts/skill_input_execution_native.json)
+adds the original AbilityAction.AssignData/ReAssign environment stores, the
+Ability.Init source-Skill store and the Skill/Ability instance-id getter reads.
+DamageAction's exact generic-parent chain reaches the declaring AbilityAction
+owner. An environment reference must not be cast blindly to Ability: retain
+the explicit assignment and independently observed Ability identity. Rebinding,
+object reuse and copied cast identifiers prevent a pointer or numerical id from
+being treated as a globally unique cast occurrence. Synchronous input ancestry
+ends when that call returns; it cannot be inherited by a later tick.
+
+The [battle input capture recipe](../../scripts/game_data/contracts/battle_input_capture.json)
+observes game-action callbacks, player commands, cast predicates, request-cache
+entry/return snapshots, pending-record state, skill/Ability lifecycle and damage
+processing with ordinary paired observers. `battle_input_capture_sources` derives
+the closed request storage from the selected request construction/clear proof;
+open Nullable field offsets are never used. Snapshot coherence is not implied
+by one guarded read. `battle_input_inspect` admits only complete healthy retained
+sessions through the shared reader and keeps boolean predicate results, cache
+contents, preparatory execution and damage processing separate. A false inner
+predicate is not a global input rejection; a true cache refresh or void normal
+return is not a completed cast. A damage-processing return is not automatically
+a damaging hit. Cross-tick environment/Ability matches remain conditional
+candidates, with request ownership and lifetime explicitly unresolved.
+
+The existing numerical captures contain no complete input stream. Default input
+configuration and Lua callbacks can explain possible operations but cannot
+reconstruct missed presses or the user's live rebinding. The new recipe is not
+an OS key log and does not prove every physical press was delivered. Capturing
+DoCast alone is insufficient because initialization can be inlined in callers;
+unsupported aggregate or oversized signatures must not be forced through a
+smaller generic hook ABI. Live coverage remains to be observed separately from
+successful preparation and compilation.
+
+Stored key maps are subject to export freshness independently of the native
+observer ABI. If the installed asset layers differ from the export provenance,
+the input-source reader may retain authenticated stored-export observations with
+`currentInstalledDataProved=false`; it must not label those defaults or Lua
+handlers as the current live configuration. This does not authorize extraction.
+The [stored input-source contract](../../scripts/game_data/contracts/skill_input_bindings_sources.json)
+selects named InputSetting objects, local UI PPtrs and bounded Lua text sections.
+The stored Battle defaults separate Mouse0 press/release and digit/Alt-digit
+actions. AttackButton's authored text connects the attack actions to start/end
+requests with cursor/button/mode gates. MainHud button references identify jump
+and sprint actions, but their default Space/Shift/Mouse1 mapping and long-press
+ultimate acceptance remain unresolved. The separate
+[native input contract](../../scripts/game_data/contracts/skill_input_bindings_native.json)
+authenticates key/timing enums, callback declarations and bounded argument-save
+and held-field-write spans. Entry-to-span argument/receiver continuity is an
+explicit premise, not a whole-function path proof. Held state alone establishes
+neither repeated-attack scheduling nor successful cast acceptance.
+
+Complete retained input observations now distinguish a held attack's game
+action callbacks from the repeated player-command stream. A cache refresh may
+return false while a previously stored request is still present; neither that
+return nor the mere presence of the cache is a global input-rejection or cast
+acceptance label. Entry/return raw snapshots must be compared separately.
+Some successful Refresh calls exit with allow=true even though an enclosed
+AllowNext call observes allow=false at both its entry and return. This is not
+a counterexample to the selected constructor's initial false flag. The
+[Refresh-tail contract](../../scripts/game_data/contracts/skill_request_refresh_tail_native.json)
+locates a postconstruction virtual dispatch with three zero Single arguments.
+Conditional on the selected ordinary Combo Tick target, Tick calls AllowNext,
+transfers its Boolean result into a request replacement and writes the whole
+request back. That copyback occurs after the child observer's return snapshot.
+The recorded child caller addresses match the selected Tick callsite and the
+parent/child controller identities agree. The parent return snapshots conform
+to the allow-byte change while retaining the other bytes.
+
+The tail returns true after normal dispatch completion, independently of whether
+Tick retained or expired the request. The constructor's initial false flag and
+the public Refresh exit flag are different boundaries. The new proof is bounded:
+generic dispatch branch reachability, register/stack carrier continuity, live
+virtual target/IFix selection remain explicit premises; existing matching Tick
+evidence owns expiry. `battle_input_refresh_cases` generates conditional tail
+regressions from exact observed child callsite/controller/string-pointer matches
+and raw snapshots. It excludes false Refresh results rather than inventing their
+missing construction operands. This is not a complete simulator replay.
+
+`battle_input_request_links` preserves exact cache-pointer matches within a
+recorded command, all matching getter/CheckCost/BeforeCast candidates and observed
+Clear boundaries. Equal skill text can occur at distinct managed-string pointers;
+text equality cannot replace pointer identity or a request-carrier transfer.
+Historical cross-command matches retain unknown ownership/lifetime, and a common
+command ancestor does not prove which particular getter value fed the cast.
+The recorded execution lane also observes different cast identifiers on the
+same Ability pointer/instance-uid pair. Treat the uid as an object observation,
+not a unique cast key. Explicit same-thread ExecuteInternal/ProcessDamage
+ancestry with equal action/environment identities is a stronger join than a
+historical pointer match, but a ProcessDamage true return still does not prove
+HP loss. Missing Skill.Init or pending-behavior events are coverage gaps and
+cannot by themselves identify inlining, reuse or an alternate execution path.
+
+The [request delivery contract](../../scripts/game_data/contracts/skill_request_delivery_native.json)
+now authenticates the selected `_ToSkill` fragment that forwards the cache
+getter's returned string reference into `_TryGetSkill`, with a stack by-reference
+Skill output and a false-result edge. Its caller classification checks physical
+call targets and the `GetNextSkillId` wrapper's tail jump. `GetNextAttackId` and
+`HasNextAttackRequest` are query callers; their getter observations must not be
+counted as skill executions. The fragment does not yet bind the lookup's output
+to the later selected pending record or cast.
+
+The [cast identity contract](../../scripts/game_data/contracts/skill_cast_identity_native.json)
+separates Skill/Ability field carriers from individual casts. The recorded Init
+caller is the runtime-data refresh path, and recorded BeforeCast callers belong
+to the selected TryCastSkill tail. This identifies the immediate native caller;
+it does not recover an unrecorded caller above TryCastSkill. Original
+AssignSkillCastInfo copies a nonzero supplied ID, origin and cost bits. Its zero
+branch assigns one counter read to the ID, independently reloads for a wrapping
+increment, uses sourceSkill as origin and writes positive-zero cost bits. The
+two reads are not assumed equal, the counter write is not atomic, and copied
+IDs and UInt32 wrap preclude a global uniqueness promise.
+
+`battle_input_delivery` matches these native receipts to the admitted capture
+and retains all earlier matching Init snapshots as candidates. It keys observed
+BeforeCast occurrences by thread/invocation, never Ability UID or cast ID alone.
+Source-origin equality does not select the unobserved assignment branch. Its
+simulator cases separate observed Init argument-to-field pairs from portable
+identity-rule fixtures. Sequence order and command boundaries do not supply
+frame IDs, authenticated intervening writes, object lifetime or cross-frame
+delivery. These missing joins remain explicit; the real battle factory stays
+closed.
+
+The [request transfer contract](../../scripts/game_data/contracts/skill_request_transfer_native.json)
+now follows the middle of `_ToSkill`. The first lookup's output is read for the
+typed SkillType guard, with an unsigned comparison against the explicit upstream
+register operand. A null output leaves the selected nonnull path; the gate does
+not name the opaque null-exit helper's complete exception semantics. The later
+admission independently reads a skill name. A finite local control-flow check
+proves that this second name and the separately returned view's target reach
+CanCastSkill under normal Win64 calls and coherent local stack assumptions.
+The view's last word overwrites the first lookup output's stack slot. Neither
+that reused slot nor the first Skill pointer is a persistent execution identity.
+The destination declaration and its Center-state consumer are described below;
+runtime getter type, same-object handoff and scheduling remain separate open joins.
+`battle_input_handoff` checks the retained read/admission caller sites and exact
+argument equality, preserving all same-command candidates. The command is an
+observed ancestor; an unrecorded `_ToSkill` invocation is not manufactured from it.
+
+The [pending storage contract](../../scripts/game_data/contracts/skill_pending_storage_native.json)
+authenticates the request record's complete direct instance-field set and parent
+chain. There is no direct selected-Skill field, but the stored input contains a
+nested cast-info originSkill reference. That origin is not automatically the
+Skill selected for execution. The consumer prechecks by the current record's
+skill ID and independently reloads record input for the later TryCastSkill call.
+Write selection searches forward for the first resolved-entity match; read
+selection searches backward for the last. Neither filters on casting or castType.
+Both fetch the matched index again, so the compared record and final record are
+not assumed identical. A null final write fetch requests a pooled record; a null
+final read fetch returns null. A null entry encountered during the initial scan
+does not become a normal miss.
+
+Dispose directly clears only the target-handle slot. ClearAll additionally
+requests zeroing the whole input payload; opaque helper side effects remain
+outside the direct-store proof. The pending-list getter exposes the mutable
+list reference, so the selected writer inventory is not a complete writer set.
+Stable list/record lifetime across frames and observed behavior dispatch remain
+conditions, not consequences of the field layout.
+
+The [normal attack delivery contract](../../scripts/game_data/contracts/skill_normal_attack_delivery_native.json)
+also distinguishes direct casting from pending dispatch. On the selected
+CharacterAIComponent normal-return path, a false CanCastSkill stops the attempt;
+true reaches TryCastSkill and its Boolean return is forwarded. Both angle and
+distance checks are skipped at this admission call; interrupt checking is not.
+The selected name and target are preserved while AbilitySystem is separately
+read for admission and execution. A separate CenterAttackState direct-cast
+fragment does not consume TryCastSkill's Boolean before its later clear path.
+Neither a Clear observation nor a BeforeCast event substitutes for that missing
+return. These static paths do not assign the retained sample's unobserved
+upstream callers or prove which frame delivered a particular request.
+
+The [Center blackboard writer contract](../../scripts/game_data/contracts/skill_input_blackboard_native.json)
+names the destination as `CenterBlackboard.skillInputData`. The supplied closed
+MethodInfo requests `StateMachine<CenterState, CenterBlackboard>.get_stateBlackboard`,
+but its compiled closed getter identity is not established. The field binding
+therefore requires each returned object to actually be a CenterBlackboard.
+CanCast false skips both getters and all writes. True obtains a first blackboard
+and requests Dispose on its input, independently obtains a second blackboard,
+calls CopyFrom on the supplied view, then checks that second destination for
+null and writes the full input value. CopyFrom precedes the second null check;
+there is no rollback claim. Normal completion returns the original predicate.
+The two blackboard results and the source view locals remain explicit operands.
+
+The [blackboard getter contract](../../scripts/game_data/contracts/skill_blackboard_getter_native.json)
+connects the supplied closed MethodInfo to a static generic-context slot for the
+second StateMachine type parameter, giving CenterBlackboard under static
+substitution. This does not authenticate the initialized runtime context, the
+compiled closed getter or a named closed-layout source field. The physical
+getter reads its source once and resolves the type twice even when that source
+is null. For a nonnull source it checks against the second resolved type first,
+then against the first, rereading the source class for each check. On the ordinary
+class-bit path, first-check failure returns null; second-check failure requests
+an opaque cast-failure exit; both passing return the original source reference.
+Special class fallbacks and the full relation helper remain outside the proof.
+Normal resolver outcomes are explicit nonnull premises, not inferred from the
+static substitution. Source-class flag reads occur only after a reached failure.
+
+The [Center FSM construction contract](../../scripts/game_data/contracts/skill_center_fsm_native.json)
+separately binds the CenterStateBase constructor's two supplied cast contexts to
+CenterBlackboard. Its physical cast helper returns only the original source or
+null on normal return; the classifier's type semantics are not recovered by that
+identity proof. After the base constructor returns, the first cast result is
+stored even if null. A second cast uses the original argument again but its
+result is unused; its normal return precedes the blackboard barrier request.
+A null AI component skips both later field writes, preserving old values;
+otherwise the component is stored before its entity is read and stored, including
+a null entity value. That entity read belongs to the inherited BaseComponent
+`<entity>k__BackingField`, not a newly declared CharacterAIComponent `m_entity`.
+These rules preserve reached effects and normal Win64 saved
+carriers, without inventing helper side effects.
+
+The machine construction fragments provide the same saved blackboard argument
+to the Skill state construction and request AddState for the same constructed
+token, under the stated saved-carrier continuity premise. The allocation context
+requests CenterSkillState; neither allocator result type nor collection insertion
+effects follow from that request alone. Nominal OnEnter vtable membership and a
+located fixed-tick virtual call do not close the generic dispatcher, actual
+state selection or runtime OnEnter occurrence. A complete writer census and
+object lifetime proof are still required to carry the constructor alias into
+the later input writer and state reader. CenterStateBase's blackboard field is
+not init-only in metadata; absence of a named setter is not an immutability proof
+and cannot replace that writer census.
+
+The [constructor carrier-flow contract](../../scripts/game_data/contracts/skill_center_construction_flow_native.json)
+now closes the intermediate machine-entry-to-Skill-block register preservation
+premise under normal Win64 helper returns. Its finite instruction/control-flow
+check covers the metadata-initialization alternative, entity setup cold block
+and earlier state construction branches. No reached instruction overwrites any
+alias of the saved machine/blackboard registers or the stack base; every selected
+edge reaches an authenticated instruction, the Skill block or the opaque null
+exit. This proves argument continuity to that block, not allocator results,
+collection registration, helper heap effects or object lifetime.
+
+The [runtime generic-context contract](../../scripts/game_data/contracts/skill_blackboard_context_native.json)
+separates the canonical compiled getter from its supplied closed MethodInfo.
+Reference normalization uses the Object default and the eligible Int32-enum
+branch uses Int32Enum. The selected metadata-parameter fixup changes an index
+into a parameter-record pointer; VAR substitution then reads its ordinal from
+the class instantiation. The local kind-two RGCTX path inflates the type,
+requests its class and stores the result into a runtime slot. These are
+conditional native relations, not an observation that a particular live class
+was initialized or that either recorded getter returned that class.
+The selected pointer selector compares the original three-part key before
+normalizing class and method instantiations for another lookup. Existing
+interning-hit equality compares argument count and the selected type relations;
+pointer-record decoding then projects the registered method/invoker/adjustor
+indices. Probe helpers, new interning insertion, locks, attribute-mismatch copies
+and complete class initialization remain outside that conditional path.
+
+The [shared FSM dispatch contract](../../scripts/game_data/contracts/skill_center_dispatch_native.json)
+binds canonical compiled entries and checks their selected instruction paths.
+GetState checks ContainsKey and rereads the dictionary before get_Item with the
+original state ID. The selector returns the first yielded transition whose
+condition is true; absent condition checker means true. Delegate fallback
+forwards its stored target and MethodInfo only after the inline-target misses.
+List iteration is not evidence of a priority order or of an actual _ToSkill
+closure. Dictionary, iterator and callback results retain their own premises.
+Enumerator initialization copies the list and version into its local carrier.
+MoveNext checks version before its unsigned index comparison; successful yield
+sets current and increments index. Its slow path can prepare the class and then
+rechecks list/version independently, so the first mismatch alone is not the
+final exception decision. Normal end sets index to size plus one and current
+to null. AddState copies two physical context references before the dictionary
+Add tail request, captures the dictionary before state-context initialization
+and reads the state ID afterwards. These anonymous physical slots do not
+establish a closed nominal field's live contents or successful insertion.
+
+Tick checks running on entry, optionally ticks the blackboard, then requests
+selection. A first selected transition bypasses the later running recheck.
+Only after a failed first selection does it update the current state, reread
+the state, select again and recheck running. SwitchState and Transit request
+exit before writing current state, then use fresh reads for entry. Exit and
+entry receivers, the stored destination and the entry destination may differ
+after callbacks or barriers; no final current state is inferred after OnEnter.
+Nominal slot membership and a proved fallback request still do not establish
+the live virtual target, actual OnEnter occurrence or cross-frame delivery.
+
+The [Center lifecycle contract](../../scripts/game_data/contracts/skill_center_lifecycle_native.json)
+distinguishes RefreshData from construction: RefreshData writes the AI reference
+and requests its barrier before checking null. Null AI takes the opaque failure
+path with the earlier write retained and no entity write; nonnull AI supplies
+the inherited entity field, including a null value. The selected barrier's
+complete leaf preserves the volatile argument carriers used here. Stop/Clear
+dispose then zero the input at the same saved blackboard receiver; this is not
+a post-callback lookup. The bounded writer inventory cannot exclude writes
+through aliases, replacements or other helpers, and supplies no object lifetime.
+
+The [inline refresh contract](../../scripts/game_data/contracts/skill_center_inline_refresh_native.json)
+identifies another writer: CenterStateMachine.RefreshData takes an Entity,
+reads its named character-AI component field and stores machine AI/entity
+references. The complete selected normal entry and loop schedule is verified:
+the machine replacement returns before original writes; collection helper and
+iterator results remain explicit premises. Each yielded item reloads machine AI
+before two separate type predicates. The second predicate can null the state
+passed to the inline replacement; the original path cannot write a null state.
+Original refresh writes state AI before checking it, then reads that AI's
+inherited entity field once, including a null entity value. The state-refresh
+replacement test is inlined too; this path does not call the Base.RefreshData
+entry. No entry event at that hook therefore excludes neither refresh nor a
+field write. Actual replacement selection, helper effects, collection contents,
+and exception/unwind execution remain premises. Helper calls can change heap
+fields despite preserving nonvolatile carriers; successive machine-AI reads
+must not be collapsed. The first bitmap barrier preserves the carriers needed
+by the later entity write; the final bitmap sequence may consume them. Marking
+is flag-dependent and is not an unconditional observed barrier count.
+
+The dedicated Center capture now supplies observed getter results and state
+blackboard endpoints. `battle_center_observations` verifies the two native
+getter call sites within recorded ToSkill pairs, reports each returned address
+independently and retains sampled equality with OnEnter/DoCast blackboards.
+Actual OnEnter encloses DoCast and a subset of BeforeCast calls; other BeforeCast
+events remain separate. The OnEnter return site matches the shared enum virtual
+fallback, while DoCast's return site is its original OnEnter call. BeforeCast's
+caller belongs to TryCastSkill's inline initialization route, not Skill.DoCast.
+These observations prove synchronous enclosure and sampled endpoint equality,
+not a full upstream Tick/transition identity or an unobserved TryCast Boolean.
+Adjacency of ToSkill return and OnEnter entry is reported as adjacency only.
+The dispatch gate now derives the CheckCondition delegate-fallback call return
+from its validated instruction span. The Center projection requires this audit
+to match the capture's native inputs and classifies every ToSkill caller,
+including false polling results. The admitted recording matches this direct
+callsite throughout. This identifies the actual caller branch, not the checker
+object, transition identity, selected transition, or a rejected user input.
+Unknown callsites remain unclassified instead of inheriting the observed route.
+The paired argument-read mask also admits the second ToSkill GP argument at
+those exact fallback callsites. It is the forwarded MethodInfo pointer value,
+separate from the later shared blackboard getter's context argument. The
+admitted session repeats one nonnull pointer value across these calls, but
+records no pointee bytes. The projector reports observed arguments and distinct
+pointer values without equating pointer repetition with contents or lifetime;
+an unread slot or unknown caller supplies no MethodInfo observation.
+
+The [transition construction contract](../../scripts/game_data/contracts/skill_center_transition_construction_native.json)
+separately proves selected constructor request slices. They load the on-disk
+MethodDef usage for ToSkill, supply the same saved machine as target to a physical
+initializer call, and pass the same saved delegate token with a closed Center
+AddTransition context. Reaching these slices with the declared entry carriers
+and normal ABI helper returns remains conditional. The requests include a
+Skill-to-Skill transition; an entry callback therefore must not automatically
+be interpreted as a new input. Neither initialized MethodInfo/delegate contents,
+physical callee compiled generic identity, collection mutation nor the live
+selected transition is established by these request slices.
+
+The [delegate initializer contract](../../scripts/game_data/contracts/skill_center_delegate_native.json)
+now authenticates the canonical enum ConditionChecker constructor, its full
+normal main/cold control flow, and the physical slots inherited from
+System.Delegate. Its resolver uses mask `0x02`; the later initializer dispatch
+uses mask `0x10`. Resolver and bitmap-barrier instructions prove preservation of
+the volatile carriers used by this caller; Win64 ABI alone would not prove it.
+The initializer first stores the resolved method pointer, MethodInfo and target,
+then requests the target barrier. Later flag and target/pointer reads remain
+independent. Depending on those reads it either uses the reread target/pointer
+or a fixed thunk with the delegate itself as dispatch target. The null-target
+failure retains earlier stores. Final invoke/MethodInfo/dispatch-target slots
+match the slots consumed by CheckCondition's fallback. This closes a conditional
+write/read layout join, not the initialized runtime MethodInfo identity, actual
+ToSkill binding, or persistence of a particular delegate instance.
+
+The [plain MethodInfo fragment contract](../../scripts/game_data/contracts/skill_center_method_info_native.json)
+separately validates descriptor population sources. A nonnull secondary code
+pointer is retained; a null value is filled from a fresh base-code read. Saved
+metadata fields provide flags and the low parameter-count byte under the stated
+carrier/stack-local premises. The selected flag fragment clears `0x02`, uses a
+leaf generic-container lookup that preserves its saved byte, optionally writes
+that saved byte OR `0x01`, and finally applies AND `0xf7` to a fresh byte read.
+The last read is not replaced with a previously written value. These are local
+fragments, not proof that the observed MethodInfo pointer underwent this whole
+population path or that its fields remained unchanged. Live descriptor identity
+remains unresolved;
+the plain descriptor layout does not establish the delegate resolver's alternate
+code slot contents.
+
+The [usage publication contract](../../scripts/game_data/contracts/skill_center_usage_publication_native.json)
+closes the separate constructor usage-cell request through tag3 resolution to
+the previously proved definition cache. The updater reads via atomic fetch-add
+zero, returns an even word unchanged, and sends the low encoded word to the
+selected resolver for tag3. A null computed result causes no publication;
+a nonnull result is atomically exchanged into the cell, discarding the old word,
+and that computed result is returned. There is no compare/exchange winner check.
+The constructor's ready byte skips initialization when nonzero; otherwise its
+ordered updater calls are followed by ready=1 without checking individual return
+values. Ready does not prove that every cell is populated. This closes conditional
+static publication semantics, not the observed descriptor's allocation history,
+concurrent final value or lifetime.
+
+The [default comparer contract](../../scripts/game_data/contracts/skill_center_default_comparer_native.json)
+extends the null-comparer request to the default getter and the selected first
+factory branch. The getter fences after reading the cached slot. On a miss it
+saves the factory result, fences, independently resolves static bases for the
+write and barrier, and returns the saved result without rereading the cache.
+The first comparable factory branch requests the GenericComparer definition and
+runtime element type, followed by an explicit cast result. GenericComparer
+returns local null ordering or the full signed interface result. The transition
+metadata's comparable interface and CompareTo slot agree with the selected
+conditional fallback carrier. Array sorting still constructs a comparison
+delegate through a resolved interface target; its actual target/initialization,
+runtime comparer identity, other factory branches, sorting effects and tie
+stability are not established by this contract.
+
+The Center recording does not contain selector/executor pairs or descriptor
+pointee bytes, so those live joins require a further targeted observation.
+The [delivery recipe](../../scripts/game_data/contracts/battle_center_delivery_capture.json)
+and [ABI reader](../../scripts/game_data/battle_center_delivery_capture_abi.py)
+admit only the selected canonical Tick/selector/executor/condition signatures,
+authenticated direct caller sites and bounded native read spans. The generic
+root is not itself proof of a closed Center machine. The
+[delivery projector](../../scripts/game_data/battle_center_delivery_observations.py)
+retains same-Tick selector matches and nested state/cast endpoints, rechecks
+normal stack enclosure, preserves ambiguous matches, and leaves cross-frame
+identity, atomicity and lifetime unresolved. Preparation is not an observation.
+
+The same delivery recipe also admits the reviewed input/cache/admission,
+Skill/Ability/Action lifecycle, damage call and ordinary modifier/HP hooks in one
+selection. Duplicate physical observers are not installed. The high-volume
+upstream command observer is excluded while downstream OnExecute is retained.
+Bounded EntityTimeDilationInst Tick/Stop and Skill interrupt/dash observations use
+ordinary paired ABI and metadata-resolved fields: explicit Single delta, elapsed
+and duration, timer/curve identity, stored flags and authored frames. Scoped
+predicate absence is not false. No world-position, root-motion or contact layout
+is inferred, and no suspended factor context observer is re-enabled. These
+declarations prepare observations; they do not establish dilation owner, curve
+output, continuous timer delivery or complete control recovery. The delivery
+projector preserves nested modifier calls separately, so repeated HP endpoints
+are not summed, and retains lifecycle and timing samples without promoting
+pointer equality to asynchronous ownership.
+
+The combined delivery recording supplies healthy paired Tick observations:
+each Transit receiver has a unique earlier matching Select return in its Tick,
+and current-slot endpoints match stored from/to. Successful Center casts instead
+occur in a command scope after Condition/ToSkill and two getters, followed by
+OnEnter/DoCast/BeforeCast; corresponding Select/Transit invocations are unobserved.
+This is not proof of a bypass. `paired-ancestor` requires an active recorded
+ancestor, whereas a caller filter names a physical return site; that physical
+caller's invocation can fail its own recording filter. Readers must preserve
+the actual parent and leave the missing invocation unobserved. The delivery
+projector now handles both command-local and Tick-local observations.
+
+The selected original Command.OnExecute path reaches the canonical state-machine
+refresh helper, which makes out-of-line calls to the same selector and Transit
+executor used by Tick. The retained activation accepts their Tick return sites
+but excludes the refresh return sites. Command-local Condition caller addresses
+match the selector's callsite even though the selector's own invocation is
+filtered. This explains the missing parent observations by caller filtering,
+not inlining or a demonstrated state-machine bypass. The selection helper here
+is distinct from the state RefreshData field-refresh path. Selected native bytes,
+relative call targets and retained activation were checked together; original
+path reachability and runtime execution remain separate claims. No omitted
+selector result, Transit receiver or intermediate current-state write can be
+reconstructed from these static calls.
+
+ToSkill descriptor code/flag bytes are sampled and code slots match its selected
+native entry; successful callback descriptor/forwarded-pointer values agree.
+Initialization history, closed generic context and uninterrupted lifetime remain
+unproved. Transition endpoint equality also cannot supply the missing state IDs
+and callback-surrounding rereads needed by the full executor model.
+
+Observed non-global dilation elapsed endpoints agree with Single addition.
+Native-authenticated authored normal-attack thresholds agree with captured false
+interrupt outcomes. Skills without an admitted authored asset match can be
+checked separately from directly captured exclusiveFrame, timer and mark fields,
+provided their named field paths and selected native frame conversion are
+validated. That comparison includes true getter outcomes; it neither establishes
+external SkillData asset ownership nor shows that a player input was accepted.
+Keep authored-asset and captured-receiver operands distinguishable. Adjacent
+observed dilation Tick elapsed endpoints agree, but this does not prove omitted
+intervals, the delta provider or a continuous owner clock. Stop handle clearing
+is separate from evaluated curve output, effective scale and control recovery.
+Nested outer/inner modifier endpoints agree and count once; non-HP targets are
+not damage mismatches.
+
+Missing damage Action binding candidates do not mean that all Ability evidence
+is absent. The existing projection first requires a matching Action bind/rebind
+receiver; the observed damage receivers have no such match in this recording.
+Independent environment-pointer equality nevertheless yields historical Ability
+Init-epoch candidates. Init sourceSkill matches the supplied Skill, BeforeCast
+may update cast ID, and Ability pointer reuse is observed. Keep the Action bind
+and Ability equality lanes separate. Observed reinitialization/release or UID/
+source drift invalidates an epoch candidate; absence of such a recorded event
+does not prove uninterrupted lifetime. Damage-time UID/source/cast snapshots
+are still missing, so historical equality is not asynchronous ownership or a
+unique cast occurrence.
+
+The simulator subproject owns the reviewed command-scope extension, raw-prefix
+capture preparation and conditional snapshot comparator. The research-kit
+delivery recipe and its admission whitelist remain unchanged: the extended
+manifest requires its child-specific reader, not a patched parent gate. An
+unhooked refresh helper is the physical caller; a recorded Command ancestor is
+not substituted for it. Existing bounded guarded reads can retain an environment
+prefix and Ability receiver headers without assuming an IActionEnvironment is
+an Ability. Unknown prefixes remain raw. Matching nonzero leading words permits
+only conditional display at baseline-declared field offsets; managed-header ABI,
+exact dynamic type, allocation extent, atomicity and lifetime are not proved by
+that equality. New unreadable/truncated spans or incomplete/lost records reject
+admission; observed null remains distinct from an unreadable value. Offline
+parser tests and old-record transport compatibility do not observe these new
+fields. The remaining command return and damage-time identity joins therefore
+require a short targeted observation, not another full boss battle.
+
+The maintained implementation is in the independent simulator's
+`scripts/command_dispatch_analysis.py`, `scripts/observed_timing_regression.py`,
+`scripts/action_binding_audit.py`, `scripts/command_dispatch_extension.py` and
+`scripts/environment_snapshot_audit.py`; selected-build declarations stay in
+that project's reviewed contracts. The interpretations above are retained here
+so research-kit readers do not depend on local generated reports for the rules.
+
+The child command-delivery projector now accepts the extended transport without
+requiring every Transit to have a recorded Tick parent. It reconstructs complete
+same-thread normal ancestry, scopes candidates to the nearest actual Tick or
+Command invocation, and retains every earlier selector with explicit pointer
+match/nonmatch/unknown results. Multiple matches remain ambiguous. Nested state
+entry/cast endpoints and equality with sampled target/current-state pointers
+remain separate observations. Empty or null samples cannot supply identity;
+unique pointer equality cannot supply cross-frame lifetime or causal delivery.
+Its command branch has bounded fixture coverage, not a new runtime observation.
+Changed source bookends invalidate old consumer admission even when the raw
+journal is unchanged; do not repair such a receipt by replacing its recorded
+hashes. The research-kit's original Tick-scoped projector remains unchanged.
+
+The later command-refresh extension recording has passed complete healthy
+transport admission and actually contains the added refresh caller sites. In
+this sample each Tick/Command Transit has a unique preceding matching selector
+return within its actual invocation scope. Sampled current-slot entry/return
+values equal the transition's from/to pointers. Some Command scopes now contain
+the full nested Transit -> Center.OnEnter -> DoCast -> Ability.BeforeCast chain;
+OnEnter receiver equality with sampled to-state and returned current-slot is
+observed directly. Other transitions have BeforeCast without Center endpoints
+or no captured cast endpoint. This closes the sampled synchronous dispatch join,
+not callback-surrounding rereads, closed generic identity or cross-frame delivery.
+
+The same recording provides readable damage-time raw prefixes with equal paired
+entry/return bytes. Most leading words match observed Ability receiver prefixes;
+under the explicit baseline-layout interpretation their UID/source/cast/origin
+values also match actual BeforeCast endpoints. Unmatched prefixes remain raw.
+Some outer DamageAction invocations match a unique preceding Center Command
+BeforeCast candidate on the same thread. All equal-value matches are retained;
+future or different-thread matches are not silently selected. Actual outer
+ExecuteInternal ancestry groups nested ProcessDamage observations, preventing
+double counting of callbacks as hits. Reused Ability UID with different cast
+IDs demonstrates why UID alone is insufficient. Exact dynamic type, continuous
+lifetime, atomicity and asynchronous ownership remain unproved by these values.
+
+New timing regression samples include true interrupt getters for endminf's
+third and fifth normal attacks with markCanInterrupt false, consistent with the
+sampled timer exceeding the native-authenticated threshold. The ordinary skill
+and a Rodin skill also supply positive captured-frame cases. The previous
+normal-attack evidence was false-only; it no longer describes the whole retained
+sample set. Original-path/Single assumptions, asset ownership, input acceptance,
+clock owner, effective dilation and full control recovery retain their boundaries.
+These rules are checked through the simulator's child-transport timing consumer,
+without fabricating parent-profile admission or modifying its whitelist.
+
+Further offline projection separates successful Refresh from readiness: the
+selected constructed-request tail writes the nested AllowNext result, which
+can be either Boolean value. Its stable paired request snapshots now exercise
+the simulator's existing conditional tail model; false full-Refresh paths remain
+excluded. Some Center commands clear the cache before DoCast, so current cache
+presence cannot identify whether an earlier request was delivered. Same-command
+name getters and both blackboard getter pointers match sampled endpoints, while
+cache versus blackboard input bytes differ only at the target-handle cell.
+
+The selected execution path obtains Skill through TryCastSkill's dictionary
+lookup and carries that instance through CanCastToTarget and a physical readiness
+helper to CheckCost. The helper has no matched managed method identity and must
+not be renamed CanCast, IsAvailable or CheckCd. The first `_TryGetSkill`
+output in `_ToSkill` is only a type guard, not this execution instance. Captured
+DoCast-enclosed CheckCost and BeforeCast Skill pointers agree. Input.CopyFrom
+obtains a separate target handle and copies target-view lists; pointer inequality
+therefore does not establish target inequality. The retained recording lacks
+those list elements. Actual content equality and continuity across that copy
+remain open, and require scoped observations rather than another lookup hook.
+
+Positive cancellation getters have distinct synchronous consequences: ordinary
+skill checks in Attack commands can precede BeforeCast of a normal attack, while
+normal-attack third/fifth checks precede Tick transitions without a captured cast
+in those scopes. Keep checked current skill separate from incoming execution
+skill. Negative AllowNext can still precede selector evaluation; selector entry
+alone is not acceptance. This projection does not prove a cancellation writer,
+complete control recovery or asynchronous ownership. Reusable child auditors
+preserve normal ancestry, every candidate and source bookends; generated counts
+remain in the child's reports.
+
+Before the next carrier recording, review found that a whole-list read sized
+for one inline wrapper can stop capture readiness when the list is larger;
+offline partial admission cannot recover later unrecorded commands. The child
+profile now selects bounded individual elements through a generic indexed
+inline-container reader in EndfieldCapture. Absent indices read no payload and
+do not fail the session; larger lists preserve explicit counts and missing
+coverage. Header agreement within and across pages remains required, without
+claiming atomicity. Capture-time source snapshots are inert provenance separate
+from current reader bookends, so compatible reader fixes can reuse recordings.
+These are transport improvements, not new runtime target or lifetime evidence.
+
+The resulting target-copy recording now passes healthy complete child admission
+and covers every observed target-list element. Source-entry versus destination-
+return bytes agree for each normal paired copy, and source entry/return bytes
+remain equal. Actual ancestry distinguishes input callbacks, cache construction
+and ToSkill blackboard delivery. Same-Command cache-return target handles match
+ToSkill copy sources; copy destinations match OnEnter/DoCast input snapshots.
+Both blackboard getters also match cast state fields. These sampled joins close
+the former content-observation gap without asserting atomicity, validity or
+continuous lifetime. Clear is observed both before casts and after BeforeCast,
+so its relative order must remain explicit. The child projection keeps all
+candidates and rejects incomplete whole-list comparison; it does not turn
+conditional CopyFrom requests into proved universal collection or pool effects.
+
+The child's independent target-identity contract now authenticates wrapper
+layout, Entity tag and closed ObjectPtr<AbilitySystem>.Lock usage. Shared Lock
+null-tests the reference, rereads it for UID dispatch, compares returned UInt32
+with a subsequent cached-UID read, and rereads the result reference on success.
+The wrapper's original Entity branch instead copies the token to a local value
+before those helper reads and final conditional selection. Preserve these
+separate carriers and reads; successful comparison alone proves no lifetime.
+The UID dispatcher uses a runtime class discriminator. The nominal inherited
+getter and a dispatcher branch reading the same backing-field offset do not
+establish the actual class's selected route.
+
+The admitted copied token's reference bits also match named modifier-receiver
+and damage-effectSource records carrying Rodin's entity name and server ID,
+plus CanCastById receiver records with Rodin skill names. This is an observed
+named-argument association, stronger than surrounding scenario context, but
+not a separately read enemy-config identity or continuous object lifetime.
+The sampled Attributes UID belongs to a different carrier and cannot validate
+the ObjectPtr cached UID. No live UID/Lock result was recorded for this target;
+dynamic validity and actual skill-target consumption remain independent gaps.
+The child conditional regression preserves the selected original Lock rule
+without making these endpoint matches into an unconditional entity binding.
+Additional child consumer windows connect CanCastToTarget distance/angle
+requests to the input TargetHandleView's get_firstTarget accessor, including
+the argument home slot and original accessor forwarding. The internal accessor
+copies list elements and contains an Entity-tag copied-local validity branch.
+This identifies actual target consumption separately from Skill-owner Lock,
+but not complete traversal/order, which sampled element was chosen, runtime
+UID selection, geometry-check results or actual input acceptance.
+
+The child's subsequent complete-range target-selection proof establishes the
+ordinary scan: snapshot signed Count once, independently load the storage
+list, scan ascending indices with current unsigned size/array bounds, and
+return the first selected resolution even when null. There is no retry after
+an invalid accepted target. One wrapper copy supplies resolution, a second
+supplies the Entity filter, and a third supplies the Slot filter when needed.
+Only under stable-source premises is this simply the first stored Entity or
+Slot. Bounds/storage failures are exceptional requests rather than ordinary
+null exhaustion. Dynamic Count dispatch, producer order, Slot resolution and
+the actual observed selection remain separate from this conditional rule.
+
+The selected native class creator also supplies a conditional UID route:
+it locates the metadata definition record from the supplied index and selected
+table globals, then copies the record's extra-index word into the class
+discriminator. AbilitySystem's selected record takes the proved signed branches
+and guarded selector/target tables to a direct instance-UID field read. Do not
+equate the definition row index, discriminator, or instance UID. Normal creation,
+matching globals, helper/register preservation and an unchanged class word are
+premises; cache selection, other class-word writers and the recorded receiver's
+runtime class are still unbound. Existing Ability/environment prefix captures
+do not contain the dereferenced class word or live UID of this selected target.
+The simulator now preserves explicit Count/copy reads and signed/table dispatch
+in conditional regression; no live UID is supplied by an unrelated Attributes
+or Ability UID. New source declarations and reports remain owned by the child.
+
+The child's current class-cache/global-binding proof reuses parent proof
+algorithms with freshly authenticated declarations, rather than admitting old
+contracts against a different native pair. The resolver's sentinel returns
+null; cache hits perform a fresh return read. The selected locked cold miss
+forwards the signed index to class creation, publishes its result, unlocks on
+the depth-one path, then rereads the cache. Other lock paths retain separate
+semantic boundaries. Metadata initialization publishes the loader result to
+base before testing null. Failure leaves header/cache untouched; a nonnull
+path probes the header before publishing it, then later uses a fresh section
+size in the authenticated allocation arithmetic. Normal allocator-result
+publication does not prove capacity or completed initialization.
+
+Current loader/path control, metadata path literals and imported close/error
+declarations are proved separately from actual mapping-child effects and live
+IAT/global values. A filename literal or old nonnull header does not bind
+runtime metadata to a selected disk file. The conditional chain now reaches
+cache creation/publication while retaining that runtime identity gap.
+
+Slot resolution is an Entity ObjectPtr list lookup followed by Entity's
+abilityCom read and AbilitySystem ObjectPtr construction. Negative index,
+initial null list and signed out-of-count return default; a subsequent null
+list or unsigned internal bounds failure takes an exceptional path. Item/null
+comparison uses separate validity results and then cached UIDs when those
+booleans agree. A non-equal item is independently validated for Lock; failed
+Lock is exceptional. Construction checks one UID, writes the saved ability
+reference and requests its barrier, then caches a second independently read
+UID, including zero. Neither the earlier validity nor first UID can stand in
+for later reads. Actual manager/list/Entity identity and lifetime are not
+observed by this native proof or its simulator regression.
+
+The child's current metadata-mapping extension connects loader forwarding to
+the actual mapping body and verifies its complete enclosing control. Create
+status selects the view request; a nonzero view still passes through registry
+calls, subtraction using fresh local-slot values, two payload stores and a
+final return-slot read before release. Depth-specific release preserves that
+saved return under normal ABI premises. Initial view and final returned base
+must not be equated. The child's complete create/view extension now checks
+owned instructions, branches, stores, frames and closed access/protection helper
+programs. Live IAT, OS effects, output validity and mapped-file identity remain
+separate gaps. Normal string/helper calls retain ABI and valid-storage premises.
+
+Create checks file information and size before its name/API path. The API's
+size low/high parts are separate reads; its protection table differs from the
+VirtualAlloc helper. Nonnull create result samples last error once; already-
+exists closes it and writes status before cleanup, other results leave status
+untouched. Null create result with nonzero first error samples again, and the
+second error determines status. First error zero returns zero without writing
+status. This reinforces why create status and returned handle are distinct.
+
+View uses signed division for offset alignment and separates size's predicate
+read from its value read. A refreshed system granularity is published and used
+from the same sample. Map failure optionally writes status and requests close;
+later allocation failure returns zero without close/unmap. Query return values
+are ignored, so query output storage must remain explicit sampled operands.
+One first region-size sample feeds both allocation comparison and zero-length
+fallback; successful allocation triggers a fresh query. Final size is reread
+after the selected region sample, and success returns the original view rather
+than the allocation result. No actual file identity follows from this control.
+
+The Slot producer chain now includes manager/controller constructor stores,
+Reset and OnCenterChanged forwarding, and list/helper bodies. Constructor
+backing-array initialization alone does not establish zero count/version.
+Clear resets count before its positive-old-count backing-clear request; fast
+Add increments version and writes count before the second bounds check, then
+stores full token bytes with the selected barrier order. Resize stays opaque.
+Reset snapshots source Count, filters only the first literal-null read, then
+rereads the entity for conversion and appends its returned token. A null second
+read yields an authenticated zero token and is still appended.
+
+Reset and OnCenterChanged request swapping the first qualifying main-character
+entry with index zero; this is not removal. Reset stops even at index zero;
+OnCenterChanged continues there. The latter separately null-checks and rereads
+charCtrl, so stability cannot be inferred between those reads. Generic Swap
+gets right then left and requests left/right writes in that order; actual
+generic destinations and resulting list state remain unresolved. The newer
+Swap contract checks each runtime class/interface lookup: exact pointer scan,
+first match, fresh table reread for the signed offset, Int32 slot arithmetic,
+vtable code/MethodInfo reads, resolver miss and distinguished setter branch.
+List metadata joins the requested interface slots, but precise Entity generic
+specifications lack direct registration candidates; canonical registration is
+not proof of live generic sharing. Conditional candidate get/set bodies are
+available. Setter copies the input before the array bounds check, writes all
+token bytes with the barrier order, then increments a fresh list version only
+after normal child return. Failure does not increment version. The intercepted
+array-setter extension now authenticates its code discriminator, normal body,
+type/boxing helpers and raw/reference writer bodies. It initializes and rechecks
+context before an unsigned index/count check. The reference-array path freshly
+reads boxing context, requests boxing/compatibility, then uses a separate bounds
+check and reference store. Raw writing independently reads stride and copy
+length, requests byte-copy then barrier, without a local bounds/equal-size check.
+Neither path updates a List version. Opaque helper effects and actual runtime
+selection remain separate obligations.
+
+The generic-sharing extension freshly locates the current normalizer and its
+actual method-pointer selector. Reference kinds collapse through the reference
+class cell; generic value recursion rereads type data for composition after
+normalizing nested arguments. The startup name-lookup/publication slice requests
+System.Object, without proving lookup identity or execution. The selected
+original-miss/normalized-hit path compares three exact pointers: method key,
+reloaded class-instantiation result and saved method-instantiation result.
+Matched slot data feeds pointer projection. Checked primary/invoker indices
+and later actual indices are separate samples; adjustor has a sentinel branch,
+not an invented bounds check. Primary/adjustor/flag stores precede the final
+invoker sample and store. Static canonical registrations do not establish
+initialized runtime table population, canonical interning or live vtable binding.
+
+The subsequent offline residency/table/delivery extension proves the missing
+source mechanisms conditionally. The actual interner's selected count-one hit
+saves and returns the resident pointer across normal unlock. Its cold path
+writes count without padding, independently rereads the argument-array pointer
+for each copy, requests insertion through the allocated-record local, ignores
+insertion outcome and preserves the saved allocation for normal return. The
+composer also ignores insertion outcome and only initializes its first two
+words. Equal type content therefore cannot alone prove unique pointer residency;
+allocator initialization and actual table history remain independent premises.
+Object-kind equality ignores data identity, and generic comparison with two
+null instantiations does not compare definitions.
+
+Registration seeding writes the same global method table read by the selector.
+Each selected row supplies a MethodSpec key and a saved-row pointer to its index
+triple. MethodSpec check/return reads are separate; the cold path independently
+reloads class index, registration, store-cache base and return-cache base. The
+selected same-thread key constructor preserves its three pointer words and
+allocated result across insertion. First-empty bucket publication increments
+occupied count before fresh input reads/stores; duplicate insertion preserves
+the existing value. These are conditional production rules, not observations
+that startup executed or a normalized key equals a canonical resident pointer.
+
+MethodInfo construction samples selector blocks and independently rereads direct,
+writes direct before primary, and may overwrite direct via fallback when primary
+is absent. Alternate publication and vtable selection inspect different flag
+bits and independent gate samples. Ordinary vtable publication checks direct
+before flags; linked publication saves flags first and permits a carrier/helper
+route when direct is absent. Both write MethodInfo before code. A successful
+nonnull check does not constrain the later selected target reread to stay nonnull.
+Live class/MethodInfo identity, actual getter/setter choice and initialization
+history remain unresolved. These durable rules are also encoded in the child
+simulator's reviewed generic-intern, generic-table and vtable-delivery contracts;
+they do not change the older blackboard contract's narrower proof boundary.
+
+The allocator extension distinguishes two conditional sufficient-capacity fast
+paths. Raw interning allocation reserves an eight-byte-rounded UInt64 length,
+checks arena capacity, advances the cursor and subtracts from a fresh remaining
+sample; it returns the old cursor without initializing payload. Composer
+allocation reserves the rounded low UInt64 count-times-size product, then
+requests zero-fill for the unrounded length and returns that helper's result.
+Zero-helper effects/identity, slow allocation paths and disjointness remain
+unresolved. Equal-key insertion returns false without publishing a replacement
+before opaque unlock, whereas success returns true; callers still ignore that
+outcome. Actual canonical seed execution and unique pointer residency therefore
+remain independent obligations rather than consequences of content equality.
+
+The class-initialization extension joins actual ordinary/linked writers to their
+setup owner and traces a reached initializer fragment through recursive class
+preparation to that setup request. The saved resolver-result class is not assumed
+to be the incoming initializing class. Setup checks flags before and after its
+opaque acquisition fragment, and the generic-field check, resolver argument and
+retained key are separate reads. Completion first requests a helper on one flag
+byte's address, then directly updates a different byte after normal return; the
+helper's store/synchronization effects remain unproved. A complete adapter returns
+the pair-storage address after setup, not pair contents. These bounded carrier
+and branch facts do not prove whole initializer reachability or live vtable state.
+
+The subsequent initializer-control proof covers that initializer's complete owned
+instruction partition, local control graph, static reachability and normal frame
+restoration, including the previously located carrier and setup call. It does not
+cover the setup owner's whole control flow or prove branch feasibility, helper
+effects, recursive termination or runtime execution. Ready and pending bits are
+separate early-true checks; the DWORD error handle is read only after both clear.
+The ordinary path freshly marks pending and increments a byte counter. Selected
+post-recursion inheritance copies one resolved-class flag bit while preserving
+other bits from the fresh original-class sample. Early true is not a completion
+observation, and those class receivers need not be identical.
+
+Ordinary slow allocation now has a checked descriptor/list-publication route:
+descriptor and payload allocation remain opaque, then cursor/base, remaining/
+capacity and header are written before a new list node is spliced at a saved
+anchor. The owner-count exceptional guard is equality-only and later increment
+uses a fresh memory sample. The actual zero helper's short paths cover exactly
+the requested byte range and return the original destination; this includes the
+composer's record-sized request. Larger zero paths, indirect allocator semantics,
+disjointness and post-helper persistence are separate from that bounded proof.
+
+Static canonical provenance is now joined to startup metadata seeding. The
+argument loop uses the registration alias, starts at zero and passes increasing
+pointer-array slot addresses to insertion, with fresh registration/count reads
+and ignored insertion outcomes. Insertion samples the slot after acquisition and
+publishes the unchanged saved pointer on its selected first-empty route, using
+the same interner table/hash/comparator. Complete static comparison finds unique
+equivalent inner-object and outer argument vectors. Generic-class seeding also
+receives the registered pointer array and conditionally publishes its unchanged
+carrier to the actual composer table. The carrier pointer appears once in that
+static array; this is not a generic-class content-key uniqueness result. Its
+opaque slot predicates, full helper control flow, composer equality, collision/
+resize behavior and preexisting dynamic residents remain unresolved. Static seed
+source proof therefore does not establish runtime canonical pointer identity or
+actual Entity getter/setter selection.
+
+The composer lookup extension now proves its selected ordinary-slot hash and
+comparison paths. Hashing mixes the definition's type hash with shifted class-
+and method-instantiation pointers, while equality compares definition types,
+class-instantiation counts and ordered argument contents. A fresh zero count
+skips argument arrays. The selected equality does not read the method-instantiation
+word, which is null in the authenticated canonical carrier. Separately allocated
+content-equal class instantiations may hash differently; content equality alone
+cannot close the runtime canonical-hit premise. A mismatch uses incrementing-step
+triangular probing with modular arithmetic. A further cold-path proof shows equal
+occupied/deleted counts bypass the key and hash, reread capacity then slots and
+publish an end iterator. Iterator writes are current, table, end; equality returns
+without a scan-flag read, and a false scan byte avoids slot reads. Selected scan
+tails prove predicate-false stop and predicate-true cursor increment to end, with
+the cursor reread for its update. Complete iterator and deleted-predicate grammars
+now check all local edges, content-comparison loops and ordered reads. Their record
+and definition read orders differ; both retain a fresh marker count for iteration.
+Skip updates the cursor and then independently rereads it for comparison. Finite
+sample-driven regression fails on missing operands rather than inventing a return.
+Type-comparator effects, termination, actual table history and live getter/setter
+selection remain unresolved.
+
+The resident-table extension authenticates marker comparison, growth-candidate
+and cleanup programs. Marker equality rereads the sentinel tag, and a reached
+zero-tag route compares actual record counts/type contents; it is not simply a
+deleted-bit check. Growth uses staged Single arithmetic and unsigned conversion
+before a strict count/threshold comparison, with wrapping capacity doubling and
+no universal termination proof. The simulator keeps the converted threshold an
+explicit operand rather than replacing the native algorithm with integer division.
+Cleanup can clear its marker without rebuilding. Its actual constructor, swap and
+destructor now have bounded effect proofs: constructor copies/zeros in ordered
+read/write pairs before checking a source flag, and its growth-only branch does
+not establish migrated records. The other branch's actual copy/rebuild child and
+its setup, slot hash, vacancy, deleted-skip and advance helpers now have complete
+independent program checks. Copy publishes tag before rereading and writing the
+source record pointer, then updates occupied count and iterator before advance;
+normal return increments version even for empty input. Hash loop count and seed
+come from separate count reads. Setup stores the allocator return, uses independent
+fill start/end bases, writes each tag before reading its record and publishes
+capacity/zero counters before recalculating thresholds. Allocation/reuse effects,
+termination and preserved map invariants are still premises. Swap exchanges
+semantic fields, but some marker-region padding comes from
+uninitialized temporary stack bytes, so it is not a complete bytewise structure
+swap. It then rereads capacities, recomputes thresholds through the native Single
+stages and clears markers during those stores. Destructor conditionally rereads
+the payload pointer for release and performs no field clear. Neither these effects
+nor marker clearing establish release success, initialized sentinels/slots, resize
+correctness or all-map invariants. The simulator keeps conditional operands and
+bounded write fragments separate from complete container behavior.
+
+The allocator/reuse extension proves zero normalization, unsigned size rejection,
+two-gate retry control, explicit error/null paths and conditional pointer publication.
+Nonzero-old-pointer reallocation with zero bytes requests release then returns null;
+the reuse wrapper treats that null as a diagnostic/failure/trap path, not success.
+The caller's modular size shift precedes allocator checks. On-disk Heap API imports
+do not establish live IAT targets or successful heap effects. These storage bodies
+do not initialize table sentinel fields, so initial markers remain an offline gap.
+
+The vtable setup owner's complete control graph and normal frame are now proved
+separately from the initializer, with joins to the prior writer fragments. Its
+auxiliary and pair loops use wrapping UInt16 increments and fresh UInt16 count
+reads at each latch. Static reachability and restored frames do not establish
+stable counts, feasible execution, termination, child effects or actual class/
+MethodInfo identity. Earlier entry/allocation counts cannot replace latch reads.
+
+An authenticated offline coverage audit of the retained target-copy and
+command-refresh recordings found no named manager/controller/Slot-list samples
+or caller origins within the reviewed manager/Slot bodies. TargetHandle's
+BattleTargetWrapper list cannot stand in for Slot's ObjectPtr<Entity> list;
+anonymous raw spans and pointer equality do not establish their owners. This
+bounded absence of coverage does not imply absence of runtime execution. No
+manager/slot identity, caller order, exhaustive writer inventory, or captured
+character slot number follows from these conditional native producer rules.
+
+Static manager access is now joined through GameWorld's public static battle
+field, not a GameWorld instance field. The consumer checks battle null before
+saved IFix table/handler selection; nonnull table with null handler falls back
+to m_slotController. Creation publishes the typed manager-lookup return, even
+null, with independent static-storage reloads for the store and barrier.
+Destruction requests public/static reflected fields, BaseWorldManager type
+assignability and SetValue(null,null). The battle field is nominally eligible;
+actual reflection results and clearance are unobserved. These source proofs do
+not supply the missing runtime instance samples or continuous lifetime.
+
+The typed ManagerCollection lookup now has an additional conditional carrier
+proof: initial context check/initialization precedes array null/bounds checks;
+fresh context is read before the element, and the saved element is retained
+across type-context resolution into the cast. Null input returns zero and
+successful assignability returns the original input. Failed assignability
+continues further checks rather than implying null; secondary helper values
+are predicates, not replacement manager references. All ordinary cast returns
+preserve the original reference or null-input result under normal ABI returns.
+Actual array contents, writer order, compatible runtime type and continuous
+manager/Slot binding still need independent evidence.
+
+The manager lifecycle extension proves conditional array production and request
+order. Collection construction saves the freshly read sorted type-list count,
+requests the context-selected array allocation and publishes its returned
+reference. PreInit saves its destination array before type lookup, Activator
+creation and cast; the cast result, including null, is written into that saved
+array. The writer checks unsigned bounds, reads the barrier gate, writes the
+reference, then conditionally marks the barrier; it adds no compatibility check.
+Original World initialization requests PreInit, manager-created publication and
+Init in that order, with independent collection reads. Release traverses in
+reverse using signed Int32 termination and fresh array/element checks, then
+requests Array.Clear with a length from one array read and a receiver from another.
+Only the length-source array is null-checked by the caller. Allocation/lifecycle
+child effects, replacement paths, successful clearing and continuous manager/Slot
+identity remain conditional or unresolved. These findings are recorded in the
+child's reviewed class-init, residency-premises and manager-lifecycle contracts;
+no recording or parent contract is retroactively promoted by them.
+
+The simulator's bounded reverse-release step now preserves decrement-before-test,
+signed-negative exit, independent array/element reads and unsigned bounds checks
+before the lifecycle child request. Initial length and successive equal pointer
+samples do not establish a persistent manager array or Slot owner. Exceptional
+paths, actual child effects and the separately reread Clear receiver remain
+outside that step's normal-return premise.
+
+The collection release child is now bound to the concrete BaseManager.Release
+method. Selected normal paths authenticate patch-table/handler fallback and
+original short-circuit byte checks. An active original path writes a third state
+byte, requests the same numbered dispatch helper twice in order, then clears the
+first two bytes after normal returns. This final word store does not cover the
+third byte, whose post-child value is not known. A replacement skips that original
+logic. The helper is now independently proved to truncate its selector to UInt16,
+preserve the original receiver, read its class before a preparation call and
+reread class afterward for code/MethodInfo pair reads. After excluding three inline
+specialization code targets, the generic indirect call passes the original receiver
+and the loaded MethodInfo. There are no preceding null/bounds guards. Physical pair
+selection does not identify a nominal callback or prove that the class stayed the
+same across preparation. Preparation now joins to the existing setup owner through
+a carrier field read from the incoming class; carrier identity is not assumed.
+The three inline branches have complete instruction/control inventories and
+independently checked modeled byte paths: patch/state/dependency guards in the
+first, non-vector flag writes in the second, and gate/state/class-init/tail-receiver
+requests in the third. The tail check and call use independent pointer reads.
+Vector/float outcomes, lazy binding, unknown callbacks, exception/log routes and
+continuous manager/Slot identity remain unresolved. These source facts and
+conditional models stay separate from the recordings' limited instance coverage.
+
+The vector specialization is now identified through authenticated method/field
+metadata as TMP text rendering. Its input is lossyScale Y, not a position. Native
+control uses a sign-cleared Single difference and ordered-above comparison; NaN
+does not take that branch if COMISS completes. The checked indexer returns an array
+element address, whose first word gates the callback; it does not return a count.
+The denominator is reread and the saved scale is written after the callback.
+Numerical regression explicitly assumes RNE, DAZ=0, FTZ=0 and completed operations.
+These facts must not be labeled battle-manager runtime behavior without the actual
+code selection. The selected class-creation prefix also writes a self-pointer into
+the setup-carrier field, conditionally explaining preparation's carrier read without
+proving that the live manager class used that creator or kept the field unchanged.
+
+Retained target-copy pages only observed Entity targets in this scope. Missing
+named manager/controller/list and GetFirst return samples prevent recovering live
+selection from copied wrappers alone; absence of Slot observations does not make
+Slot a required branch for the single-character scenario. Future focused capture
+must distinguish primary Entity selection from optional naturally reached Slot
+lookup and preserve no-hit/partial states rather than demand a Slot sample.
+
+The child simulator now prepares caller-scoped ordinary GetFirst/SlotGet paired
+observations with typed bounded list pages and existing IFix selector snapshots.
+The hidden SlotGet output buffer, controller receiver and low-word index have
+separate ABI roles. Unused GP slots are not promoted to MethodInfo identities, and
+entry output-buffer bytes are not constructed-token evidence. Offline parser,
+relocation and bounded-reader checks validate the proposal, not runtime execution.
+Endpoint tuples still do not prove a branch load between samples or cross-frame
+lifetime; filtered outer hooks can leave usable but unassociated inner endpoints.
+
+The admitted target-binding capture now distinguishes cast-distance GetFirst from
+damage-time Slot lookup. The former returns the reference word in its single
+sampled Entity wrapper. Same-scope CopyFrom endpoints pass the check handle into
+a distinct ToSkill destination used by OnEnter/DoCast; raw handle equality alone
+would miss that transfer. Conditional model comparison uses stored token bytes
+to predict the separately observed return, retaining stable-copy, Count dispatch,
+ordinary-path and ObjectPtr-validity premises. Stored cached UID is not live UID.
+Slot endpoints instead have damage-execution ancestry and the physical caller
+from GetFirst's Slot callsite; their missing outer hook cannot be replaced by a
+nearby recorded GetFirst. Controller/list/Entity token, hidden output address and
+returned Ability token are different observed roles. No named Ability/damage
+scalar equality identifies that output with player or boss. IFix boundary tables
+are null, but intervening selection, numeric UID dispatch, singleton binding,
+Entity.abilityCom reads and uninterrupted lifetime remain unobserved.
+
+The missing damage consumer GetFirst origin is recoverable offline from an owned
+native instruction fragment, rather than a proximity or byte-search inference.
+The follow-up proposal therefore widens only that caller and observes selected
+validity sites and Slot's direct Ability UID construction calls. Scoped capture
+currently means any active paired ancestor, not a named ancestor filter; excluding
+the shared validity-to-UID caller is necessary to avoid unrelated baseline traffic.
+A common validity helper receives both Entity and Ability tokens, so an unconditional
+Entity.abilityCom projection there would not have a proved receiver type. Guarded
+class/discriminator samples and actual Boolean/UID returns keep their separate
+evidence boundaries, including the still-unobserved numeric Entity UID.
+
+The follow-up live-identity capture records the previously missing same-invocation
+GetFirst → Slot → validity/constructor-UID → final-validity → GetFirst-return chain.
+The Slot item checks return true, its zero-token comparison returns false, and
+both constructor UID calls use the same receiver. The second actual UID and saved
+receiver match the separately observed output token; the later caller validity
+token and returned reference also agree. Constructor values are actual dispatcher
+returns, not inferred cached UIDs. They do not observe validity's internal UID
+calls. This particular Slot-containing damage-execution scope has no recorded
+ProcessDamage child, so target validity alone does not establish an applied hit.
+Ancestry, cached words, actual return values and class-field samples retain
+separate evidence tiers; internal reads, runtime type and lifetime remain gaps.
+The constructor receiver matches later skill-admission receivers with Endminf's
+normal-skill ID and damage effectSource arguments with a sampled Endminf entity
+name. Those are separate recorded scopes, so this narrows character association
+without proving constructor-time actor identity or continuous lifetime. The child
+auditor retains their original argument slots, typed field paths and ancestry.
+
+The child `target_slot_runtime_flow` further closes the instruction interval from
+the Entity lock-local read through abilityCom loading, saved-register delivery to
+both recorded constructor UID calls, token stores and output copy. It consumes
+the existing reviewed Slot windows and checks every instruction and branch join,
+rather than inferring register continuity from address order. Under explicit
+ordinary execution, Win64 nonvolatile-register preservation and stable local-read
+premises, the actual UID receiver conditionally identifies that one abilityCom
+load result. The Entity identity additionally requires the later token-local
+read to match its sampled lock input. No direct field observation, atomic snapshot
+or lifetime claim follows. Independent token output matches the prediction from
+the observed constructor inputs, so this narrow binding does not require another
+recording merely to repeat the same evidence.
+
+For saved capture intake, historical source provenance must be distinguished from
+current native validation. The battle subproject now has a separate reproof reader
+that preserves changed transitive hashes as unavailable historical bytes, keeps
+critical capture/runtime/contract and transport gates, and independently validates
+the current selected native pair and dependency graph before and after decoding.
+It does not modify the saved manifest, run retained source text, or reuse a stale
+native result. Source drift during a run still rejects publication.
+Native-only dependency changes after decoding can be handled by a derivative
+receipt that reauthenticates the original inventory, journal, decoded bytes and
+unchanged transport readers, then reruns the current native proof. Earlier
+receipts remain immutable; changing transport code still requires new admission.
+
+The [transition storage contract](../../scripts/game_data/contracts/skill_center_transition_storage_native.json)
+composes the constructor request proof with canonical machine/state AddTransition
+registrations and selected normal schedules. Each Contains/get_Item request
+rereads the state dictionary. Both get_Item results are obtained before testing
+the from result for null; a null to result can still be forwarded. The state
+helper writes from, to, priority and checker into the allocated object, with
+reference barriers in their observed order, then rereads the source state's
+transition list and requests List.Add. After that helper returns the machine
+rereads its transition map and requests set_Item using the original target ID.
+Written from/to/checker slots match the executor and condition-reader slots.
+The helpers' normal outcomes, runtime RGCTX, allocated nominal type, collection
+mutation, lifetime and actual selected transition remain explicit boundaries.
+
+The [transition list contract](../../scripts/game_data/contracts/skill_center_transition_list_native.json)
+extends the selected List.Add request to its fast-capacity mutation: version is
+incremented before the array null guard, size is written before a second bounds
+check, and the original item is stored at the old index before optional bitmap
+marking. Version/size increments wrap in the stored width; capacity comparison
+uses unsigned low bits. The resize branch remains an opaque AddWithResize
+request. Written list/array/version slots match the selector's iterator reads;
+this does not establish that a particular runtime list instance persisted.
+Under coherent reads, a mutation can invalidate an old enumerator version even
+when the subsequent operation fails; portable regressions keep the version
+operands explicit instead of inventing a recorded collection join.
+
+Start requests the sort-all chain before writing running and making entry
+dispatch requests. State sorting forwards its list to List.Sort; the latter
+requests the range from zero through the read count with a null comparer.
+The transition CompareTo body reads other priority first, reads this priority,
+and rereads this priority on the non-less branch. With coherent values it has
+ascending signed-priority comparison semantics. Actual default-comparer
+selection, sort effects and tie stability remain unproved. The BB entry leg is
+a physical slot request, not proof of a particular virtual callback execution.
+
+The recorded constructor returns have empty AI/entity fields; later state-entry
+samples at the same address have populated fields despite no base RefreshData
+entry. The inline writer is a proven possible route, not attribution of the
+actual intervening write or proof that the address's lifetime was continuous.
+Raw getter MethodInfo bits lack pointee/context contents and still cannot
+establish the actual closed runtime type. Stop/Clear endpoints include a
+nonzero-to-zero whole-input sample; reset byte regression compares the observed
+return bytes, without substituting expected zeros when a recording disagrees.
+
+The [Center blackboard consumer contract](../../scripts/game_data/contracts/skill_blackboard_consumer_native.json)
+identifies a separate direct route: CenterSkillState reads that named input field,
+constructs a view and calls AbilitySystem.TryCastSkill. It is not the independent
+`_TickToCastSkill` → CastComboSkill → pending route. Matching a named field closes
+the static producer/consumer declaration, not the live writer/reader object join.
+After a normal TryCast return the caller does not branch on its Boolean. It
+reloads the current blackboard, clears only `skillInputData.skillEndCallback`,
+then reloads entity and AbilitySystem before ClearSkillRequest. A later null
+carrier stops after earlier effects; it does not undo callback clearing.
+ClearSkillRequest's original tail forwarding explains the retained Combo.Clear
+caller's outer return address, without inferring cast success from the clear.
+
+`battle_input_center_links` reuses admitted pair/enclosure evidence and the
+native call/tail-wrapper bindings to retain all same-command ordered admission,
+BeforeCast and selected Clear candidates. It does not manufacture hidden
+_ToSkill/_DoCastSkill invocations, a TryCast Boolean or a shared blackboard from
+a single candidate. Unmatched and multiple candidates remain explicit.
+The retained input profile has no Center state/FSM hook, blackboard getter result
+or state-to-blackboard relation field. Its pending hooks concern the separate
+CharacterCastSkillBehavior path, and a Combo request snapshot is not a Center
+blackboard input snapshot. Static caller classification adds no missing runtime
+endpoints to that recording; these candidates cannot establish same-instance
+continuity or cross-frame scheduling.
+
+The CenterSkillState keep flag is checked after base OnEnter. A true flag is
+reset and skips the local cast call; base effects are not excluded. Cleanup
+names must retain their owners: CenterBlackboard Stop/Clear dispose and zero its
+input, while its original ClearAll body does nothing. The separately reviewed
+pending SkillData.ClearAll requests whole-input zeroing. None of those paths
+is interchangeable with post-cast callback-only cleanup.
+
+The exported configuration can now be followed without a type-name heuristic.
+`skill_ai_mode_sources` selects an explicit CharacterTemplateData root RID,
+checks its componentList ownership of CharacterAIComponentData, resolves aiCfg
+by external source/PPtr identity, then follows the configuration's brainConfig.
+The selected mode maps to a blackboard mode tag; the mode's graph and behavior
+tags resolve to exact managed-reference payloads in the explicitly selected
+root blackboard. Physical AssetMap tuples and source/freshness bookends guard
+the involved documents. The current endminf template follows this stored chain
+to the melee AI configuration and cast graph, with distinct cast/plunging
+behavior payloads. Empty config templates are not alternate evidence for this
+populated selection. The configured aiBBPath still needs its resource-loading
+join; an explicit blackboard argument does not prove that live loading chose it.
+The behavior data's authored duration is a stored field, not a recovered player
+lock duration, skill duration or control-restoration boundary.
+
+The separate `skill_ai_mode_sources_native` contract binds the original brain
+InitData parameter to aiComp.data.aiCfg and its brain configuration, then checks
+the physical mode-pair/cache-selection transfer into CharacterAIMode.InitData
+and the following m_modeData Add request. Resource-loader and dictionary
+MethodInfo arguments are checked at their actual receiving call sites. A typed
+supplied context does not authenticate the compiled closed helper or its
+effects. Resource path construction/resolution, actual loaded blackboard and
+the active entity configuration therefore remain unadmitted joins.
+
+The [closed mode layout](../../scripts/game_data/contracts/skill_ai_mode_layout_native.json)
+now binds the concrete CharacterAIMode carrier through its generic AIMode and
+AIClassPool ancestors. Complete declarations, the concrete suffix, native
+constructor stores and the only remaining aligned reference slot identify the
+inherited graph field without using open-generic placeholder offsets. The
+dispatch validator consumes this proof on the same opened native image, with
+matching selected input pins and separate contract bookends. Its brain-forward
+graph receiver therefore has named closed-field ownership, rather than an
+anonymous physical-slot premise. This does not prove live initialization.
+
+A bounded factory fragment separately maps an explicit graph-enum result to
+the supplied GetClassFromPool<CharacterCastSkillGraph> MethodInfo and follows
+the normal nonnull physical result into that graph slot. The supplied context
+does not identify the compiled closed pool implementation or the returned
+object's dynamic type. A bounded CFG over the complete framed InitData body now
+checks the indexed jump tables and propagates the image-base register from the
+actual entry. All paths reaching the factory table load carry the image base,
+under normal Win64 nonvolatile-register preservation. Guarded table access may
+not be entered midway, and unsupported control transfers or register writes
+fail closed. The virtual getter result and whole InitData receiver continuity
+remain separate premises. Only the layout proof is consumed by graph dispatch; no actual graph
+or behavior selection is promoted by this combination.
+
+Original cast-graph routing tests the returned pending record first. Absence
+requests ResetAIMode with no force/guard. Presence chooses the plunging static
+tag only for castType one, otherwise the cast static tag; Int32 tag inequality
+controls whether a switch is requested. Comparison, requested value and
+post-call field write are distinct reads. The brain only forwards a present
+mode/inherited graph receiver, with force=true. The selected graph's entry path
+clears the current list before lookup, issues ordered Enter requests only when
+the nullable tag is present and lookup returns true, and writes the nullable
+tag even when lookup fails. Enter requests do not prove the concrete OnEnter
+virtual callback ran.
+
+Completion checks the post-entry current list independently. Null/empty lists
+satisfy all-finished; the first false flag skips invocation and clearing. The
+callback reference is reread after the checks: a null reread skips invocation
+but still clears its field; a normal invocation also precedes the clear.
+Reentrant writes can therefore be cleared rather than preserved. The simulator
+keeps these observations separate and requires coherent collection accesses;
+it does not infer live graph type, concrete behavior selection, callback effects
+or scheduler ordering from a successful local request.
+
+The simulator maintains finite Single clock and ordered-interruption reference
+models with whole-result conditional regression. Getter boundaries reuse the
+admitted authored projections; synthetic deltas, curve samples, markers and
+membership results remain labelled assumptions. The regression neither runs a
+native gate nor upgrades these operands to observations or enables the real
+Gym battle environment. The simulator's `input_rules` additionally models the
+ordered cast gates, Attack mapping request, cache selection/replacement,
+epsilon expiry, stored visibility and the distinct repeated admission checks.
+Input/target tokens stand for explicitly supplied external results; copy/dispose
+requests do not simulate unproved reference-counting effects. Pending commit
+cases name the post-call record explicitly and keep actual-new-skill-start
+unproved even when the TryCastSkill result is true.
 
 ## The rules every contract shares
 
@@ -1751,21 +4083,647 @@ selection or an entire damage result. The earlier Pack contract remains separate
 
 Within the stated branch, ordered Double operations apply the attack scalar,
 Pack return, critical bonus, DEF factor, damage reduction, nonnegative type
-factor, optional global callback factor and two mask-selected scalars. DEF uses
+factor, defenderPoiseFactor and two mask-selected scalars. DEF uses
 the observed Single coefficient widened to Double; replacing it with its short
 decimal display changes the calculation. Type resistance and damage-taken scalar
 are separate operands. Exact indices, predicates and byte provenance belong to
 the contract. The conditional expression ends before a later optional Actor
 Single scale, block and settlement processing, so it is not final HP loss.
 
-The current capture does not observe the actual Dice Boolean, global callback
-selection/result or subsequent Actor-scale branch/value. A null callback can
+The earlier calibration capture does not observe the actual Dice Boolean, defenderPoiseFactor
+replacement selection/result or subsequent Actor-scale branch/value. A null callback can
 select the identity factor in the reviewed code, but an unobserved callback is
 not evidence of null. Do not back-solve those missing values from settled HP,
 choose critical outcomes by residual fit or label the fragment a full prediction.
 The next numerical capture needs proved observations of those selections plus
 an explicit Pack-to-target/modifier association; skill-instance ownership remains
 a separate requirement before a sample can represent a player action.
+
+The simulator-owned full-fight capture now supplies actual Dice and
+health/UsesRaw returns, plus the factor's report-entry register value in the
+same Process/local-Pack scope. In its eligible recorded calls the factor is
+directly observed as one; early-return calls with no eligible context remain
+unset. This does not select every possible getter replacement branch or make
+one a universal default. Same pointer-plus-UID attribute observations and
+target/Modifier scope binding let the existing ordered damage arithmetic be
+checked without back-solving missing operands from HP. The full-fight lane
+still supplies PackFinal as an observed intermediate. A continuous Boss HP
+domain initializes once, advances only from computed damage and compares
+later HP/realDelta independently, stopping at the death/clamp boundary of its
+interior-only rule. Observed typed DamageImmune cancellations are classified
+outside the no-immunity domain, not promoted to an immunity activation model.
+The owning implementation and maintained boundary are in the separate
+[simulator recovery contract](../../tools/endfield_battle_sim/docs/recovery.md#full-fight-numeric-and-cast-regression).
+
+Native physical argument storage and native value width must stay distinct.
+A Win64 Boolean uses its low byte; a saved eight-byte carrier may have dirty
+upper bits even when that Boolean is false. Preserve the full raw carrier for
+audit and mask only when interpreting the declared native value. Whole-carrier
+truth incorrectly classifies some normal damage as extra-target damage. Fixing
+the analysis does not invalidate or require replacing the original capture.
+
+The full-call lane also connects ordinary attacks to actual Skill Tick
+ancestry and BeforeCast epochs. The recorded actionEnvironment receiver and
+its UID/source-Skill/castId byte span match the typed Ability observation for
+ordinary attack1 through attack5; guarded raw sampling is non-atomic and is
+not an unrestricted allocation-lifetime proof. Child normal-skill environments
+can differ and retain that gap. DamageAction dispatches are distinct from
+Process target calls, so a multi-dispatch attack cannot use a single-hit model.
+Logical TimeManager frameCount has an ordinary initialization and per-Tick
+increment of its own; do not substitute it for Unity frameCount at Skill's
+same-cast-start-frame gate merely because observed counts correlate.
+
+The simulator's authored multi-hit component now checks the current five normal
+attack plans against the recorded Skill Tick/target/settlement scopes. Source
+start times drive event dispatch; recorded dispatch IDs and timer/HP endpoints
+remain independent comparisons. Multiple Find/Damage actions can share a Tick
+or reuse a target-group key in later windows. A preceding Find and Damage need
+not have equal end frames; pairing must retain its targetSource, context/key,
+writer-order and BB-lifetime conditions instead of zipping equal-size lists.
+The measured suffix initializes each Skill timer once and carries computed HP
+across Skills for one unchanged target/attributes identity. This is conditional
+suffix execution, not recovery of the unresolved full entry gate or autonomous
+input acceptance. Pointwise raw entry fields do not establish a later helper's
+read when intervening writes or replacement paths remain possible.
+
+An observer qualified for ordinary native function entry is not qualified for
+an internal instruction site. The existing entry-context bridge assumes entry
+stack alignment and a hardware return address at the original stack top;
+post-call body sites need their own alignment, stack-layout, register/flags and
+relocation proof. Renaming an entry ABI or treating local stack bytes as its
+caller return is invalid. Such a future observer must pass a production-native
+harness before any game recording command is published.
+
+The child simulator's qualified private clock observer now uses a dedicated
+CALL-site ABI and a real instrumentation return address, while explicitly
+leaving the original function caller unobserved. It preserves the original
+source stack address and pairs post-frame-call/duration operands to the actual
+thread-local Skill Tick. The native harness executes both displaced sequences,
+checks register/flags/MXCSR/x87 protection, real Windows unwind walks and Stop
+with subsequent instrumented executions. Active exception delivery is untested.
+Stop closes logging only: the pinned module and CALL sites remain resident until
+the game exits, and same-process rearming is rejected. This lifecycle needs its
+own summary health policy; it cannot be admitted by forging the older
+hook-disabled fields or renaming internal contexts as function entries.
+Independent production forwarding/sampler qualifications and frozen launch
+checks authorize a short normal-attack clock capture, not a repeated full fight.
+No runtime clock selection or complete battle parity follows from tool readiness.
+
+The admitted short clock recording now directly connects the original Unity
+frame return, live castType, saved input deltas and actual duration delta/timer
+under one Skill Tick. Same-cast-frame zeroing explains the selected nonzero-input
+stopped Tick; it is not an ordinal rule or a TimeManager/Unity counter equality.
+Five authored Skill components execute from source period/remaining and zero
+elapsed state, carrying computed HP and comparing actual timing/dispatch/HP
+without injecting suffix timer seeds or post-entry deltas. Query/Pack inputs,
+source-order/BB semantics and helper/object continuity remain conditional.
+
+A non-null cooldown list must not be promoted to the null-list path. In the
+selected source, the signed helper return is preserved in one nonvolatile GP
+carrier, and a separate counter starts at zero and grows only after a true
+predicate. Bounded proof of both ordinary and special false-predicate routes
+and the downstream gates excludes alternative counter writes, conditional on
+ordinary Win64 helper preservation. Matching same-call count/completion and
+element-offset carriers can therefore witness loop exhaustion. This recovers
+the executed path without inventing concrete reloaded bounds or item values;
+the helper's meaning as actual List.Count and independent cooldown prediction
+remain unresolved. A sampled register value alone, without that full def-use
+and alternative-path proof, would not establish the earlier helper result or
+loop history. Other counter states are not silently forced into this case.
+
+The same recording also closes four direct TryCast-local old/new Skill handoff
+chains. Interrupt checking, old Interrupt, nested same-processor CastEnd with
+casting clear, and new BeforeCast retain concrete same-thread scope and pointer
+bindings. Their outer roots are separate Delivery calls, not observed physical
+input or cache-dequeue causes. The copied nullable options prefix supports
+conditional hasValue/force/ignore-distance/ignore-angle facts at reviewed
+consumer offsets; it does not establish full Nullable extent, override-CD
+meaning or replacement-path absence.
+
+The simulator's conditional combo kernel now selects successors from authored
+ComboCache modifiers and checks positive AllowNext membership in strict source
+windows using computed old Skill time. It creates later components internally
+only after selected admission and reason-seven stop rules, carrying computed HP
+and resetting their timer from source duration. Actual success and timer/HP
+endpoints remain comparisons. Readiness, actual mapping winner and native/helper
+continuity are explicit conditions, and strict defaults do not turn them true.
+This is a source-selected request/stop composition, not proof of the held-input
+driver or a production-ready real-battle Gym action contract.
+
+Post-CastEnd same-Skill Tick samples are retained only until the next same-Skill
+BeforeCast. In these bounded epochs, casting is false, the post-frame point is
+present, duration update absent and timer storage stable. Conditional retired
+duration probes leave both the old timer and current component clock/HP alone;
+they do not simulate all cooldown side effects, prove natural completion, or
+establish allocation lifetime or global player-control restoration.
+
+The selected request writer has now been authenticated separately. Its real-map
+modifier is an unboxed value, whose skillId and instId pass through local storage
+into the current request; remainingTime instead comes from the cache-helper
+return. A successful ordinary selected Refresh therefore conditionally admits
+the stored request ID as the selected modifier ID, without proving priority or
+an authored creator. PlayerCommandData.GetCacheTime belongs to CommandBase.Tick
+expiry and is not this mapping's default cache provider. Equal terminology is
+not a dataflow join.
+
+Static readiness inspection cannot turn the recorded source flags or empty
+SkillTags into a constant true result. Dynamic entity-tag/controller/movement
+checks remain, and nearby movement snapshots are not call-local operands.
+The combined short observer targets named CanCastToTarget,
+CheckTag/CheckState and actual ComboCache ExecuteInternal/OnEnd handle prefixes.
+There is no declared OnStart hook in the selected class, and its environment
+interface is recorded only as an opaque pointer. Exact ordinary prototypes and
+typed list traversal, rather than open-generic placeholder offsets, gate these
+recipes; the qualified existing producer is reused. Capturing created handles
+and independent child returns is distinct from already admitted clock/stop data.
+
+The combined recording is now admitted, and actual same-thread paired ancestry
+separates Hero and Rodin predicate domains. Independent Cost/Tag/State results
+are available; Rodin AI target refusals cannot be assigned to the player, and
+normal/ultimate-skill cost checks under input callbacks cannot be assigned to the normal
+attack target gate. Final TryCast success remains a comparison, never evidence
+from which to fill missing owner/type/local-cooldown results. A whole-target
+Boolean is an external CanCastToTarget port, not a readiness predicate. Selected
+instruction-chain validation is not an every-path dominance proof, and a compact
+projection that drops caller RVA cannot establish the exact native callsite.
+
+Coherent complete individual Handle-list endpoints now link ExecuteInternal
+empty-to-populated, stored request owner/instance ID, and OnEnd populated-to-empty.
+The reviewed action native bridge supports a conditional creator/request/cleanup
+interpretation; no-alias/helper/identity continuity remain premises, and neither
+allocation lifetime nor absence of intermediate writes follows from equal
+endpoint addresses. Captured OnEnd calls are nested under Interrupt/CastEnd;
+this is not evidence of natural authored completion. Each removal-stage owner
+Lock is independent, and emitting ClearSkillRequestByModifierInstId is not proof
+that the callee's exact-ID guard cleared the request. Unmatched requests and
+cache-helper return provenance remain explicit. These recovered rules are also
+documented in the child simulator's maintained recovery and rule modules; the
+generated inventories are not the sole durable record.
+
+Input callbacks separately observe false normal/ultimate-skill cost predicates
+while the callback Boolean itself remains true. In their complete projected
+synchronous scopes no command creation or skill execution is observed. The
+callback return therefore cannot stand in for gameplay acceptance, and a child
+cost refusal cannot prove absence of deferred or independent-root delivery. The
+reviewed input entry/save fragment does not establish a complete cost-guard to
+command/return CFG; action binding fields do not identify physical keys by name.
+
+A separately bounded callback audit now closes the metadata-ready ordinary
+wrapper through its restored return: a present Func delegate receives the saved
+arguments and supplies the Boolean; a null delegate defaults to true. Opaque
+post helpers must return normally and preserve the saved nonvolatile result.
+The indirect replacement route remains separate. No direct ordinary-wrapper
+CheckCost guard or downstream delegate identity is thereby recovered. The
+simulator models this return wrapper with an independent delegate result port;
+an observed callback true does not fill that port for a prediction.
+
+The complete getter projection also separates same-Delivery delivery from
+historical writer candidates. Stored request modifier ID and skill-name pointer,
+getter return and TryCast argument can agree inside one actual invocation, with
+the selected Skill/Ability matching BeforeCast and the returned current Skill.
+UID and cast identity delimit the prepared epoch. Earlier matching Refresh
+endpoints are not a unique source; later observed conflicting Refresh marks
+them superseded, without proving all intervening writes. Missing getters may
+be called absent only after full per-hook projection accounting, never from a
+deduplicated report. The child simulator now consumes independent whole-target
+results and compares this local cache/preparation chain in the same five-attack
+replay; source mapping winner, original helper paths, global scheduling and
+independent collision prediction remain explicit boundaries.
+
+The cache lane now recovers hardware caller headers already retained in the
+original capture. Same-Tick CheckCanInterrupt results bind to the reviewed
+`_AllowNextSkill` direct-return tail; no final allow byte supplies the predicate
+being predicted. The reviewed zero-time Refresh dispatcher continuation also
+retains its nested Tick's computed request on the selected normal tail. An
+unknown constructor starts a new cache domain, seeded once from an actual Tick
+entry; later snapshots compare rather than overwrite state. Matched outer
+clears and nested Tick-owned clears are distinct effects, and getters do not
+consume. This computed visibility, independent source-action Handle owner and
+exact UInt64 ID now gate source Skill delivery in the simulator. Missing
+modeled domains stay unresolved; no historical matching write becomes a unique
+cause. Cache allScaledTime and Skill effective delta remain independent ports.
+
+A retained serialized BattleCommandMappingConfig supplies separate ordinary,
+dash and perfect-dodge cache candidates. The simulator's reviewed native
+configuration contract now joins the typed global configuration field, serialized
+enum-to-Single map field, named GetDefaultCacheTime signature and shared
+GetValueOrDefault MethodSpec. The maintained export freshness guard validates
+the selected source against the configured installed resource fingerprints.
+The earlier expectation that each provenance stamp must contain nativeInputs
+was a validator assumption, not evidence that a re-export was required.
+Concrete runtime generic context, dictionary dispatch/FindEntry and the live
+configuration object remain unproved; static typing and numerical agreement do
+not admit the candidate as a global runtime default. A runtime remaining endpoint
+never supplies the provider operand it is compared against.
+
+A subsequent admitted selected-provider observation records the actual indirect
+MappingModifier value at the cache selector, bounded skill text, typed current
+Skill pointer and returned Single bits. Inner movement/perfect-dodge results
+are owned by exact same-thread selector parents and reviewed native caller
+sites, rather than neighboring frames. The simulator now independently selects
+the input UInt32 provider bits and compares both selector return and published
+request reference/instance/time. A normal-attack movement child at the native
+original site distinguishes the actual ordinary route; nonattack calls lacking
+an internal body witness retain original-path selection as a premise. The
+published allow bit is a separate nested-Tick result, not necessarily the
+constructor's initial false. Selected value observation does not recover the
+competing priority queue, all map writers, or the upstream configuration/generic
+binding. Equal current-Skill samples at Refresh and selector entries do not
+prove uninterrupted lifetime, and no new-session operand fills an old session's
+missing state. These durable distinctions also apply when scalar values agree.
+
+Those same-session selector input operands now feed the simulator's complete
+source-combo/cache execution instead of a fixed ordinary-route case. The actual
+selected skill/instance must match the authored successor and created source
+Handle; actual getter returns supply only visited selector operands. Independent
+target predicates and cache-to-prepared-instance joins retain exact invocation
+ownership. Request/selector outputs only compare with computed state; no request
+or Tick-entry seed is introduced. Current and retained retired Skill clocks,
+cache, pending handoffs, HP and actual frame-dispatch observations share one
+checkpoint history. This narrower measured selection does not predict the
+initial competing map, every mutation, or autonomous global scheduling.
+
+Complete held/command observations already retained in that capture also allow
+offline request prediction and command-state carry from recorded Reset history.
+Reset actor capture remains an explicit opaque helper-identity port; numerical
+state, time, blocked flag and delay are computed by the native lifecycle rule.
+Independent consume/block predicates and exact synchronous OnExecute scopes
+connect the resulting Attack commands to the selected cache constructions.
+Later independent Delivery roots are not reassigned to nearby input callbacks.
+When unknown movement and nonmovement branches produce identical timer bytes,
+the simulator can eliminate that operand for the narrow result without claiming
+the actual moveAxis value or branch. Positive timers whose outcomes differ
+still require their own operands; nonpositive samples do not calibrate a delta
+provider. A separate MoveAxis-command delay-write mismatch remains a named
+mutation frontier rather than an invented default or an Attack-domain failure.
+
+The authored canonical base map is recoverable offline through the precise
+CharacterTemplate root, component RID, AbilitySystemData and
+SkillDataBundle.defaultCmdMapping. The selected native OnInit field chain reads
+that same typed member. The stored map includes the first normal attack plus
+normal/combo/ultimate skill identities; complete initialization reachability,
+priority-register continuity, collection helper effects and live owner choice
+remain separate conditional joins. Fresh simulated opaque IDs may preserve
+identity/equality without reproducing the historical absolute shared counter.
+Allocation/recycle method names alone are not reset proof: their selected
+original paths are no-op, while Release requests collection clearing. Full
+pooled lifecycle effects still require their own control/helper proof.
+
+The child fresh-map factory now constructs base values, absent runtime queues
+and ordinary effective-map refresh from authored rows and explicit cache
+candidates. Opaque allocators belong to the model; measured instance IDs and
+provider values never initialize it. Current concrete dictionary allocation
+contexts, constructor requests and publication are authenticated separately
+from the selected fresh-zeroed-allocation and normal nonescaping-helper
+premises. These premises do not establish a full allocator or later-writer
+closure, and matching recorded base selections remains comparison evidence.
+
+The fixed Delivery registration source requests FixedTickGroup with zero
+interval and the OnFixedTick MethodDef, then stores the returned TickFunction
+on the same controller. The ordinary callback's typed entity/AbilitySystem/
+TickOwnerInfo path scales incoming delta in two Single stages; initial scale
+guards and the later running reload remain separate. The observed delta is
+not a universal simulation timestep. Actual callback registration lifetime,
+virtual target, local scale values and engine phase/frame production need their
+own binding. Execute's separately resolved bark-system notifications must not
+be relabelled as AbilitySystem state events or used to attribute a delay writer.
+
+The combined passive control observer is now qualified offline in the child
+simulator. Controller/Base Consume binds by synchronous parent, native caller,
+receiver and low-byte force; both effective delay getter returns are retained
+as independent Single carriers. Returned command state is comparison-only.
+Getter-free clear branches remain valid but an unobserved virtual OnConsume
+effect blocks their full-state prediction. Device-specific affect and missing
+visited operands are explicit per-row frontiers, not guessed defaults.
+
+Concrete MainCtrl.OnFixedTick supplies the center/entity/Ability endpoint path
+and retained TickFunction delegate identity. The existing shared generic FSM
+Tick receives no derived-class deep reads and keeps its established ABI. Its
+default virtual-slot helper is joined through a reviewed native caller,
+immediate parent and matching center receiver; other fast targets remain
+distinct. Scheduler owner info cannot replace the local Ability scale operand,
+and matching callback endpoints do not prove uninterrupted registration life.
+These declarations and production/frozen gates prepare a short combined sample;
+they do not retroactively add runtime coverage to the previous recording.
+
+The admitted combined recording now directly supplies the actual MoveAxis
+Controller-to-Base Consume branch and both reached effective getter results.
+Delayed state is computed from entry operands and independent Single returns;
+the returned nullable value only compares. Getter-free threshold clearing is a
+legitimate lazy path. The controller call is a separate observed root, so this
+does not attribute it to an earlier attack scope or reconstruct all input roots.
+MoveAxis has its own OnConsume override; the attack class's inherited empty
+callback must not be generalized to it. Its ordinary body clears a derived
+Vector2 and preserves Base fields, while its own replacement selector remains
+separate from the observed Base Consume selector.
+
+The same recording binds concrete OnFixed callback target, method pointer and
+MethodInfo endpoints to immediate center-FSM calls and onward selected
+CenterAttack TryCast/BeforeCast preparation. Concrete entity/Ability pointers
+can change during the session and are retained separately. Stable generic
+current-state endpoints are not proof of the selected OnUpdate implementation.
+The reviewed shared float-delegate helper explains the observed callback caller
+and has a source caller from TickFunction, but its sharing prevents inferring
+the live outer TickFunction object from delegate equality. Local Ability scale
+operands, scheduler gates and uninterrupted registration remain explicit gaps.
+Reusable declarations and checks are maintained in the child simulator's
+contracts and recovery modules; detailed observations remain generated reports.
+
+The delayed command value now carries through subsequent independent controller
+gates and Tick deltas to expiry and invalid-state continuation without later
+entry seeds. Concrete callback Base-field noninterference remains an explicit
+source-backed selection; strict mode stops at its unobserved dispatch rather
+than borrowing returned state. ConsumeMoveCommand's first direct StartMove
+consume is followed by a controller reload and tail MoveAxis consume with no
+intervening call. Exact adjacent scopes and inherited return addresses support
+this conditional continuation, not an attack or physical-key attribution.
+
+The pure TickFunction model preserves the initialization-ready normal callee's
+ordering. Its return is Boolean: owner-group skip returns before stamp/frame
+writes, near-zero callback rejection occurs after them, and a null callback may
+still return true. Caller-owned interval/frame eligibility remains distinct.
+The next child observer combines the concrete MoveAxis callback selector/axis,
+pre-multiplication OnFixed arithmetic inputs and filtered outer TickFunction
+invocation. Its isolated overlay, mixed ABI, displaced MULSS behavior, parent
+scope, transport and all sampler groups are qualified separately. No original
+SDK source or older capsule is changed, and qualification creates no runtime
+observation or guarantee of process stability.
+
+That observer's retained follow-up failed from queue saturation, rather than
+unreadable or truncated fields. It is not a complete admitted capture. The
+child's maintained salvage consumer authenticates its staged producer and
+current observer/layout closure, hashes the raw journal, finds exact missing
+sequence IDs and stops before the loss/failure frontier. Inter-thread row
+reorder is not loss; unfinished scopes and post-gap state remain unavailable.
+Complete pre-loss pairs nevertheless observe the concrete MoveAxis selector
+endpoints and axis clear, actual outer TickFunction object/callback dispatch,
+and reached local scaling operands delivered to FSM. The core recomputes both
+Single multiplication stages from those operands, without inferring one from
+equal input/output deltas. Ordinary callback continuity remains conditional;
+empty selector endpoints do not close all writers. TickFunction's own group
+scale is still distinct from the local Ability owner and is not supplied by it.
+These observations do not need repeating. The broad legacy Skill tick traffic
+dominated the failed profile; any genuinely necessary future observer requires
+a separately qualified narrow scope and throughput evidence. Local regression
+does not rehabilitate an incomplete capture or enable the real scenario.
+
+The child now also proves the complete initialized ordinary nonexclusive
+TickGroup path. Released and direct shouldTick checks precede interval
+eligibility, whose threshold is a nonzero native literal. Under the supplied
+Boolean, signed wrapping frame-difference and timestamp conditions, the group
+may narrow elapsed Double time into the forwarded Single delta. Tick and this
+group request Unity's frameCount internal call; a resolver name does not identify
+the live cached function pointer or generate runtime frame values. SetInterval's
+ordinary store copies its new timestamp from an unresolved helper result, not
+from an assumed engine clock.
+
+Actual pre-loss TF callers bind to the nonexclusive group's direct callsite.
+Their zero-interval entry snapshots satisfy the recovered eligibility projection
+under explicit snapshot-preservation premises. Original group delta and Boolean
+inputs remain absent; downstream TF delta does not supply them. This does not
+observe a positive-interval or catch-up branch, close helper/list lifecycle, or
+prove global scheduling. The child extends its existing clock core and contract
+rather than adding one module per proof; exact frozen historical sources retain
+the earlier diagnostic's provenance when the current contract evolves.
+
+The TimeManager ordinary source now supplies the fixed dispatch's actual input
+origins: cached logic delta and Double logic time, with a true flag. Initialize
+converts the configured integer rate to Single before the Single division;
+Tick accumulates a supplied render Single into Double time and emits each
+reached fixed step. PreLate has a distinct metadata-authenticated phase and
+forwards cached render delta/time with a false flag. Managed manager frames
+remain distinct from Unity frame-provider results. This is a source-derived
+cadence projection, not a frequency guessed from observed deltas or wall time.
+
+The child carries one initial clock snapshot through consecutive manager frames
+using independent cached render inputs, and one initial TF stamp through later
+source stores. Unexpected configuration/writes, multiple threads or missing
+frames stop the projection without reseeding. Predicted fixed calls match the
+actual TF parameters in sequence-bounded render windows under explicitly
+selected root membership and ordering premises. Numerical agreement does not
+prove that the live TF group is a member of the sampled manager's fixed root;
+that missing identity join alone does not demand another recording.
+
+The original full-fight journal already contains the physical world fields
+that earlier compact clock outputs omitted. A bounded re-selection connects the
+same clock model to a complete normal-attack sequence. Native metadata gates
+each admitted field; labels or containment within a raw span are insufficient.
+Ordinary Skill second-argument candidates converge bitwise when the independent
+manager scale makes the unknown reason/selector alternatives equal. Initialization
+zero arguments are independently tied to the checked TryCastSkill call block.
+Neither route is selected from the observed callee argument, and signed-zero
+differences remain distinct. Ordinary first/scaled delta, local HitStop factors,
+internal frame gates and full control recovery remain separate. Check actual
+frozen read declarations and retained journal coverage before treating a compact
+projection's omission as a reason to request a new capture.
+
+Retained Dilation return witnesses can recover synchronous Skill invocation
+context through exact thread and immediate-parent invocation IDs, closed parent
+scope containment and actual PreLate ancestry to Ability. This is distinct from
+the affected-owner binding: readable return handles, duration, curve references
+and elapsed values do not prove entry state, curve evaluation, handle lifetime
+or the effective group-cache write. Zero Dilation delta/elapsed endpoints do not
+justify a zero or identity Skill scale. Nearby returns without an exact parent
+remain unbound rather than being assigned by time or address proximity.
+
+Observation coverage requires the consumer's actual physical call route, not
+only a same-named metadata method and a valid prolog. Entity Dilation bypasses
+the named AnimationCurve Evaluate wrapper through its cached icall and reaches
+physical modifier helpers distinct from the named registered methods. Its
+curve return is clamped before the actual modifier Add input; the delivered
+factor cannot recover an arbitrary negative/NaN raw curve result. Source-typed
+machine operands and opaque trailing GP carriers are not a complete managed
+prototype. In particular, a caller ignoring a return does not prove void and
+does not justify a typed void detour for unknown callers. Preserve unknown ABI
+effects through a transparent entry observation instead.
+
+The admitted combined clock/control sample confirms that Root.DoTick reaches
+its ordinary and exclusive group functions directly. Absence of a separate
+TickGroup.Tick wrapper observation is therefore not evidence that group
+scheduling is absent. Actual manager input, its root-slot pointer, the native
+caller and the recorded Root scope bind fixed dispatches without selecting an
+instance by matching timestamps. Unobserved list elements still require a
+registration/no-migration premise; manager FP controls remain distinct from
+separately sampled Ability controls.
+
+The retained physical modifier inputs also support an ordered self-cache fold:
+start at source Single one and narrow each multiplication over the complete
+incoming list. Add's already-clamped factor and an opaque UInt32 allocation
+label construct the expected appended entry; returned lists and cache values
+are comparison endpoints, not seeds. This does not recover the raw curve or
+the handle allocator. One initial list per group can carry later mutations
+without resetting, conditional on successful Remove/Clear effects, no other
+writer, preserved FP controls and uninterrupted group-address lifetime. Strict
+replay stops at the first unproved effect. Missing Stop-scoped recalculation
+observations do not establish that no recalculation executed.
+
+The second local Ability probe precedes both MULSS operations: its selected
+global-or-one register is not the first product. Preserve each probe's own
+group pointer and observed floating controls before predicting Skill inputs.
+TickOwnerInfoGroup's owner metadata declaration is Object; same-scope actual
+get_owner results and Remove-group owner equality may independently bind the
+selected Entity, but the declaration alone does not give Entity type or a
+continuous lifetime. These component rules and their explicit external ports
+are maintained in the simulator's existing hitstop and replay owners.
+
+DamageActionData carries the inherited serialized `serverActionIndex`; this is
+distinct from a recovery reader's node ordinal. In the selected normal-attack
+plans, independently bound source Skill, Damage data type and stored index can
+uniquely select a source action. That uniqueness is local to the reviewed plans,
+not a global game identity, and a live match still needs its own runtime read.
+An inherited generic reference prefix may be proved separately from a derived
+class's full suffix extent: the concrete parent argument, sole reference field,
+base size, first derived field and exact native consumer reads must agree.
+Unsupported later value-structure fields do not justify guessing the whole
+layout or weakening a general reference-layout validator.
+
+The combined runtime sample now supplies the stored Damage index together with
+actual cast/environment endpoints, so selected normal Damage actions can join
+their unique authored nodes without ordinal matching. The native order agrees
+with the source time schedule even where the physical serialized node array is
+ordered differently. A scope without Process observation is not automatically
+a miss. Extra non-HP modifiers within the same Process are separate effects,
+and incoming player HP cannot be appended to the outgoing boss HP domain.
+
+The same sample supplies reached duration-loop witnesses and callback-time
+TickFunction/component/owner snapshots. Opaque helper counts and completed
+cursors are actual inputs, not inferred List.Count. Per-call admission must not
+leak to an unobserved retired/paused path. Previous valid same-object TF stamps
+can conditionally drive interval/catch-up arithmetic; first samples, replacement
+or missing snapshots break the carry. The actual callback owner/unscaled and
+additional-scale reads select the arithmetic branch, rather than choosing one
+because its result equals a recorded delta. Manager frames and the independent
+TF/Unity frame provider remain distinct.
+
+The same admitted sample can now start normal Skill timers at actual BeforeCast
+epochs using authored duration and zero elapsed time, then carry calculated
+local cache through actual Unity frame-return gates. Later timer endpoints only
+compare; older pooled Skill calls before a known cast cannot be back-seeded.
+Every observed cooldown list is present. Without its internal traversal witness,
+strict execution stops, while the conditional model explicitly selects ordinary
+helper return and timer/processor/delta/FP noninterference; it never invents a
+zero Count or substitutes null. A recorded not-casting predicate explains timer
+freeze but does not independently predict complete control recovery.
+
+Damage request ancestry and retained environment UID/castId/sourceSkill bytes
+bind the same invocation to the current cast. Request timing/count agreement
+does not identify a runtime Action with a source reader's node ordinal or settle
+target HP. Also retain Ability's delivered delta as an independent port: some
+actors receive a different delta from their enclosing PreLate Root. Even when
+all selected-actor values match, equality is not an observed TickFunction
+interval/catch-up selection. The simulator's existing source-clock component
+and lane regression preserve these boundaries.
+
+Skill.m_ability is an Ability behavior carrier, not the execution AbilitySystem.
+Use actual direct PreLate/TryCast parents and native callers for that execution
+context. Retired Skills may retain different Ability instances from the current
+Skill; a pointer mismatch between those layers is not a reason to discard Tick.
+An observed CastEnd with a direct same-Skill Tick parent can be bound to the
+audited duration-completion callsite and explicit argument/timer endpoints.
+This proves the reached request and casting transition, not the earliest
+accepted input or the cause of later movement.
+
+An independently admitted joint session now supplies normal-attack natural
+completion witnesses. Recompute each complete active prefix from authored zero
+timer state through actual delivered arguments, ending at the exact parent Tick
+of CastEnd; compare later timer endpoints rather than using them as seeds.
+Same-owner PreLate slot clear followed by a normal-input signal and a new
+accepted cast establishes that observed chain, while callback lifetime and
+physical idle remain separate. Conditional shared cleanup joins can preserve
+unknown raw-action/target presence and apply only common direct stores; their
+opaque-effect noninterference premises must stay explicit. A shared generic
+rule for other normal skills does not expand the observed skill domain.
+
+Creation-bounded normal handoffs can now construct a request without observing
+an old request payload or seeding from Tick entry. Refresh.entry contributes only
+a complete no-retained-input witness. With the independent source successor,
+created Handle identity and explicit provider/route operands, the selected
+nonempty mapping computes an identical whole replacement for both old-presence
+possibilities and emits no old-input Dispose request. Unknown cache therefore
+becomes known through a computed overwrite; an empty mapping preserves unknown
+or existing state instead of manufacturing an empty request. Subsequent Tick
+and getter state is carried continuously, with returned request fields and
+Refresh Boolean used only for comparison. This narrower construction proof and
+its continued checkpoint forks coexist with the broader entry-seeded cache
+replay. Actual winner, runtime branch/provider selection and writer/instance
+continuity remain conditional.
+
+The simulator now reexecutes source construction, cache clocks and Skill clocks
+in one checkpointed state machine rather than supplying previously calculated
+cache visibility to a separate Skill runner. Getter state is read from that
+same instance before Handle/source/target-gated submission. A checkpoint with a
+visible cache and pending handoff replays subsequent cache and Skill operations
+together. When the covered source-action lifetime ends, loss of cache knowledge
+is explicit: unknown cache is not a predicted Clear or known-empty state, and
+it does not cancel pending delivery or alter Skill time/HP.
+
+The retained post-stop samples can be replayed throughout the covered interval,
+not just at its first probe. Each keeps the stopped Skill's computed duration
+unchanged while the current Skill, cache and HP continue independently. Retained
+prefix coverage does not include omitted callbacks or prove full cooldown
+effects. An explicit observed-dispatch port tracks actual Unity frame values,
+thread/invocation order, bounded cast identity and active/retired roles. Multiple
+Skill calls in one frame are not additional world-time steps; neither missing
+frames nor autonomous scheduler callbacks are synthesized.
+
+Additional complete normal cycles retain usable clock operands and cooldown
+completion witnesses. Their missing spatial projections can be recovered by a
+targeted authenticated original-journal pass, with actual scope/epoch ownership;
+the existing compressed clock carrier supplies later retirement windows. Each
+cycle now has its own query geometry, target prefix, formula/cache operands and
+handoff scopes for the same joint kernel. Authored-duration/zero-elapsed timers
+and within-cycle HP are calculated; cross-cycle HP/input gaps remain external.
+Downstream damage never supplies its own upstream spatial selection.
+
+The wider scope establishes that equal Skill and action pointers can refer to
+different casts. An earliest equal-pointer creator is therefore not a valid
+later-cast source. The source-slice selector requires the unique same-thread
+creator and exact-Handle OnEnd interval that contains the actual handoff request
+entry; outcomes and returned cache payloads do not choose it. Overlapping
+candidates fail closed. This narrows the sampled epoch without proving all
+unobserved lifecycle writes or the runtime competitor queue.
+
+The current retained recordings lack the actual MappingModifier value passed
+into the cache selector and its float return, plus same-call movement/perfect
+predicate returns. Source candidates and repeated numeric agreement cannot
+reconstruct these absent observations. The simulator-owned combined passive
+recipe observes those entry/return operands and current Skill while preserving
+input/delivery/clock scopes. It reuses qualified SDK wrappers and additionally
+tests the exact newly used typed-return variants; no SDK source edit or game
+launch is part of preparation. Live readability/coverage still requires the
+short sample, and selected-value observation alone does not establish candidate
+queue construction or unrestricted global scheduling.
+
+Actual cancellation getter scopes can be joined to the nearest completed Tick
+within the same cast and checked against independently source-computed Single
+timer bytes. Conditional timer-branch eligibility at other endpoints is not an
+observed marker state, query return or input-restoration event. The first actual
+true query need not be the first eligible timer endpoint; full player-control
+restoration remains a separate join.
+
+The selected Refresh.entry samples independently retain the typed owner's
+current-Skill pointer. Exact thread/invocation/controller/owner/source binding
+admits passive presence at entry, not continuity to a later selector read.
+Movement mode, perfect-dodge and live provider selection stay unresolved. The
+retained dictionary pointers and action-owned Handle lists do not expose the
+controller's complete competitor queue or selected real-map value. A complete
+one-Handle action list therefore does not prove the actual priority winner.
+
+The admitted false-Refresh audit observes unchanged semantic old requests and no
+nested cache Tick in other command domains; it contains no false attack Refresh.
+Neither false return nor missing child call identifies a null/empty provider.
+Exact-instance cleanup uses independent entry IDs before comparing returned state;
+unobserved mismatch and empty-provider cases retain their conditional boundary.
+These local coverage limits do not require another capture while source-constructed
+normal-attack delivery can still progress on the retained evidence.
+
+The cancellation getter's source conversion is now also checked against both
+false and true queries in one actual later attack5 cast, bound by Skill, Ability,
+timer and cast epoch. The threshold is calculated from authenticated source
+frames and Single rules, not from the first observed true time. Sparse query
+brackets do not prove earliest input acceptance or unchanged marks between
+queries. Player-action permission remains independent and supplies no observed
+false-to-true restoration edge in this sample.
 
 The [calibration reader](../../scripts/game_data/damage_runtime_calibration.py)
 retains Pack returns, enclosing actions, dump calls, typed getter callers and
@@ -1801,8 +4759,523 @@ The two ExecuteInternal call sites pass different literal extra-target values,
 but a recorded damage-unit index of zero alone does not identify either call.
 An ordinary entity name also cannot exclude a part-compatible receiver.
 Consequently the existing record narrows this gap without proving the branch
-was skipped. The anonymous runtime callback table's live selection remains
-unknown; a static null/default branch is not evidence that it was taken.
+was skipped. The runtime replacement table's live selection remains unknown;
+a static null/default branch is not evidence that it was taken.
+
+That formerly anonymous selector now matches
+`DamagePackData.get_defenderPoiseFactor`: the selected named getter, the
+ProcessDamage fragment and the standalone formula share the same root, table,
+function and receiver slots. The normal getter returns Double one; an active
+replacement supplies the factor instead. The native validator checks these
+selector identities and default/patch edges, not merely a similar method name.
+This identifies the operand without proving its live value. Because the
+selector is present directly in ProcessDamage, a named getter observer may
+remain unvisited; nonentry cannot establish a factor of one.
+
+A later complete joint capture independently observes the factor Double at
+its arithmetic use, the health/UsesRaw return values and typed defender.data /
+healthType boundaries within the same Process/Pack context. Its admitted
+normal contexts supply factor one and false predicate returns without fitting
+HP residuals. This closes those actual operand/data joins for that session;
+it does not prove default versus IFix selection, exclude intervening writers
+or repair the identities of earlier crashed sessions.
+Typed HP settlement must bind both outer and child modifier entry types to
+the selected branch. HP/Add is a positive signed operation, while zero Add
+can return Cancelled with cancelReason None and preserve entry realDelta;
+that differs from DamageImmune's type/reason mutation. Continuous player HP
+can include directly parented healing events from the same actor/attributes,
+without reseeding from later damage entries. Healing amount/schedule remain
+external until Buff production and its parameters are independently recovered.
+
+Existing retained IFix payloads contain no fix record for this getter. The
+current patch publication path requests the runtime HotPatch API; its internal
+call boundary does not expose the historical replacement-slot state. See
+[IFix ownership and limits](ifix_patch.md). Neither an absent stored fix record
+nor an empty log search proves that a past invocation used the default factor.
+Poise-related attribute snapshots and outer Poise modifier deltas also do not
+record the getter result, current-poise state or the actual replacement choice.
+For those earlier unobserved invocations, keep the live factor and independent
+bounds unknown; settled HP must not supply them through residual fitting.
+
+The extended branch recipe observes the module selector at ProcessDamage entry
+and return, with two bounded collections of root/table/function/receiver at each
+boundary. Null, unresolved, changed and unreadable snapshots remain distinct.
+Even equal snapshots do not prove unchanged state between reads or selection at
+the arithmetic instruction. Two typed wrapper candidates are scoped to the
+reviewed indirect-call return site inside ProcessDamage. A captured normal
+return observes that physical callback's Double result; no hits or an unmatched
+active function do not select one. Calibration retains these returns separately
+from selector snapshots and from each Pack's unknown factor, because a shared
+ProcessDamage ancestor alone does not prove a unique Pack-to-callback mapping.
+
+A retained short branch session now supplies admitted selector boundaries: its
+entry/return snapshots show a resolved root with a null table, and neither
+scoped callback candidate is entered. The incoming extra-target flags are false.
+This narrows the selected samples without recording the factor instruction
+itself. The conditional rule is precise: if the original normal arithmetic path
+reaches the selector and no intervening write changes its root/table choice
+before the selector loads, the null-table fallback contributes Double one.
+No existing writer/synchronization proof excludes an intermediate change and
+restoration, so actual path/value remain unknown in the observation report.
+Repeated identical boundary recordings alone would not remove that condition.
+
+Under that explicit factor-one/ordinary-non-RawDamage hypothesis, the existing
+simulator arithmetic reference reproduces every compared outer Modifier request
+in the short session bit-for-bit as Double. Inputs come from the authenticated
+attacker/defender caller roles in each Pack's own nested dump, its observed DEF
+Single return and the conditional later critical flag interpretation. The sample
+also narrows each comparison to a single Pack and outer Modifier under the same
+ProcessDamage, with matching source/target attribute identities. No multiplier
+or critical branch is chosen by residual fitting. This supports the conditional
+fragment model; it does not prove selector continuity, normal-path reachability,
+array-to-frame lifetime, general floating-environment parity or final HP policy.
+
+The independent [Process route reader](../../scripts/game_data/damage_process_route_native.py)
+and [reviewed contract](../../scripts/game_data/contracts/damage_process_route_native.json)
+now authenticate the Pack caller, predicate argument joins, default enum rules,
+selector families and bounded bypass/merge windows on the selected native pair.
+The retained Pack return sites match the original Process call fragment. This
+does not prove arrival at the factor selector: the health and Raw alternatives
+occur afterward, and later Modifier observations are already past their merge.
+The captured efficiency getter's caller identifies its Def helper body, not
+the helper's incoming Process callsite; unobserved provider/replacement reentry
+therefore cannot be excluded from this trace alone.
+
+The ordinary `UsesRawDamageValue` rule is true for LifeDrain and Fixed and false
+for Physical. It reads the local Pack's damage type, whose captured boundary
+value still needs continuity to that read. Its replacement selector shares the
+factor's root/table family, while the health predicate uses the same root with
+a different table family. The latter matches `AbilitySystem.get_healthType`:
+its original path reads the defender's data reference and then
+`AbilitySystemData.healthType`; the predicate compares the resulting enum with
+Independent. A replacement may supply that enum instead. The current enum maps
+Normal and Independent separately, and existing fresh ordinary-Rodin component
+data stores Normal. This remains a stored candidate, not a binding to the
+historical defender.data or proof that its getter used the original path.
+Factor-family null boundary samples do not observe the separate health family.
+
+These default rules and call markers narrow the remaining questions to live
+defender/data ownership, both predicate selections, local Pack continuity and
+root/table publication during the interval. The route validator deliberately
+retains unknown actual reachability/value; numerical agreement and later HP
+settlement cannot supply those missing observations.
+
+The retained field inventory explicitly separates AbilitySystem identities
+from their Attributes objects. Neither retained combat session records the
+defender's data-reference value or its healthType. A computed field address,
+entity UID, Unity path ID or managed-reference ID cannot supply that missing
+pointer value. Fresh Endminf and ordinary-Rodin stored Normal values remain
+static candidates. No repeat decode of the full battle is needed to establish
+this absence from the admitted capture schema.
+
+The independent [HotPatch publication proof](ifix_patch.md) now bounds native
+Set/Clear/ClearAll store order and the getter's stored native-slot identity.
+Its writer/getter roots share an initialization value, not proven lifetime
+identity. The conditional null-page persistence rule still requires exclusion
+of resets and other writers, which the retained trace does not provide.
+These static gains do not change the conditional damage regression or supply
+an admitted observed factor. Operand evidence must bind live defender.data,
+the actual health/Raw decisions and the arithmetic selector/result, rather
+than repeat the existing Process entry/return snapshots. A later report
+getter call can reevaluate the property and is not the original arithmetic
+operand; the Process caller's saved pre-entry XMM register is not that operand either.
+
+The separate [operand contract](../../scripts/game_data/contracts/damage_operand_capture_native.json)
+and [validator](../../scripts/game_data/damage_operand_capture_native.py) now prove
+a bounded alternative using ordinary function entries. The arithmetic factor
+remains in XMM1 until one of the first post-arithmetic calls. The complete
+reviewed normal-flow alternatives include class initialization, the report
+getter and report-info entry. Only the earliest matching context in a complete
+Process invocation can supply this carrier; later calls may clobber it or
+reevaluate the property. This does not require historical patch-writer
+continuity to observe the carrier, and does not establish that continuity.
+
+The [operand recipe](../../scripts/game_data/contracts/damage_operand_capture.json)
+adds scoped paired health/UsesRaw predicates and ordinary-entry contexts to
+the existing branch profile. The health entry binds defender identity to its
+live data reference and stored health-type snapshot. This is an entry snapshot,
+not proof of the later native load or the getter's internal replacement choice.
+Normal predicate returns record the actual health/Raw decisions. Projection
+requires same-thread active Process ancestry, exact callers, a unique local
+Pack identity and ordered false health/Raw returns before the factor context.
+
+The [operand reader](../../scripts/game_data/damage_operand_inspect.py) separates
+direct raw carrier bits from their conditional factor interpretation. The
+normal-flow proof excludes exception/unwind, nonlocal and debugger resumes;
+a normal Process return alone does not prove that no such event occurred.
+Missing proof conditions or ambiguous joins withhold interpretation, and absent
+factor observations never become one. Producer build, native checks and offline
+decoder tests have passed. The first live operand attempt was interrupted by a
+system bugcheck. A subsequent inspection of the retained files corrects the
+earlier empty-journal assessment: the top-level journal is empty, but the
+mission-trace journal contains paired predicates and raw factor contexts. The
+earlier report already fingerprinted that nonempty journal: this corrects its
+interpretation, rather than claiming the files were subsequently restored.
+The separate [salvage reader](../../scripts/game_data/damage_operand_salvage.py)
+checks retained DLL/session identity, profile/activation bindings, every complete
+row's ABI, caller and synchronous ancestry, and source bookends. Only a closed
+leading scope is projected. Its report remains explicitly unadmitted and does
+not synthesize a complete capture receipt or relax the normal transport gate.
+
+The salvaged scopes contain false health and UsesRaw normal returns. Their
+health receivers equal the unique normally returning outer ApplyModifier
+receiver in the same Process, whose entry identifies Rodin. The health-entry
+data pointer and health-type field remain snapshots, not observations of the
+later native load. Each scoped saved XMM1 low Double is one and its stack-local
+address matches the unique Pack receiver. This is direct saved-carrier evidence;
+it does not yet prove that the earliest *saved* context was the first actual
+post-arithmetic call. No default getter or replacement path follows from the
+absence of other contexts, and equal selector boundaries still do not establish
+writer continuity.
+
+The running status and journal can be checked as a local checkpoint. Session
+termination is not logically required to prove delivery for an already closed
+synchronous scope. A source-level candidate proof uses the exit row's queue
+publication and consumption, followed by writer/status publication, to order
+earlier loss counters before the checkpoint. The producer proof now has separate
+bounded compiled lanes for recorder operations, writer fields and context
+accounting. The [COFF/PE reader](../../scripts/game_data/coff_pe_match.py) treats
+relocation-masked bytes only as candidate discovery, then checks actual targets;
+same-cohort target consistency, exact literal contents and unresolved externals
+remain distinct. TLS section-relative relocations are not ordinary RVAs, and
+matching offsets do not establish the named TLS object's complete layout.
+Capture rebuilds can replace Release objects without changing a retained
+session's DLL. Preserve the selected object/DLL cohort before rebuilding and
+use that retained cohort for historical checkpoint validation; current `out/`
+objects do not inherit a previous producer proof.
+
+The retained pre-input object cohort still matches the crash session's DLL.
+The battle-simulator's independent TLS bridge checks selected context,
+paired-entry and exit address programs against that cohort: PE AddressOfIndex,
+the thread TLS table lookup, and the matching named SECREL displacement with
+the count access inside the TLS storage extent. Compiled operand grammar is
+checked separately from recorded bytes. Under ordinary Windows AMD64 TLS
+semantics this proves selected storage-address relationships, not every TLS
+access, active ancestry, guard dominance or hook epoch. Silent early exits and
+Recorder/writer/output continuity remain necessary to exclude an earlier
+omitted carrier; these selected address joins do not admit a numeric factor.
+
+The simulator's compiled context-prefix extension now checks the ordinary
+rejection cleanup and silent omissions. Null Recorder, invalid index, empty
+nesting, no selected nonzero parent and caller lookup miss can omit records
+without increasing the caller-read-failure counter. The newest matching nesting
+key wins even when its stored identifier is zero. Only a nonzero selected parent
+and failed caller-pointer read or a result length other than exactly eight
+increase that counter. The search-result/end-pointer comparison is compiled
+evidence; its allowlist interpretation retains an external-helper premise.
+Rejected paths balance the active increment, while a passed prefix still holds
+it until later processing. Capacity guards in paired entry do not make the
+context reader safe against a corrupt nesting count. None of these local facts
+establishes all earlier runtime guard values or complete callback delivery.
+
+The retained-start extension additionally binds the retained-byte load to the
+installation-attempt test on the valid-base/count path. Retained starts bypass
+the atomic attempted-byte exchange; nonretained starts exchange one and branch
+on the old byte. This excludes interpreting that guard as an unconditional
+single Recorder lifetime. Retained eligibility/adoption, Recorder allocation,
+publication and stop exchange, writer ownership and callback quiescence remain
+unclosed. The corresponding regression models emit conditional control requests,
+not successful adoption or proof of one runtime epoch.
+
+The finite Recorder publication extension binds replacement, both start-route
+publications, stop exchange and poll consumer operands against the retained
+session/provider objects and DLL. Allocation's nonnull branch requests the
+matched constructor; the selected join replaces one owner slot and conditionally
+requests old-owner disposal. Both publications read that slot into the same
+global recorder cell. Stop exchanges a supplied register into that cell; its
+zero value is not established by the exchange slice. Poll relates the owner's
+recorder pop to its writer request through the same record buffer and checked
+write flag. Complete callee byte matches do not prove all allocator, constructor
+or disposer effects. The unchanged instance across slices, full start/stop
+control, writer lifetime, callback quiescence and one uninterrupted runtime epoch
+remain unclosed. These local joins therefore do not admit raw factor carriers.
+
+The simulator's complete stop-CFG extension now independently decodes every
+selected instruction, branch/fallthrough edge and call relocation, then computes
+register states to a fixed point. Under ordinary Windows AMD64 nonvolatile
+preservation, the selected exchange receives zero; its sole value-copy predecessor
+also prevents entry that bypasses that copy. Reaching this exchange atomically
+revokes the global publication. Reachability of that runtime event is not
+guaranteed. A conditional owner-slot clear still depends on an unclassified
+register predicate, not a proved quiescence or disposal result. Direct owner
+write inventory does not exclude aliases or callee effects. Start-to-publication
+continuity, replacements, writer lifetime and one continuous Recorder epoch
+remain unresolved, so the stronger stop proof still does not admit numeric
+factor candidates or exclude earlier silent omissions.
+
+The complete selected start-CFG extension additionally proves original-Session
+receiver preservation to its state load, excludes reentry to that load and
+tracks the nonvolatile state base through replacement and both publication
+paths. The sole direct same-base owner replacement store dominates both
+publication loads, including retained-hook publication. Checked load/NOP/store
+predecessors prevent publishing through a bypass of the selected load. Reusing
+retained hooks therefore does not imply skipping the Recorder owner write.
+Intervening call effects, aliases and concurrent writes remain unclosed;
+unchanged owner-slot bits require a separate premise and do not prove the same
+live allocation. Start/stop control facts alone still cannot establish one
+continuous epoch or admit the candidate damage-factor values.
+
+A further retained-code alias witness binds both intervening status calls to
+their actual linked target and passes the original state receiver with zero
+flags through non-bypassable argument preparation. A complete selected acyclic
+callee prefix preserves that receiver and freshly reads its Recorder owner slot
+under normal ABI returns. This proves an exposed state alias and callee read;
+it does not establish absence of later writes or unchanged pointee state.
+Other calls, aliases/concurrency and live allocation lifetime still leave the
+replacement-to-publication and publication-to-stop instance joins unresolved.
+
+The complete selected status-body extension checks its switch table, call targets
+and direct writes. Absence of a direct same-offset owner write does not exclude
+aliases, overlapping writes, callees or concurrency. The selected old crash rows
+and incomplete final summary do not carry Recorder allocation identity; static
+code cannot create that missing observation. A separate new producer identity
+lane is required for future records and must not repin or upgrade old receipts.
+
+The simulator now retains a reviewed producer supplement with immutable serials
+that saturate permanently instead of wrapping. New rows explicitly stamp
+borrow/queue/drain identity; final publication/unpublication and loss/quiescence
+checks are separate. Legacy rows remain historical without allocation identity.
+The new source/version gate and passive Skill/ATB endpoint profile were compiled
+and exercised offline through production parsing, disabled prologue examples and
+real queue/allocator code. This prepares future observation; it is not a live
+capture, full lifecycle journal, unobserved-callback proof or numeric factor
+admission. A fresh game process and a short new sample are required for the
+selected live bindings; unrelated static branches remain recoverable offline.
+
+The subsequent serial Skill capture was received and independently admitted.
+For its selected lossless paired records, borrower, queue and drain serials agree
+with final publication/unpublication witnesses. Identity is scoped to one loaded
+producer module and the observed records. This does not supply timestamps for
+every allocation/destruction or callback borrow, prove a global no-reset history,
+or retroactively bind the older crashed session. Complete Recorder epoch and
+candidate damage-factor admission remain separate open joins.
+
+Passive ApplyCost/exclusive/ATB setter entry and return observations are now
+available. Fresh applied-cost flag changes have directly nested successful cost
+checks; setter arguments and independent return balances are clamp-compatible
+under original-path and maximum-read premises. Stable owner/delegate bytes are
+endpoint observations, not continuous allocation identity or callback effects.
+Actual debit, callback nonmutation and cost-query inputs cannot be obtained by
+subtracting resource endpoints. Single elapsed additions and native-derived
+interrupt getters also match the admitted endpoints under explicit precision
+and original-path premises; neither match proves scale propagation or complete
+input/control recovery. These distinctions are maintained by the simulator's
+separate observed audits and conditional regression operations.
+
+The new physical cost-query proof separates CostData's resource discriminator
+from its base Single and from the selected normal-skill attribute adjustment.
+Wrong or null CostData selects a zero base without necessarily selecting a zero
+ATB query. On the selected original ready path the attribute's Double return is
+converted to Single before the Single sum and nonnegative clamp. Nominal
+ownership of the physical queries, live arguments and that attribute return
+remain unresolved. Authored exports and resource residuals cannot replace these
+operands. The new synchronous scope audit likewise preserves separate input
+and command roots rather than inferring cross-frame acceptance by proximity.
+
+The nonnull exclusive delegate code slots in the new admitted cohort identify a
+registered enemy AI callback. Native fallback forwarding and the callback's
+complete selected original body distinguish AI finish-state updates from player
+control restoration. The callback clears its guard before null checks, requests
+disabling the ability's CastEnd callback, then copies finish-wait bits and writes
+WaitFinish. A later null failure does not undo the earlier guard-clear request.
+The callback's Skill argument is unused on this original path. Observed delegate
+bytes do not establish invocation, target-object class/lifetime or actual field
+effects; those runtime joins remain separate from the native conditional rule.
+
+The subsequent owner dispatch proof binds the full object-type getter to its
+inherited entity field and typed Character discriminator. The caller's first
+owner-kind check selects a second independent owner request before the
+AbilitySystem wrapper tail-requests its controller with the Skill ID. First and
+second owners must not be unified without additional binding evidence. The
+selected controller prefix has a structural Nullable-storage byte test only;
+its closed hasValue meaning and full Combo behavior remain unproved.
+
+A safe next observation uses the naturally called, metadata-typed attribute
+GetValue API at the actual cost-query caller and preserves its Double return.
+Direct cached attribute bytes are not that API result, especially across dirty
+or recalculation paths. Separate named primary cost getter entries can expose
+their CostData argument fields and Single returns when naturally called, but
+their complete bodies have no direct forwarding edge to ApplyCost's physical
+query entries. A shared method name does not establish an ABI alias. The
+physical callers also do not establish a zero hidden context register, so a
+three-GP hook for those anonymous entries remains unadmitted. The next reduced
+profile keeps these observation families distinct and uses the existing bounded
+sampler rather than adding an unproved method-middle probe.
+
+The selected original AI WaitFinish continuation stores Single(wait minus delta)
+before testing completion. Only ordered nonpositive results additionally set
+the finish flag and state None; positive or unordered results retain the countdown
+store without those finish writes. The selected Tick state4 lane forwards its
+preserved delta and returns true after the helper's normal return. Runtime
+scheduling/receiver/delta and player control recovery are not supplied by this
+native continuation or by an earlier zero-wait callback endpoint.
+
+The complete Skill refresh wrapper and selected creation prefix also prove a
+direct store of the caller-supplied SkillData reference before later helpers.
+There is no clone before this selected store. The wrapper rereads initialized
+after the helper, then conditionally requests refresh with false. This does not
+close the live object's producer, subsequent writes or CostData values, and must
+not equate a retained serialized asset with the live supplied reference.
+
+The subsequent scoped endpoint capture has now passed an explicitly qualified
+prepared-isolated reproof. Exact prepared source preimages execute in a separate
+tree; reviewed simulator-Git JSON supplements supply prerequisites absent from
+the historical inventory. Original profile failure is retained, and neither a
+complete historical input cohort nor equivalence to the current research
+workspace is claimed. Raw recordings, historical hashes and readers remain
+unchanged. The simulator's source-snapshot, reproof and observed-identity tools
+keep this distinction checkable for later endpoint audits.
+
+The naturally called cost-addition attribute API returned positive-zero Double
+bits in the admitted scope. This supplies the additive operand only: live
+CostData's discriminator/base, complete query and actual debit remain unknown.
+Skill labels use actual synchronous ancestry or nested gate observations,
+not nearest timestamps. Independently authored conditional regression goldens
+retain unknown base/debit flags; no model generates its own expected result.
+Named-primary getter non-observation is not zero cost or a reason to repeat the
+same observation scope.
+
+Directly nested exclusive-to-AI callback pairs now bind the Skill argument,
+delegate code/this/opaque argument slots and sampled ability component at the
+endpoints. The raw parent owner prefix is an AbilitySystem pointer, compared
+with Entity.abilityCom rather than the Entity pointer. Its remaining suffix
+has no proved generation interpretation. Guard/CastEnd-callback clearing and
+zero-wait WaitFinish endpoints match the conditional original rule, but do not
+prove interior iFix selection, causal stores, allocation lifetime or later Tick
+completion. Live cost-query context and AI continuation require distinct
+observations. Legal null CostData must remain absent/unknown, not a numeric zero
+or an unreadable-memory failure in a future context sampler.
+
+The simulator's next observer now distinguishes arity-free ordinary-entry
+architectural context from typed paired hooks. Saved registers bind the physical
+cost-query arguments; the real ATB request is sampled at its typed resource
+consumer, not inferred by subtracting balances. Legal null-root NoChain reads
+are absent with no bytes, while invalid and short reads still fail. The fix is
+built in an isolated SDK copy, with whole-thunk/sampler and selected compiled
+transport checks against retained baseline evidence. Ordinary external ABI/CRT
+and unresolved linked-target premises remain explicit. A fresh immutable reader
+cohort, staged runtime/config/activation checks and streamed output prevent
+unrelated current-source changes from requiring another recording. This is
+prepared observation code, not an observed gameplay value, full DLL equivalence,
+complete object lifetime, damage-factor admission or resource debit proof.
+
+The combined cost/clock recording has since been admitted by its frozen
+reader executed from the retained source tree. All selected observations are
+present and final transport is stopped/lossless; an earlier running status
+snapshot must not supersede the final summary. Saved RDX at the two physical
+queries equals sampled live CostData; SP's saved RCX is CastData and ATB's is
+Skill. Live discriminator/base and naturally returned attribute input now
+conditionally predict the independently observed CostAtb XMM2 request for
+same-invocation normal-skill gates. Upper register bits of a Boolean argument
+remain unspecified; use its low byte. Context MXCSR confirms nearest rounding
+and gradual underflow at observed entries, with differing sticky exception flags
+kept distinct. Query return, read continuity and full debit remain separate.
+
+The same recording also supplies a direct nested AI Tick/WaitFinish receiver
+and delta. The countdown's negative result, finish flag and None state match
+the selected native rule. The enclosing Tick returns true; a later separate
+root Tick at the same address retains finish and returns false. This is
+observed local dispatch and endpoint compatibility, not a general scheduler,
+cross-frame allocation identity, callback causality or player control recovery.
+The simulator's source-bound actual regressions use independent golden data;
+models never author their own expected result, and absent inputs stay unknown.
+
+The resource continuation can also be checked within the same observed
+ApplyCost: the real request and nested SetAtb share the sampled manager, the
+separate setter-entry ATB minus that request matches the passed parameter, and
+the return endpoint matches the conditional clamp. Equality with an earlier
+resource-entry sample does not make these reads continuous or prove callback
+nonmutation. Helper Boolean/out-slot and final debit remain unobserved.
+
+The captured AI Tick caller is now resolved by exact registered pointer and
+instruction call target to EnemyCastSkillInRangeBehavior.OnTick. Its selected
+original wrapper tests inherited finish state, passes delta unchanged to the
+common skill Tick, then on a false result requests Exit, reloads the skill for
+Finish and tail-requests its own finish setter. Each receiver reload is distinct
+across calls. The setter's additional graph branches and the child effects are
+not admitted by this caller proof; actual wrapper fields and receiver continuity
+remain a separate runtime join. Proximity of native method addresses was not
+used to assign the method name.
+
+Full saved query context also shows nonzero incoming R8 words. The selected SP
+body does not read them and the selected ATB path overwrites R8 before use;
+they are not a proved MethodInfo or typed argument. Exhaustive exact registered
+pointer lookup still does not name the physical query entries, leaving generic
+or unregistered ownership unresolved. No getter alias or ABI arity follows from
+these register values or native address proximity.
+
+The simulator now has a separate verified observer family for the typed
+wrapper OnTick and common Exit/Finish methods, with their selector roots/slots
+proved from actual prefixes rather than copied by method ordering. Passive
+Skill-to-Ability pointer and nonReturnedAtbCost reads reuse the existing paired
+sampler: null chains remain absent, unreadable/short reads fail. This requires
+no new SDK binary. Exact manifest/parser/guard/compiled-template checks and a
+fresh immutable reader cohort prepare the next runtime join without repinning
+old receipts or changing their frozen readers. Actual wrapper/cleanup fields,
+stored cost and continuous lifetime are still unobserved at this point.
+
+The [writer contract](../../scripts/game_data/contracts/capture_checkpoint_writer_native.json)
+joins pop/write/flush/status requests to the selected physical candidates,
+checks actual E8 destinations, and binds successful row/byte increments and
+failure unrecorded increments to their branch conditions. Status labels, value
+carriers and receiving insertion calls are checked together. The selected flush
+body comes from the runtime translation unit; a different same-named COMDAT in
+the mission session object does not match. A single object's nonmatch therefore
+does not establish source drift or missing linked implementation. The recorder's
+copy/fill targets likewise match retained older toolchain archive members rather
+than the newest available members. Ordinary CRT behavior remains an explicit
+helper premise, not a consequence of a symbol name or byte match.
+
+The [recorder contract](../../scripts/game_data/contracts/capture_checkpoint_recorder_native.json)
+checks complete finite push/pop programs, reachable roles, memory-write coverage
+and queue geometry. Copy precedes admission and sequence publication; a matching
+sequence precedes pop's copy, then cell release precedes dequeue advancement.
+Error counters and the constructor's zero/sequence initialization are separate
+from the operations' monotonic updates. No local counter reset is proved only
+under compatible live objects, ordinary helpers, and an output Record disjoint
+from the Recorder's complete storage. It does not exclude construction of a new
+Recorder elsewhere.
+
+The [context contract](../../scripts/game_data/contracts/capture_checkpoint_context_native.json)
+binds selected actual thunk calls and TLS-relative consistency, and checks the
+early unreadable counter increment before event sequence allocation. Other
+early exits can still omit a row without incrementing that counter; their guards
+need Process/caller/hook coverage. Executable references in the selected COFF
+unit identify increment-only sequence uses and the enumerated recorder loads,
+start stores and stop exchange. These are not an inventory of all module writes
+or an observed lifetime. The ordinary-start attempt guard is a bounded fragment,
+not proof that retained-hook adoption or another writer never occurred.
+
+These local gains still require hook coverage and recorder-epoch/reset
+continuity before the closed Process checkpoint argument can be admitted. Timestamp order
+and equal counters alone do not close these joins or create a global atomic
+snapshot. The existing entry-thunk/unwind checks do not prove these producer
+paths. Consequently the value remains a conditional carrier candidate, not an
+admitted numeric operand or replacement for the factor-one regression assumption.
+The retained release DLL has no CodeView identity to bind the available older
+debug PDBs. The COFF joins provide a bounded alternative, with explicit external
+helper and lifecycle boundaries. No-reset inside a push/pop operation must not
+be promoted to no replacement of the Recorder across Process callbacks and
+checkpoint publication. Sequence-from-start plus truncate-on-restart can help
+exclude intervening epochs only after global sequence lifetime, all publication
+paths and the active writer/output instance are connected. Continue those
+lifecycle joins offline before requesting new captures.
+Stream-write success is not a crash durability receipt. Preserve the original
+session and hold further live use pending crash diagnosis; the bugcheck alone
+does not identify its cause.
+
+The admitted branch session separately observes a Rodin-source modifier cancelled with
+`DamageImmune`, leaving HP unchanged despite a nonzero modifier request. This
+is an observed settlement cancellation, not a zero factor or evidence of which
+animation/state caused immunity. Keep it separate from outgoing HP-decrease
+samples and never use settled zero damage to infer a formula operand.
+
+Saved branch admission uses the same reviewed recipe-inheritance loader as
+preparation, including inherited kernel hooks. The closed generic source
+carrier also requires its own narrow native ABI witness: ordinary concrete
+value-type rules do not admit it, and its lack of pointee reads is deliberate.
+Direct Boolean GP observations use the declared low byte; nonzero unspecified
+upper register bits do not turn an observed false into true.
 
 The [coverage reader](../../scripts/game_data/damage_runtime_coverage.py) uses
 the dump's explicit GetFinalAttackValue parent before matching target attribute
@@ -1811,6 +5284,35 @@ that reuse one stack address within a DamageAction. A unique candidate remains
 conditional ownership. Optional native interpretation additionally binds the
 current contract digest, selected native identities and the retained flag field
 layout, preserving raw observations and interpretation as separate fields.
+
+The [source-role reader](../../scripts/game_data/damage_runtime_source_roles_native.py)
+authenticates the current Dump body, typed Pack array fields, Attributes provider
+ABI and the two getter-return/array-store transfers against the selected native
+pair. It maps immediate getter callers to named attacker/defender destination
+arrays. Old snapshot selector/body receipts are not reused when their build or
+grammar differs. The role proof and its implementation sources are checked before
+and after evaluation. Coverage may consume it only when its source fingerprints
+and native identities match the retained capture. This removes the source-role
+guess; it does not close runtime object lifetime, coherent snapshot timing or the
+complete array-to-ProcessDamage-frame dataflow. The later flags and settled HP
+never select which source is the attacker.
+
+The separate branch recipe now supports a scoped observation of the actual
+transferred-source ObjectPtr.Lock normal return. Its selected shared-reference
+ABI and unique immediate ProcessDamage caller are independently checked. A
+bounded return snapshot reads the returned object's class first and admits UID
+and Single damageRatio only for exact equality with the resolved EnemyPart
+ClassInfo. Entry, null return, unresolved ClassInfo, class mismatch and unreadable
+memory remain distinct states; only the admitted finite ratio is numeric.
+The offline reader binds both the return phase and returned pointer, and the
+provider checks the ClassInfo cell against the actual loaded module size.
+No extra getter/Lock call is made and no observed argument or result is changed.
+This is observation code preparation, not a new live sample. The snapshot still
+does not prove that the later arithmetic load sees an unchanged value; derived
+classes and unknown replacement effects remain outside this observation grant.
+The selected metadata includes `AbilitySystemForSoul` as an EnemyPart-derived
+type; this exact-class observer deliberately does not admit it. A mismatch is
+therefore not evidence that a returned object has no compatible inherited field.
 
 ## Character attribute formula
 

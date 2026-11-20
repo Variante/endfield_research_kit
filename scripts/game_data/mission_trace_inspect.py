@@ -48,6 +48,15 @@ def require(condition: bool, detail: str) -> None:
         raise InspectionError(detail)
 
 
+def center_delivery_check(name, *args):
+    """Expose narrow retained-proof failures through the ordinary CLI diagnostic."""
+    from scripts.game_data import battle_center_delivery_capture_abi as delivery
+    try:
+        return getattr(delivery, name)(*args)
+    except (ValueError, KeyError, TypeError, IndexError) as exc:
+        raise InspectionError(str(exc)[:2048]) from exc
+
+
 def integer(value: Any, label: str, maximum: int = (1 << 64) - 1) -> int:
     require(type(value) is int and 0 <= value <= maximum, f"invalid unsigned integer: {label}")
     return value
@@ -256,8 +265,239 @@ def bound_bytes(artifacts: dict[str, dict[str, Any]], name: str, limit: int) -> 
     return data
 
 
+def validate_module_selector_descriptor(field,hook):
+    from scripts.game_data.damage_runtime_branch_abi import CONTRACT,SCHEMA
+    from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+    contract,_=read_reviewed_contract(CONTRACT,schema=SCHEMA,label='damage_module_selector',status='reviewed')
+    spec=contract['moduleSelector'];w=(field.get('rawProof')or{}).get('sourceWitness')or{}
+    require(hook.get('name')==spec['hook'] and field.get('readMode')=='moduleCallbackSelector'
+            and field.get('argumentName')=='module' and field.get('type')=='damage.defenderPoiseFactor.moduleSelector'
+            and field.get('valueBits')is None and field.get('valueRepresentation')is None
+            and field.get('arg')==field.get('offset')==0 and field.get('chain0')==field.get('chain1')==4097
+            and field.get('byteCount')==64 and field.get('rootRva')==int(spec['rootRva'],16)
+            and field.get('tableOffset')==spec['tableOffset'] and field.get('functionOffset')==spec['functionOffset']
+            and w.get('schema')==SCHEMA and w.get('hook')==spec['hook'] and w.get('logicalGetter')==spec['logicalGetter']
+            and type(field.get('imageBytes'))is int and 0<field['rootRva']<=field['imageBytes']-8,
+            'module selector descriptor differs from reviewed source/module')
+
+
+def decode_module_selector(field,observed):
+    state=integer(observed.get('state'),'module selector state',16)
+    names={1:'activeBoundary',2:'readFailed',10:'nullRootUnknown',11:'nullTableBoundary',12:'nullFunctionBoundary',
+           13:'changedWithinSnapshot',14:'unresolvedRootUnknown',15:'unresolvedTableUnknown',16:'unresolvedFunctionUnknown'}
+    require(state in names,'invalid module selector predicate state')
+    text=observed.get('rawHex');require(observed.get('byteCount')==64 and isinstance(text,str)
+            and re.fullmatch('[0-9a-f]{128}',text)is not None and observed.get('value')==observed.get('sourceAddress')==0,
+            'module selector snapshot framing/source differs')
+    values=struct.unpack('<8Q',bytes.fromhex(text));a=values[:4];b=values[4:]
+    canonical=lambda p:0<p<0x800000000000 and not p&7
+    def expected(v):
+        root,table,function,receiver=v
+        if not root:
+            require(table==function==receiver==0,'null selector root carries dependent bytes');return 10
+        if not canonical(root):
+            require(table==function==receiver==0,'unresolved selector root was dereferenced');return 14
+        if not table:
+            require(function==receiver==0,'null selector table carries dependent bytes');return 11
+        if not canonical(table):
+            require(function==receiver==0,'unresolved selector table was dereferenced');return 15
+        if not function:return 12
+        if function>=0x800000000000:return 16
+        return 1
+    if state!=2:
+        first=expected(a);expected(b)
+        require((state==13)==(a!=b),'module selector stability state differs from sampled tuples')
+        if state!=13:require(state==first,'module selector predicate differs from retained bytes')
+    keys=('root','table','function','receiver')
+    return dict(label=field['label'],type=field['type'],state=state,stateName='unreadable'if state==2 else names[state],
+        predicateReason=names[state],value=None,before=dict(zip(keys,a)),after=dict(zip(keys,b)),rawHex=text,byteCount=64,
+        snapshotStable=(a==b)if state!=2 else None,actualFactor=None,arithmeticSelectionObserved=False,readMode='moduleCallbackSelector')
+
+
+def validate_callback_candidate_descriptor(hook,profile):
+    from scripts.game_data.damage_runtime_branch_abi import CONTRACT,SCHEMA
+    from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+    contract,_=read_reviewed_contract(CONTRACT,schema=SCHEMA,label='damage_callback_candidate',status='reviewed')
+    specs=[x for x in contract['callbackCandidates']if x['hook']==hook.get('name')]
+    require(len(specs)==1,'unknown damage callback candidate')
+    spec=specs[0]
+    selector=contract['moduleSelector']
+    proofs=hook.get('captureCallerProofs');families=hook.get('captureCallerSourceWindows')
+    opaque=(hook.get('pairedAbiProof')or{}).get('opaqueByRefArguments')
+    require(profile.get('recipeSchema')=='endfield.mission-trace-capture-recipe.v17'
+            and hook.get('captureIndirectCaller')=='damage.defenderPoiseFactor'
+            and hook.get('symbol')==spec['type']+'.'+spec['method'] and hook.get('declaringImage')==spec['declaringImage']
+            and hook.get('returnType')=='double' and hook.get('parameters')==spec['parameters'] and hook.get('fields')==[]
+            and hook.get('abiId')=='win64.scoped_paired_gp_double_3.v1' and hook.get('captureScope')=='paired-ancestor'
+            and int(hook['rva'],16)==int(spec['entryRva'],16), 'callback candidate image/ABI/entry/scope differs')
+    require(hook.get('captureCallerReturnRvas')==f"{int(selector['returnRva'],16):x}"
+            and isinstance(proofs,list) and len(proofs)==1 and isinstance(proofs[0],dict)
+            and isinstance(families,list) and len(families)==1,
+            'callback candidate requires exact indirect caller proof and source windows')
+    proof=proofs[0]
+    require(proof.get('callerHook')=='damage.Action.ProcessDamage' and proof.get('callKind')=='indirectCandidate'
+            and proof.get('targetSelectionObserved')is False and proof.get('callBytes')==selector['callBytes']
+            and proof.get('callRva')==int(selector['callRva'],16) and proof.get('returnRva')==int(selector['returnRva'],16)
+            and proof.get('targetRva')==int(spec['entryRva'],16), 'callback candidate indirect source/site differs')
+    require(isinstance(opaque,list) and len(opaque)==1 and isinstance(opaque[0],dict),
+            'callback candidate requires opaque P0 byref witness')
+    witness=opaque[0];raw=witness.get('nativeTypeRecordHex','')
+    require(witness.get('argument')=='P0' and witness.get('type')==spec['parameters'][0]['type']
+            and witness.get('mode')=='opaqueValueByRef' and witness.get('bytes')==8
+            and witness.get('byref')is True and witness.get('pointeeRead')is False
+            and isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw)is not None
+            and bytes.fromhex(raw)[10]==0x11 and bytes.fromhex(raw)[11]&0x7f==0x20
+            and int.from_bytes(bytes.fromhex(raw)[:8],'little')==witness.get('typeDefinitionIndex'),
+            'callback candidate P0 byref type/representation differs')
+    return selector
+
+
+def validate_reference_pointer_return(hook, profile):
+    if hook.get('centerDeliveryProof'):
+        return center_delivery_check('validate_retained_return',hook,profile)
+    if hook.get('name') == 'battle.Center.GetBlackboard':
+        from scripts.game_data.battle_center_capture_abi import validate_retained_return
+        return validate_retained_return(hook, profile)
+    if hook.get('name') == 'damage.Source.Lock':
+        return validate_damage_pointer_return(hook, profile)
+    proof=hook.get('returnAbiProof')or{}
+    try:raw=bytes.fromhex(proof.get('nativeTypeRecordHex',''))
+    except(ValueError,TypeError):return False
+    if (len(raw)!=16 or raw[11]!=0 or proof.get('mode')!='directReference'
+            or proof.get('returnType')!=hook.get('returnType')
+            or proof.get('returnObserved')is not True or proof.get('pointeeRead')is not False):return False
+    if raw[10]in(0x0e,0x1c):
+        return hook['returnType']=={0x0e:'string',0x1c:'object'}[raw[10]]
+    return raw[10]==0x12 and type(proof.get('typeDefinitionIndex'))is int and int.from_bytes(raw[:8],'little')==proof['typeDefinitionIndex']
+
+
+def validate_damage_pointer_return(hook, profile):
+    from scripts.game_data.damage_runtime_branch_abi import CONTRACT, SCHEMA
+    from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+    contract,_=read_reviewed_contract(CONTRACT,schema=SCHEMA,label='damage_pointer_return',status='reviewed')
+    spec=contract['returnedPart']
+    p=hook.get('returnAbiProof')or{}; raw=p.get('nativeTypeRecordHex','')
+    require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
+            and hook.get('name')=='damage.Source.Lock' and hook.get('symbol')=='Beyond.ObjectPtr`1.Lock'
+            and hook.get('returnType')==hook.get('pairedAbiProof',{}).get('returnType')==p.get('returnType')==spec['returnType']
+            and p.get('mode')=='selectedSharedGenericReference' and p.get('closedReturnType')=='object'
+            and p.get('contractSchema')==SCHEMA
+            and p.get('byref')is False and p.get('returnObserved')is True and p.get('pointeeRead')is True
+            and p.get('sharedNativeEntryRva')==hook.get('rva')==spec['entryRva'] and hook.get('parameters')==[]
+            and hook.get('captureCallerReturnRvas')==','.join(f'{int(x,16):x}' for x in spec['callerReturnRvas'])
+            and isinstance(raw,str)and re.fullmatch('[0-9a-f]{32}',raw)is not None
+            and bytes.fromhex(raw)[10]==0x13 and bytes.fromhex(raw)[11]&0x7f==0
+            and int.from_bytes(bytes.fromhex(raw)[:8],'little')==int(spec['returnType'][4:-1]),
+            'invalid exact damage shared-reference return ABI')
+    return True
+
+
+def validate_damage_source_carrier(profile, hook, aggregate, fields):
+    """Admit only the preparer's reviewed, unread Process source temporary."""
+    from scripts.game_data.damage_runtime_branch_abi import CONTRACT, SCHEMA
+    from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+    contract,_=read_reviewed_contract(CONTRACT,schema=SCHEMA,label='damage_source_carrier',status='reviewed')
+    context=f"hook={hook.get('name')} argument={aggregate.get('argument')}"
+    require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
+            and hook.get('name')=='damage.Action.ProcessDamage'
+            and hook.get('symbol')=='Beyond.Gameplay.Core.DamageAction._ProcessDamage'
+            and hook.get('abiId')=='win64.paired_gp_bool_8.v1',
+            'damage_source_carrier.selected_hook: '+context)
+    for role,key in (('gameAssembly','gameAssemblySha256'),('metadata','metadataSha256')):
+        require((profile.get('files',{}).get(role)or{}).get('sha256','').lower()==contract['nativeInputs'][key].lower(),
+                'damage_source_carrier.selected_native_inputs: '+context+' input='+role)
+    witness=aggregate.get('reviewedNativeWitness');expected=dict(contractSchema=SCHEMA,**contract['captureAbi'])
+    require(witness==expected,'damage_source_carrier.reviewed_native_witness: '+context)
+    consumer=aggregate.get('consumerProof');keys=('entryRva','stackDelta','incomingSlot','copyRva','copyBytes')
+    require(isinstance(consumer,dict) and set(consumer)==set(keys)
+            and all(consumer.get(k)==expected[k]for k in keys)
+            and hook.get('rva')==expected['entryRva'],
+            'damage_source_carrier.native_consumer_coordinates: '+context)
+    raw=aggregate.get('nativeTypeRecordHex','')
+    require(isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw)is not None,
+            'damage_source_carrier.native_type_record: '+context)
+    record=bytes.fromhex(raw)
+    require(record[10]==0x15 and record[11]&0x7f==0 and int.from_bytes(record[:8],'little')>0
+            and aggregate.get('mode')=='indirectValue' and aggregate.get('unboxedBytes')==expected['unboxedBytes']==16
+            and aggregate.get('byref')is False
+            and aggregate.get('type')=='Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>'
+            and aggregate.get('argumentType')=='Beyond.Gameplay.Core.AbilitySystem'
+            and type(aggregate.get('definitionTypeIndex'))is int and aggregate['definitionTypeIndex']>=0
+            and type(aggregate.get('nativeTypeIndex'))is int and aggregate['nativeTypeIndex']>=0,
+            'damage_source_carrier.closed_reference_uid_representation: '+context)
+    params=hook.get('parameters')or[]
+    position=expected['incomingSlot']-1
+    require(aggregate.get('argument')==expected['parameter']=='transferredSource'
+            and len(params)==6 and position==4 and params[position]==dict(name=expected['parameter'],type=aggregate['type'])
+            and hook.get('receiverIdentity',{}).get('arg')==0
+            and not any(f.get('argumentName')==aggregate['argument']for f in fields),
+            'damage_source_carrier.parameter_or_unread_policy: '+context)
+
+
+def validate_returned_part_descriptor(field, hook):
+    from scripts.game_data.damage_runtime_branch_abi import CONTRACT, SCHEMA
+    from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+    contract,_=read_reviewed_contract(CONTRACT,schema=SCHEMA,label='damage_return_descriptor',status='reviewed')
+    spec=contract['returnedPart']; proof=field.get('rawProof')or{}; witness=proof.get('sourceWitness')or{}
+    require(hook.get('name')==spec['hook'] and field.get('readMode')=='returnedExactClass'
+            and field.get('argumentName')=='returnValue' and field.get('type')==spec['classType']
+            and field.get('valueBits')is None and field.get('valueRepresentation')is None
+            and field.get('byteCount')==32 and field.get('arg')==field.get('offset')==0
+            and field.get('chain0')==field.get('chain1')==4097 and not field.get('fieldPath')
+            and field.get('classInfoRva')==int(spec['classInfoRva'],16)
+            and field.get('uidOffset')==spec['uidOffset'] and field.get('ratioOffset')==spec['ratioOffset']
+            and proof.get('type')==field['type'] and proof.get('byteCount')==32
+            and witness.get('schema')==SCHEMA and witness.get('classType')==spec['classType']
+            and witness.get('hook')==spec['hook'] and witness.get('uidField')==spec['uidField']
+            and witness.get('ratioField')==spec['ratioField'], 'returned exact-class descriptor differs from reviewed domain')
+    require(type(field.get('imageBytes'))is int and 0<field['classInfoRva']<=field['imageBytes']-8,
+            'returned ClassInfo cell outside loaded module')
+
+
+def decode_returned_part(field, observed):
+    state=integer(observed.get('state'),'returned-part state',9)
+    names={1:'exact',2:'readFailed',6:'entryNotApplicable',7:'nullReturn',8:'unresolvedExpectedClass',9:'classMismatch'}
+    require(state in names,'invalid returned-part predicate state')
+    text=observed.get('rawHex');require(observed.get('byteCount')==32 and isinstance(text,str)
+            and re.fullmatch('[0-9a-f]{64}',text)is not None,'returned-part snapshot framing differs')
+    obj,klass,expected,uid,bits=struct.unpack('<QQQII',bytes.fromhex(text))
+    require(observed.get('value')==observed.get('sourceAddress')==0,'returned snapshot must not masquerade as raw span')
+    if state==1:require(0<obj<0x800000000000 and obj&7==0 and klass==expected and 0<expected<0x800000000000 and expected&7==0,'exact returned-part class predicate differs')
+    if state==6:require(obj==klass==expected==uid==bits==0,'entry snapshot unexpectedly reads return memory')
+    if state==7:require(obj==klass==expected==uid==bits==0,'null return snapshot carries fields')
+    if state==8:require(obj>0 and klass==uid==bits==0 and (expected==0 or expected&7!=0 or expected>=0x800000000000),'unresolved class state inconsistent')
+    if state==9:require(0<obj<0x800000000000 and obj&7==0 and 0<expected<0x800000000000 and not expected&7 and klass!=expected and uid==bits==0,'class mismatch snapshot carries admitted fields')
+    result=dict(label=field['label'],type=field['type'],state=state,stateName='unreadable' if state==2 else names[state],value=None,
+        byteCount=32,rawHex=text,returnedObject=obj,observedClass=klass,expectedClass=expected,
+        predicateReason=names[state],ratioValue=None,uid=None,ratioBits=None,readMode='returnedExactClass')
+    if state==1:
+        ratio=struct.unpack('<f',struct.pack('<I',bits))[0]
+        result.update(uid=uid,ratioBits=bits,ratioValue=ratio if math.isfinite(ratio)else None)
+        if not math.isfinite(ratio):result['predicateReason']='nonFiniteRatio'
+    return result
+
+
+def validate_returned_part_phase(row, decoded):
+    if row.get('phase')=='enter':
+        require(decoded['state']==6 and row.get('returnValue')is None,
+                'returned-part entry must be not-applicable without a return value')
+    else:
+        require(row.get('phase')=='return' and decoded['state']!=6
+                and decoded['returnedObject']==row.get('returnValue'),
+                'returned-part snapshot differs from original normal return')
+
+
 def validate_bounded_descriptor(field,fields,hook):
     kind=field['kind'];proof=field.get('rawProof')if kind!=7 else field.get('containerProof')
+    if field.get('readMode')=='centerDelivery':
+        center_delivery_check('validate_retained_field',field,hook)
+        return
+    if kind==10:
+        validate_module_selector_descriptor(field,hook)
+        return
+    if kind==9:
+        validate_returned_part_descriptor(field, hook)
+        return
     require(isinstance(proof,dict)and proof.get('type')==field.get('type'),'bounded read lacks exact selected type proof')
     require(field.get('valueBits')is None and field.get('valueRepresentation')is None,'opaque bounded bytes cannot grant scalar or reference semantics')
     if kind==7:
@@ -323,11 +563,13 @@ def program(hook: dict[str, Any]) -> list[list[int]]:
     for item in text.split(";")[:-1] if text else []:
         require(re.fullmatch(r"\d+(?:,\d+){4,11}", item) is not None, "invalid readProgram row")
         row=list(map(int,item.split(',')));arg,kind,offset,chain0,chain1=row[:5]
-        require(all(n<=0xffffffff for n in row)and arg <= 7 and 1 <= kind <= (8 if bounded else 5) and offset <= 4096 and chain0 <= 4097 and chain1 <= 4097,
+        require(all(n<=0xffffffff for n in row)and arg <= 7 and 1 <= kind <= (10 if bounded else 5) and offset <= 4096 and chain0 <= 4097 and chain1 <= 4097,
                 "readProgram bounds exceeded")
         require(chain0 != 4097 or chain1 == 4097, "readProgram second chain lacks first chain")
         require(kind != 4 or (offset == 0 and chain0 == chain1 == 4097), "scalar readProgram has memory path")
-        require(len(row)=={6:6,7:12,8:8}.get(kind,5),'invalid readProgram arity')
+        require(len(row)=={6:6,7:12,8:8,9:9,10:9}.get(kind,5),'invalid readProgram arity')
+        if kind==10:require(arg==offset==0 and chain0==chain1==4097 and row[6]<=65528 and row[7]<=65520 and 0<row[5]<=row[8]-8,'module selector read bounds differ')
+        if kind==9:require(arg==offset==0 and chain0==chain1==4097 and row[6]<=4092 and row[7]<=4092 and 0<row[5]<=row[8]-8,'returned exact-class read bounds differ')
         if kind==6:require(1<=row[5]<=256,'raw byte read exceeds bound')
         if kind==7:require(all(n<=4096 for n in row[5:10])and 1<=row[11]<=8 and 1<=row[10]<=256//row[11],'container read exceeds bound')
         if kind==8:
@@ -343,7 +585,7 @@ def caller_source_families(hook, by_name, profile, image_size):
     """Check retained complete unwind-family framing without reopening natives."""
     families=hook.get('captureCallerSourceWindows')
     if families is None:return None
-    require(profile.get('recipeSchema')=='endfield.mission-trace-capture-recipe.v15'
+    require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
             and isinstance(families,list)and 1<=len(families)<=16,'invalid caller source-family selection')
     from scripts.game_data.il2cpp.unwind_chains import UnwindChainIndex
     result=[];names=set()
@@ -412,11 +654,18 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     retained_profile = bound_object(artifacts, "private/mission-trace-build-manifest.json", limits)
     from scripts.game_data.mission_trace_audio_links import mission_projection
     profile,combined = mission_projection(retained_profile)
+    operand_profile = None
+    operand_hooks = {}
+    if profile.get('recipeSchema') == 'endfield.damage-operand-capture-recipe.v1':
+        from scripts.game_data.damage_operand_inspect import validate_operand_profile
+        operand_hooks = validate_operand_profile(profile)
+        operand_profile = profile
+        profile = {**profile, 'recipeSchema': profile.get('baseRecipeSchema')}
     summary = bound_object(artifacts, "mission-trace/summary.json", limits)
     session = bound_object(artifacts, "session.json", limits)
     require(profile.get("schema") in {"endfieldCapture.missionTraceBuild.v1","endfieldCapture.missionTraceBuild.v2"}, "unsupported retained profile schema")
     bounded_profile=profile.get('schema')=='endfieldCapture.missionTraceBuild.v2'
-    require(not bounded_profile or profile.get('recipeSchema')=='endfield.mission-trace-capture-recipe.v15','bounded profile requires recipe v15')
+    require(not bounded_profile or profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'},'bounded profile requires recipe v15')
     require(not bounded_profile or profile.get('observerProviders')==['mission-trace']and type(profile.get('providerMask'))is int and profile['providerMask']==128,
             'bounded provider declaration must exactly select mission-trace/128; combined audio not supported by this package gate')
     require(summary.get("schema") in ("endfieldCapture.missionTraceSummary.v1", "endfieldCapture.missionTraceSummary.v2", "endfieldCapture.missionTraceSummary.v3","endfieldCapture.missionTraceSummary.v4","endfieldCapture.missionTraceSummary.v5"),
@@ -424,6 +673,10 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     require(session.get("schema") == "endfieldCapture.session.v1" and profile.get("profile") == "mission-trace" and
             type(session.get("providers"))is int and session.get("providers") == (130 if combined else 128) and session.get("gameBuild") == profile.get("gameBuild"), "session/profile binding mismatch")
     hooks, summary_hooks = profile.get("missionTraceHooks"), summary.get("hooks")
+    if profile.get('centerDeliveryProfile') is not None or any(
+            isinstance(h,dict)and (h.get('name','').startswith('battle.Delivery.')or h.get('centerDeliveryProof'))
+            for h in (hooks if isinstance(hooks,list)else[])):
+        center_delivery_check('validate_retained_profile',profile)
     require(isinstance(hooks, list) and 0 < len(hooks) <= 96 and isinstance(summary_hooks, list), "hook count bounds exceeded")
     require(len(hooks) == len(summary_hooks) == summary.get("hookCount"), "profile/summary hook count mismatch")
     paired_profile = any(PAIRED_ABI.fullmatch(h.get('abiId', '')) for h in hooks if isinstance(h, dict))
@@ -444,6 +697,16 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                 f"profile/summary native input binding mismatch: {key}")
         hashes.append(digest)
     layouts=profile.get('readLayouts')
+    battle_layouts=profile.get('battleReadLayouts')
+    if battle_layouts is not None:
+        from scripts.game_data.battle_input_capture_sources import SCHEMA as battle_schema, validate_read_layouts
+        require(bounded_profile and isinstance(battle_layouts,dict) and battle_layouts.get('schema')==battle_schema
+                and all(battle_layouts.get(k)is False for k in ('openGenericOffsetsRead','runtimeSelectionObserved','atomicSnapshotProved')),
+                'invalid battle request source boundary')
+        require(validate_read_layouts(battle_layouts),'invalid battle request retained geometry')
+        pins=battle_layouts.get('nativeInputs')or{}
+        require(all(isinstance(pins.get(k),str)and pins[k].lower()==v for k,v in zip(('GameAssembly.dll','global-metadata.dat'),hashes)),
+                'battle request source/native input mismatch')
     if layouts is not None:
         require(bounded_profile and isinstance(layouts,dict)and layouts.get('schema')=='endfield.patrol-capture-read-layouts.v1'
                 and layouts.get('openGenericOffsetsRead')is False and layouts.get('runtimeSelectionObserved')is False
@@ -460,9 +723,11 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
         name = hook.get("name")
         require(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.$<>+`-]{1,127}", name) is not None and name not in names, "invalid or repeated hook name")
         names.add(name)
+        candidate=hook.get('captureIndirectCaller') is not None
+        if candidate:validate_callback_candidate_descriptor(hook,profile)
         if hook.get('declaringImage') is not None or hook.get('declaringImageProof') is not None:
             owner=hook.get('declaringImageProof') or {}
-            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                     and isinstance(hook.get('declaringImage'),str)
                     and owner.get('imageName')==hook['declaringImage']
                     and re.fullmatch(r'[A-Za-z0-9_.-]{1,128}\.dll',hook['declaringImage']) is not None
@@ -471,9 +736,9 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                     and hook.get('symbol')==owner.get('type','')+'.'+hook.get('symbol','').rsplit('.',1)[-1]
                     and all(type(owner.get(k)) is int and owner[k]>=0 for k in ('imageIndex','typeDefinitionIndex','methodIndex','methodStart','methodCount'))
                     and owner['methodStart']<=owner['methodIndex']<owner['methodStart']+owner['methodCount']
-                    and hook.get('receiverIdentity') is None
+                    and (candidate or (hook.get('receiverIdentity') is None
                     and all(p.get('type') in {'bool','int','uint','long','ulong'} for p in hook.get('parameters',[]))
-                    and all(not f.get('fieldPath') and f.get('argumentName')!='this' for f in hook.get('fields',[])),
+                    and all(not f.get('fieldPath') and f.get('argumentName')!='this' for f in hook.get('fields',[])))),
                     'invalid declaring image/method owner binding')
         try:
             rva = int(hook["rva"], 16) if isinstance(hook.get("rva"), str) else integer(hook.get("rva"), "hook RVA")
@@ -481,7 +746,24 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             raise InspectionError("invalid hook RVA") from exc
         require(0 < rva < 1 << 32 and rva not in rvas, "invalid or repeated hook RVA")
         rvas.add(rva)
+        if name in operand_hooks:
+            text = hook['readProgram']
+            if hook['abiId'] == 'win64.entry_context.v1':
+                process_index = hook['contextProcessHookIndex']
+                require(text == f'ctx1:{process_index};0,6,0,4097,4097,160;0,6,0,4097,4097,256;',
+                        'operand context fixed read program differs')
+                reads = [[0,6,0,4097,4097,160],[0,6,0,4097,4097,256]]
+            else:
+                reads = program(hook)
+            require(receipt.get('index') == index and receipt.get('name') == name
+                    and receipt.get('rva') == rva and receipt.get('reads') == reads,
+                    'operand profile/summary hook binding mismatch')
+            integer(receipt.get('calls'), 'operand hook calls')
+            activation += f"hook={name}|{rva:x}|{hook['abiId']}|{hook['expectedBytes']}|{text}\n"
+            continue
         paired = PAIRED_ABI.fullmatch(hook.get('abiId', ''))
+        if hook.get('centerDeliveryProof'):
+            center_delivery_check('validate_retained_hook',hook,profile)
         require(hook.get("module") == "GameAssembly.dll" and (hook.get("abiId") == "win64.transparent_entry_snapshot.v1" or paired), "unsupported hook ABI/module")
         if paired:
             proof = hook.get('pairedAbiProof', {})
@@ -496,11 +778,11 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                         'paired primitive return has byref/ABI decoration')
             scoped=hook['abiId'].startswith('win64.scoped_')
             require((hook.get('captureScope')=='paired-ancestor') == scoped
-                    and (not scoped or profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}),
+                    and (not scoped or profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}),
                     'paired scope/ABI binding differs')
             if paired[1]=='int':
                 enum=proof.get('enumReturn',{});raw=enum.get('nativeTypeRecordHex','')
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                         and isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw) is not None,
                         'invalid enum return native record')
                 native=bytes.fromhex(raw)
@@ -531,7 +813,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                         and scalar_type_record(input_proof,'float',byref=False),'invalid Single slot1 type/ABI')
             if mixed:
                 scalar_inputs=proof.get('scalarInputs',[])
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                         and hook.get('returnType') == 'void' and len(scalar_inputs)==1
                         and hook.get('receiverIdentity') is not None
                         and [p.get('type') for p in hook.get('parameters',[])] == ['string','double'],
@@ -544,18 +826,19 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             elif not single:
                 require(not proof.get('scalarInputs'),'scalar inputs require typed mixed ABI')
             if int(paired[2]) == 5:
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'},
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'},
                         'fifth paired GP slot requires recipe v10')
-            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v8', 'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'} and hook.get('observationMode') == 'paired'
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v8', 'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'} and hook.get('observationMode') == 'paired'
                     and proof.get('argumentSlots') == int(paired[2]) and proof.get('includesMethodInfo') is True
                     and (proof.get('returnType') == paired[1] and hook.get('returnType') == paired[1]
-                         or paired[1]=='int' and proof.get('returnStorage')=='int')
+                         or paired[1]=='int' and proof.get('returnStorage')=='int'
+                         or paired[1]=='pointer' and validate_reference_pointer_return(hook, profile))
                     and len(hook.get('parameters', [])) + int(hook.get('receiverIdentity') is not None) + 1 == int(paired[2]),
                     'invalid paired ABI provenance')
         if paired and paired[1] in {'float', 'double'}:
             scalar = proof.get('scalarReturn', {})
             bits = 32 if paired[1] == 'float' else 64
-            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                     and scalar.get('type') == paired[1] and scalar.get('bits') == bits
                     and scalar.get('register') == 'xmm0' and scalar.get('representation') == 'rawIeee754Bits',
                     'invalid floating return provenance')
@@ -574,7 +857,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             require(isinstance(witness, dict), 'invalid opaque byref witness')
             argument = witness.get('argument'); raw = witness.get('nativeTypeRecordHex', '')
             matches = [(n, p) for n, p in enumerate(hook.get('parameters', [])) if p.get('name') == argument]
-            require(paired and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+            require(paired and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                     and isinstance(argument, str) and argument not in opaque_names and len(matches) == 1
                     and isinstance(raw, str) and re.fullmatch('[0-9a-f]{32}', raw) is not None,
                     'invalid opaque byref parameter binding')
@@ -590,7 +873,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                     'opaque byref must forward a declared value pointer without reads')
         if "anonymousEntryProof" in hook or name == "buff.AbilityActionData.DispatchAssignData":
             proof, caller = hook.get("anonymousEntryProof"), hook.get("sourceCaller")
-            require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14","endfield.mission-trace-capture-recipe.v15"}
+            require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14","endfield.mission-trace-capture-recipe.v15","endfield.mission-trace-capture-recipe.v16","endfield.mission-trace-capture-recipe.v17"}
                     and isinstance(proof, dict) and isinstance(caller, dict)
                     and all(isinstance(field, dict) for field in fields)
                     and isinstance(caller.get("returnType"), str)
@@ -623,7 +906,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                     "invalid field label")
             require(field["label"] not in labels, "repeated field label")
             labels.add(field["label"])
-            keys=['arg','kind','offset','chain0','chain1']+({6:['byteCount'],7:['countOffset','versionOffset','storageOffset','arrayLengthOffset','arrayDataOffset','elementStride','maxCount'],8:['parentFieldIndex','itemIndex','byteCount']}.get(field.get('kind'),[]))
+            keys=['arg','kind','offset','chain0','chain1']+({6:['byteCount'],7:['countOffset','versionOffset','storageOffset','arrayLengthOffset','arrayDataOffset','elementStride','maxCount'],8:['parentFieldIndex','itemIndex','byteCount'],9:['classInfoRva','uidOffset','ratioOffset','imageBytes'],10:['rootRva','tableOffset','functionOffset','imageBytes']}.get(field.get('kind'),[]))
             require([field.get(key)for key in keys]==read, "field/readProgram binding mismatch")
             if field.get('kind',0)>=6:validate_bounded_descriptor(field,fields,hook)
             if field.get('kind')==7:
@@ -633,7 +916,12 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                 expected.update(type=field['type'],sourceWitness=dict(schema=layouts['schema'],type=field['type']))
                 require(field['containerProof']==expected,'container descriptor/source witness mismatch')
             witness=(field.get('rawProof')or{}).get('sourceWitness')
-            if field.get('readMode')=='virtualCallbackPair':
+            if field.get('readMode')=='moduleCallbackSelector':
+                require(profile.get('recipeSchema')=='endfield.mission-trace-capture-recipe.v17' and field.get('imageBytes')==summary.get('moduleImageSize'), 'module selector requires v17 and exact loaded module size')
+            elif field.get('readMode')=='returnedExactClass':
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}, 'returned exact-class snapshot requires recipe v16')
+                require(field.get('imageBytes')==summary.get('moduleImageSize'), 'returned ClassInfo module size differs from loaded module')
+            elif field.get('readMode')=='virtualCallbackPair':
                 source=(layouts or{}).get('callbacks',{}).get(field.get('callbackRole'))
                 require(isinstance(source,dict)and source.get('receiverType')==field['type']
                         and source.get('byteCount')==field.get('byteCount')==16
@@ -641,10 +929,15 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                         and source.get('liveSelectionObserved')is False and source.get('actualCallbackEffectsProved')is False
                         and witness==dict(schema=layouts['schema'],callbackRole=field['callbackRole'],type=field['type']),
                         'virtual callback descriptor/source witness mismatch')
+            elif field.get('readMode')=='centerDelivery':
+                # Exact role geometry and selected native-input binding were
+                # checked above; this is not a generic source-layout escape.
+                pass
             elif witness is not None:
-                source=(layouts or{}).get('values',{}).get(field['type'])
+                witness_layouts=battle_layouts if battle_layouts and witness.get('schema')==battle_layouts['schema'] else layouts
+                source=(witness_layouts or{}).get('values',{}).get(field['type'])
                 require(isinstance(source,dict)and source.get('byteCount')==field.get('byteCount')
-                        and witness==dict(schema=layouts['schema'],type=field['type'],byteCount=source['byteCount']),
+                        and witness==dict(schema=witness_layouts['schema'],type=field['type'],byteCount=source['byteCount']),
                         'raw span descriptor/source witness mismatch')
             for cell in (field.get('rawProof')or{}).get('fields',[]):
                 witness=cell.get('sourceWitness')
@@ -658,12 +951,12 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             representation = field.get("valueRepresentation")
             require(representation in (None, "referenceIdentity"), "unsupported value representation")
             if representation == "referenceIdentity":
-                require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v4", "endfield.mission-trace-capture-recipe.v5", "endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14","endfield.mission-trace-capture-recipe.v15"}
+                require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v4", "endfield.mission-trace-capture-recipe.v5", "endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14","endfield.mission-trace-capture-recipe.v15","endfield.mission-trace-capture-recipe.v16","endfield.mission-trace-capture-recipe.v17"}
                         and field.get("valueBits") == 64 and field.get("kind") in (1, 4)
                         and field.get("storageType") == "ulong" and field.get("signed") is False,
                         "invalid reference identity binding")
             argument_representation = field.get('argumentRepresentation') or {}
-            if bounded_profile and field.get('argumentName')!='this'and not argument_representation:
+            if bounded_profile and field.get('argumentName') not in {'this','returnValue','module'} and not argument_representation:
                 ordinary=field.get('argumentAbi')or{};raw=ordinary.get('nativeTypeRecordHex','')
                 matches=[(n,p)for n,p in enumerate(hook.get('parameters',[]))if p.get('name')==field.get('argumentName')]
                 require(len(matches)==1 and isinstance(raw,str)and re.fullmatch('[0-9a-fA-F]{32}',raw)is not None,
@@ -687,7 +980,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                 witness = argument_representation.get('nativeArgumentProof') or {}
                 parameters = hook.get('parameters') or []
                 param = [n for n,p in enumerate(parameters) if p.get('name') == field.get('argumentName') and p.get('type') == scalar_name]
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                         and paired and scalar_name in {'bool','float','double'} and len(param) == 1
                         and field.get('arg') == param[0] + int(hook.get('receiverIdentity') is not None)
                         and field.get('kind') == {'bool': 5, 'float': 2, 'double': 1}.get(scalar_name) and field.get('valueBits') == bits
@@ -704,7 +997,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             if receiver is not None:
                 identity = hook.get('receiverIdentity') or {}
                 size = receiver.get('unboxedBytes') if isinstance(receiver, dict) else None
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                         and isinstance(receiver, dict) and type(size) is int and 1 <= size <= 4096
                         and receiver.get('argument') == 'this' and receiver.get('type') == identity.get('type')
                         and receiver.get('methodIndex') == hook.get('methodIndex')
@@ -715,7 +1008,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             for field in fields:
                 if (proof.get('receiverPassing') == 'normalMethodUnboxedThisPointer'
                         and field.get('arg') == 0 and field.get('fieldPath')
-                        and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}):
+                        and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}):
                     representation = field.get('argumentRepresentation') or {}
                     cell = field['fieldPath'][0]; offset = cell.get('offset'); width = cell.get('storageBytes')
                     require(receiver is not None and field.get('argumentName') == 'this'
@@ -729,10 +1022,15 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             names=set()
             for aggregate in indirect:
                 raw=aggregate.get('nativeTypeRecordHex','')
-                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                         and isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw) is not None,
                         'invalid indirect aggregate type record')
                 record=bytes.fromhex(raw);size=aggregate.get('unboxedBytes');argument=aggregate.get('argument')
+                if hook.get('name')=='damage.Action.ProcessDamage' and argument=='transferredSource':
+                    require(argument not in names,'damage_source_carrier.duplicate_argument: hook=damage.Action.ProcessDamage argument=transferredSource')
+                    validate_damage_source_carrier(profile,hook,aggregate,fields)
+                    names.add(argument)
+                    continue
                 require(aggregate.get('mode') == 'indirectValue' and type(size) is int
                         and 1 <= size <= 4096 and (size not in {1,2,4,8}or bool(record[11]&0x20))
                         and record[10] == 0x11 and record[11] & 0x7f in {0,0x20}
@@ -762,26 +1060,33 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
         activation += f"hook={name}|{rva:x}|{hook['abiId']}|{expected}|{hook['readProgram']}\n"
     by_name={h['name']:h for h in hooks}
     for index,hook in enumerate(hooks):
+        if hook['name'] in operand_hooks:
+            activation+=f"caller={index}|{hook['captureCallerReturnRvas']}\n"
+            continue
         scope=hook.get('captureCallerReturnRvas');proofs=hook.get('captureCallerProofs')
         if scope is None and proofs is None:
             require('captureCallerSourceWindows'not in hook,'caller source-family lacks scope/proofs')
             continue
-        require(profile.get('recipeSchema')in{'endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15'}
+        require(profile.get('recipeSchema')in{'endfield.mission-trace-capture-recipe.v14','endfield.mission-trace-capture-recipe.v15','endfield.mission-trace-capture-recipe.v16','endfield.mission-trace-capture-recipe.v17'}
                 and hook.get('captureScope')=='paired-ancestor' and isinstance(scope,str)
                 and isinstance(proofs,list) and 1<=len(proofs)<=32, 'invalid caller scope shape')
         families=caller_source_families(hook,by_name,profile,integer(summary.get('moduleImageSize'),'module image size',2**32-1))
         used_families=set();returns=[]
         for proof in proofs:
             require(isinstance(proof,dict), 'invalid caller scope proof')
+            indirect=proof.get('callKind')=='indirectCandidate'
+            selector=validate_callback_candidate_descriptor(hook,profile) if indirect else None
             caller=by_name.get(proof.get('callerHook'));encoded=proof.get('callBytes','')
             require(caller is not None and caller is not hook and caller.get('observationMode')=='paired'
                     and proof.get('callerMethodIndex')==caller.get('methodIndex')
                     and proof.get('callerBodySha256')==caller.get('bodySha256')
-                    and re.fullmatch('e8[0-9a-f]{8}',encoded) is not None
+                    and (encoded=='ffd0' if indirect else re.fullmatch('e8[0-9a-f]{8}',encoded) is not None)
                     and type(proof.get('callRva')) is int and type(proof.get('returnRva')) is int
-                    and proof['returnRva']==proof['callRva']+5
+                    and proof['returnRva']==proof['callRva']+(2 if indirect else 5)
                     and proof.get('targetRva')==int(hook['rva'],16)
-                    and proof['returnRva']+int.from_bytes(bytes.fromhex(encoded)[1:],'little',signed=True)==proof['targetRva'],
+                    and ((proof.get('targetSelectionObserved')is False and caller['name']=='damage.Action.ProcessDamage'
+                          and proof['callRva']==int(selector['callRva'],16) and proof['returnRva']==int(selector['returnRva'],16)) if indirect else
+                         proof['returnRva']+int.from_bytes(bytes.fromhex(encoded)[1:],'little',signed=True)==proof['targetRva']),
                     'invalid caller scope direct-call binding')
             if families is None:
                 require(not any(k in proof for k in ('callerSourceFamilyIndex','callerWindowStartRva','callerWindowEndRva','callerWindowSha256'))
@@ -789,7 +1094,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
                         'caller contiguous direct-call binding differs')
             else:
                 require(set(proof)=={'callerHook','callerMethodIndex','callerBodySha256','callRva','returnRva','callBytes','targetRva',
-                        'callerSourceFamilyIndex','callerWindowStartRva','callerWindowEndRva','callerWindowSha256'},'caller source-family proof shape')
+                        'callerSourceFamilyIndex','callerWindowStartRva','callerWindowEndRva','callerWindowSha256'}|({'callKind','targetSelectionObserved'}if indirect else set()),'caller source-family proof shape')
                 family_index=proof.get('callerSourceFamilyIndex')
                 require(type(family_index)is int and 0<=family_index<len(families),'caller source-family index')
                 family,windows=families[family_index];used_families.add(family_index)
@@ -830,7 +1135,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     dll = artifacts.get("private/EndfieldCapture.dll")
     if dll and "runtimeSha256" in session:
         require(session["runtimeSha256"] == dll["sha256"] and session.get("runtimeBytes") == dll["bytes"], "staged runtime identity mismatch")
-    return profile, summary, hooks
+    return operand_profile or profile, summary, hooks
 
 
 def scalar_type_record(witness, name, *, byref):
@@ -846,7 +1151,10 @@ PRIMITIVES = {"bool": (8, False), "byte": (8, False), "sbyte": (8, True), "short
 
 
 def decode_bounded_field(field,observed):
-    kind=field['kind'];state=integer(observed.get('state'),'bounded field state',5)
+    kind=field['kind']
+    if kind==10:return decode_module_selector(field,observed)
+    if kind==9:return decode_returned_part(field,observed)
+    state=integer(observed.get('state'),'bounded field state',5)
     require(state>0 and (state!=5 or kind==8),'invalid bounded field state')
     raw=integer(observed.get('value'),'bounded source address');count=integer(observed.get('byteCount'),'bounded byte count',256)
     text=observed.get('rawHex')
@@ -1159,6 +1467,36 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                 require(len(line) <= limits.input_line_bytes and line.endswith(b"\n"), "journal line is oversized or unterminated")
                 require(report["decodedRows"] < limits.rows, "journal row budget exceeded")
                 row = parse_json(line, "journal row")
+                if isinstance(row, dict) and row.get('schema') == 'endfieldCapture.entryContext.v1':
+                    from scripts.game_data.damage_operand_inspect import validate_entry_context_event
+                    index = integer(row.get('hookIndex'), 'context hook index', len(hooks)-1)
+                    hook = hooks[index]
+                    report['failedEvent']={'journal':journal_name,'row':report['decodedRows']+1,
+                                           'hook':hook['name'],'hookIndex':index}
+                    require(row.get('hook') == hook['name'] and hook.get('operandEntryKey') is not None,
+                            'entry context hook binding differs')
+                    sequence = integer(row.get('sequence'), 'context sequence')
+                    require(sequence > 0 and sequence not in sequences, 'duplicate or zero event sequence')
+                    sequences.add(sequence)
+                    qpc, tick = integer(row.get('qpc'), 'context QPC'), integer(row.get('tickNs'), 'context tickNs')
+                    require(start_qpc <= qpc <= end_qpc and start_tick <= tick <= end_tick, 'context outside receipt clock bracket')
+                    thread = integer(row.get('threadId'), 'context thread', (1 << 32)-1)
+                    require(thread > 0, 'zero context thread')
+                    architectural = validate_entry_context_event(row,hook,hooks,invocations,base,image_size)
+                    decoded = {**row, 'schema':'endfield.mission-trace-decoded-entry-context.v1',
+                               'rawArgs':row['args'], 'architecturalContext':architectural,
+                               'qpcOffset':qpc-start_qpc, 'qpcFrequency':frequency,
+                               'secondsFromStart':(qpc-start_qpc)/frequency}
+                    payload=(json.dumps(decoded,ensure_ascii=True,separators=(',',':'),allow_nan=False)+'\n').encode('ascii')
+                    byte_count+=len(payload)
+                    require(len(payload)<=limits.output_line_bytes and byte_count<=limits.output_bytes, 'decoded output byte budget exceeded')
+                    destination.write(payload)
+                    report['decodedRows']+=1; calls[index]+=1; threads[thread]+=1; states['exact']+=2
+                    qpc_decreases+=int(previous_qpc is not None and qpc<previous_qpc); previous_qpc=qpc
+                    first_qpc=qpc if first_qpc is None else min(first_qpc,qpc)
+                    last_qpc=qpc if last_qpc is None else max(last_qpc,qpc)
+                    report.pop('failedEvent',None)
+                    continue
                 require(isinstance(row, dict) and row.get("schema") == ('endfieldCapture.missionTraceEntry.v3'if summary.get('schema')in{'endfieldCapture.missionTraceSummary.v4','endfieldCapture.missionTraceSummary.v5'}else'endfieldCapture.missionTraceEntry.v2' if paired_profile
                         else 'endfieldCapture.missionTraceEntry.v1'), "unsupported event schema")
                 index = integer(row.get("hookIndex"), "hook index", len(hooks) - 1)
@@ -1207,6 +1545,8 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                     if descriptor['kind']in{6,7}and descriptor['chain0']==4097 and observed.get('state')==1:
                         require(observed.get('value')==args[descriptor['arg']]+descriptor['offset'],'bounded direct source/raw argument mismatch')
                     value = decode_field(descriptor, observed, enums)
+                    if descriptor["kind"]==9:validate_returned_part_phase(row,value)
+                    if descriptor["kind"]==10:require(row.get('phase')in{'enter','return'},'module selector snapshot outside Process entry/normal return')
                     decoded_fields.append(value)
                     states[value["stateName"]] += 1
                     label = descriptor["label"].split(".")[-1]
