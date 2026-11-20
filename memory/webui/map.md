@@ -374,3 +374,17 @@ activation, current condition results, visible NPCs nor traversable paths.
   joins through serialized references or a runtime capture.
 - Recover water geometry where authored map art is insufficient.
 - Add maintained behavior-level browser coverage for map navigation and layers.
+
+Atmospheric switcher configuration keeps level selection, stored switcher group
+lists and stored groups in three independently declared native dictionaries.
+Every selected switcher must resolve; every stored group retains exact keys,
+identity, field types, condition grammar and a consistent declared level.
+Retained switchers absent from the level selection list are decoded and counted
+as unindexed configuration; their presence does not prove activation. Root key
+set equality must not confuse stored configuration with the level's selection.
+
+The Contingency Contract MapMark visibility class inherits the Activity class
+without additional declared fields. Its reviewed JSON shape retains only the
+explicit discriminator, distance, dynamic-visibility Boolean and activity ID.
+Unknown identities, extra/missing fields and wrong scalar types still refuse;
+this stored visibility data alone does not establish a runtime visible marker.

@@ -215,7 +215,7 @@ def _join_and_frame(
                         "source": path,
                         "inputSetSha256": expected_input.upper(),
                         "logicalSha256": identity["logicalSha256"],
-                        "expected": "current native-gated sparse root/body/clip and null/empty collections through physical EOF",
+                        "expected": "current native-gated complete root and bounded positive collections through physical EOF",
                         "actual": str(exc),
                         "readerDiagnostic": exc.diagnostics,
                     },

@@ -29,6 +29,19 @@ ownership, activation or condition execution.
 
 ## Inputs and recovery flow
 
+LevelScript and Template publication uses one `complete_levelscript_reader`
+operation over the independent selected source inventory. Native root, reached
+child and actual parent-call proofs precede decoding. Every selected source
+must close its ordered fields and physical EOF, and native, source, complete
+reader and StringPool exit checks pass before either dataset publishes. A
+partial legacy receipt or page cache cannot bypass this operation.
+
+A full Data publication first requires every authenticated JsonData source to
+be schema-decoded. The completeness guard reads and enumerates through the
+game-file abstraction: packed LipSync rows and loose files share the same
+logical roster and exact length/SHA checks. A packed logical path is not a
+filesystem path; missing or extra store rows still refuse publication.
+
 1. `export.bat data --from-game` extracts the page's own inputs and everything
    it serves as files: Table, JsonData, Lua, whole Terrain, the undecoded
    blocks, every Unity JSON class, and the AnimationClip, Shader, Font and
@@ -64,28 +77,29 @@ ModelView rebuilds its decoded records on every publication through one freshly
 proved native operation. Its final source, StringPool, reader, publisher and
 selected native/Unity checks withhold rows after drift; refused frames remain
 explicit source records. The byte-coverage reader uses the same current graph,
-while other Interactive roots retain their own evidence tiers.
+and InteractiveData uses its own complete current source-backed operation.
 
 ### Decoded datasets
 
 | Dataset | Owning reader / source | Published |
 | --- | --- | --- |
 | `model-view-state` | `model_view_state_controller_binary.model_view_operation` | complete current stored graph with native field names, model/layer/state owners and stored audio fields; no runtime or Event links |
-| `animation-config` | `frame_animation_config` | complete reader result; opaque suffixes omit unknown montage/curve counts |
-| `npc-montage` | `frame_npc_montage` | complete reader result |
+| `animation-config` | `complete_animation_reader` | complete fifteen-field current graph, ExtraData/Montage children and both curve key layouts; all owners require physical EOF and a successful native/source/pool exit receipt |
+| `npc-montage` | `frame_npc_montage` | complete named root and bounded positive Deco/Dynamic/extra-effect/transition lists; selected native/source/pool exit receipt in provenance; stored animation configuration only |
 | `animator-controller`, `animator-override-controller` | AnimeStudio JSON in the Unity store | selected projection plus raw source link |
 | `level-config` | `decode_level_config` | complete reader result |
-| `level-data` | `frame_leveldata_named_prefix` | per-file exact or bounded status with its open-field boundary and stored spline rows |
-| `levelscript-data` | `frame_levelscript_named` | exact/bounded owner frames, byte ranges, opaque remainders and refused-profile diagnostics; native drift makes the dataset unavailable |
-| `levelscript-template-data` | `frame_levelscript_template` | named template fields where closed, otherwise exact endpoint ranges and an explicit opaque middle; native drift makes the dataset unavailable |
+| `level-data` | `complete_leveldata_reader` | authenticated current sources, all forty-three fields and physical EOF; incomplete roots or failed exit gates stop publication |
+| `levelscript-data` | `complete_levelscript_reader` | authenticated current sources, all twenty-eight fields and physical EOF; incomplete roots or failed exit gates stop publication |
+| `levelscript-template-data` | `complete_levelscript_reader` | independently proved six-field root and ActionMap/property/Task caller joins, complete stored values through physical EOF |
+| `interactive-data` | `complete_interactive_reader` | complete named root, independently proved reached components, Params, collections and ActionMap nodes; every selected source requires physical EOF and successful exit gates |
 | `spawner-config` | `frame_spawner_named` | named sequential enemy library, routes, settings and waves; refusals retain the earlier prefix and open range |
 | `atmospheric-npc` | `frame_atmospheric_npc_table` | named proxy rows, or the reader's framed/opaque status; authored placements only |
 | `map-config` | `schemas.map_config.decode_map_config` | all validated JSON fields, typed condition trees, scene-state indices and inverse variable dictionaries |
-| `dynamic-components` | `dynamic_scalar_components_native.decode_authenticated_main`, `dynamic_root_comp_native.decode_authenticated_root_components` | native-authenticated component values, authored mission string references and direct authored root associations from existing raw main files; whole owners remain partial |
-| `skill-data` | selected-native generated-wrapper values | `structural_only` records after EOF and filename-id checks; stored `AllowNextSkillAction` references and direct-action inventories |
-| `buff-data` | canonical Buff family admission and original root reader receipts | complete named roots as unchanged reader payloads; every unresolved source remains a framing projection |
-| `buff-action-receipts` | current report-backed spans for eight reviewed action wrappers | optional `bounded_partial` span projections |
-| `char-interact-perform` | `decode_char_interact_complete_frame` | complete frame, else a bounded prefix row |
+| `dynamic-components` | `dynamic_components_corpus.current_main_files`, `dynamic_root_comp_native.decode_authenticated_root_components` | complete current main roots and grid fields, all reached inline children and native zero padding; independently authenticated authored strings and root associations |
+| `skill-data` | current native root and complete named stored values | `named_exact` after full source/native replay, ordered child/union and field-boundary checks; stored `AllowNextSkillAction` references and direct-action inventories |
+| `buff-data` | canonical Buff family admission, original root receipts and native-owned value projection | all named stored values, raw numeric bits and independent root/child field extents; every root requires physical EOF |
+| `buff-action-receipts` | current source-owned action spans, including concrete EffectActionData lists | named action values joined to independently replayed child spans; a span does not establish its enclosing Buff schema |
+| `char-interact-perform` | `complete_perform_reader` | whole current stored graph, all twenty-eight root fields and physical EOF; failed roots stop publication |
 | `navmesh` | `decode_luna_area`, `decode_navmesh_state_container` | framed to EOF; unrouted names stay `unsupported` |
 | `level-mount-point` | `decode_level_mount_points` | validated trees |
 | `config-table` | one exact reader per single-instance table | reader result per table |
@@ -97,6 +111,18 @@ docstring; the Buff receipt publication checks are in
 [`buff_action_receipts`](../../scripts/webui/data_inspector/buff_action_receipts.py).
 
 Publisher rules:
+
+- DynamicComponents rebuilds from the selected raw export and authenticated VFS
+  roster. Every root needs all five root fields, all sixty-one grid fields,
+  complete reached struct fields and physical byte closure. Native builder
+  Prep/Put/Pad programs establish alignment and zero-fill; a zero residual alone
+  never establishes padding. Nonempty descriptor tables require an independent
+  positive grammar and otherwise stop publication. Native/Unity, VFS/CLI, raw
+  sources, reader/contract inputs and authored-template provenance are checked
+  through exit. A failed root or exit stops the dataset before page-cache reuse;
+  earlier scalar projections cannot serve as complete roots. Template freshness
+  uses the selected export's per-output extraction provenance, asset map,
+  manifest and object store, without requiring an old summary or a report.
 
 - The size badge says `cursor at EOF` when the reader cursor reaches the source
   length. Opaque prefixes or nested fields can remain; the badge never promotes
@@ -119,42 +145,44 @@ Publisher rules:
   unchanged. Missing or mismatched inputs publish an unavailable dataset with
   no records. Whole-reader refusals remain visible
   `decode_error` rows with their structured source-hash diagnostics.
-  A complete current canonical receipt may supply the same reader payloads
-  without repeating the decode. Reuse requires the complete reader-input
-  snapshot, selected native/source receipt, and a one-to-one path/length/hash
-  join for the family, including drift checks around publication. A missing or
-  stale receipt falls back to the maintained reader, bypassing old page caches.
-  LevelScript owners and templates also authenticate the selected adjacent
-  `UnityPlayer.dll` against the reachable child reader's reviewed native pins
-  before reuse and after reading. The structured current guard is recorded in
-  Data provenance. The canonical source receipt records GameAssembly and
-  metadata explicitly; its complete reader/contract snapshot plus successful
-  child admission establishes the required pinned Unity input through those
-  loaders' checks. That implication is not a separately observed historical
-  Unity receipt, and Data never fabricates one.
+  Both LevelScript families rebuild through the complete current operation.
+  The independent source inventory authenticates selected bytes and supplies no
+  named grammar. Root and nested native proofs, selected adjacent UnityPlayer,
+  every source hash, matching pool and complete raw-reader snapshot must remain
+  current through exit. A refused record stops publication with its source and
+  gate; it cannot become an available partial dataset.
 - SpawnerConfig and AtmosphericNpcData use the same reviewed union-tag input
   gate before cache reuse. Missing or mismatched native inputs publish no rows.
   SpawnerConfig reaches whole-file status only through its sequential wave
   cursor; a uniquely matched suffix cannot close an unknown earlier field.
   Atmospheric NPC EOF framing can still contain opaque nested bodies.
-- SkillData publishes only while the selected native plan validates; missing or
-  mismatched inputs publish an unavailable dataset with a diagnostic, and the
-  source signature includes the native hashes, so old shards are never reused
-  across a client change.
-  One matching StringPool is required for the dataset operation; its exact
-  page signature participates in cache reuse, and pool/native drift after a
-  read or cache hit withholds values. CharInteract always rebuilds its records;
-  its own selected sparse native gate and complete raw-reader/pool signatures
-  must remain stable through publication.
-  Optional `facts.canonicalRootEvidence` separately exposes source-matched
-  canonical framing. Its receipt authenticates the complete family report,
-  current parser and contract closure, selected native inputs, and every
-  source. The bounded report-header reader avoids materializing its large
-  file array; complete-file hash checks still guard the report. Complete EOF
-  framing and recursively named fields are different claims: the detail view
-  states both, while the derived values retain `structural_only`. A stale or
-  missing canonical receipt suppresses the extra facts and forces a current
-  derived decode; it does not promote old cached values.
+- SkillData requires the selected current native root/action operation and the
+  authenticated complete VFS source roster. Its source-bound family receipt is
+  replayed afresh; the generated value plan cannot admit a root, field order,
+  child grammar or union assignment by itself. Every encountered named object
+  must match a current source-owned ordered program, every positive union tag
+  must select that program's exact type, and root/available child field spans
+  must agree with the independent raw reader. Each root requires all fields,
+  its stored filename identifier, a complete raw byte partition and physical
+  EOF. The formal builder refuses partial records before publication and never
+  substitutes a derived-only decode or an old page cache.
+  Unity curves retain their wrap modes and all named key words; null curves,
+  null key arrays and empty arrays remain distinct. Scalars use their selected
+  declared signedness. Unmanaged values use selected native instance offsets
+  inside the independently proved raw copy, retaining all raw bytes including
+  padding. Floating point words retain raw bits, including signed zero and NaN
+  payloads. Typed dictionary entries preserve order and duplicate keys.
+  Matching StringPool, native/Unity, complete raw-reader and source/receipt
+  signatures remain mandatory at operation entry and exit. Missing or
+  mismatched native inputs fail the required SkillData publication. Retained
+  replay inputs live under the selected export's `meta/evidence/`; ordinary
+  builds never take these inputs from temporary or report directories.
+  `named_exact` describes authored storage, not runtime execution, callback
+  selection, evaluated conditions or an observed skill transition.
+- CharInteract always rebuilds its records; its dedicated root gate and whole
+  current native graph must both pass. Each root requires all named fields and
+  physical EOF. Native/Unity, complete raw-reader and selected-pool signatures
+  must remain stable through the operation exit.
 - DynamicStreaming components require the selected native layouts, authenticated
   current VFS roster and a byte join for every existing raw main file before
   cache reuse. Field values, grid and component ordinals stay verbatim. Mission
@@ -165,7 +193,7 @@ Publisher rules:
   ownership diagnostic; group children are not assigned indirectly. Live string
   keys, condition evaluation and runtime entity ownership are unresolved. Large integers use
   the publisher's existing exact-string representation.
-- Buff action spans use the reviewed catalog's short or extended union header.
+- Historical Buff action spans use the reviewed catalog's short or extended union header.
   Strictly contained spans are permitted; duplicates and crossing spans refuse
   publication. Containment does not establish action hierarchy or close the
   enclosing Buff schema. The census and action report must authenticate each
@@ -173,13 +201,16 @@ Publisher rules:
   selected codec against the physical source bytes and independently certified
   child spans; names, kinds, ranges and structural fields must match. Each route
   retains its own declared native input set.
+  Current v9 spans instead replay the live current program: abstract actions
+  include their dispatcher header, while concrete EffectActionData list elements
+  begin at their own member count. The formats cannot substitute for each other.
 - Buff roots follow the current canonical registry's family-report pin. Before
   cache reuse, the adapter authenticates that registry, the full family report,
   its reader and native input closure, and every exported logical source by
   path, length and digest. A complete row passes through its original root
-  receipt, including all named fields and physical EOF; an unresolved source
-  stays visible without an invented partial root. Missing or stale evidence
-  makes the dataset unavailable.
+  receipt and a separate named-value projection, including all child field
+  extents and physical EOF. Missing, stale or incomplete required evidence
+  refuses publication and preserves the last atomic dataset publication.
 - WebUI code never duplicates binary framing. A family without a reader gets a
   reader and corpus gate in `scripts/game_data/` first.
 - Dictionary keys remain verbatim in the field tree, preview and search,
@@ -289,12 +320,13 @@ BundleManifest decode to anonymous ranges with no per-record identity; Audio,
 Story/Text, Map and Gameplay data belong to their own pages.
 
 Canonical registry entries are not automatically reusable reader payloads.
-The Interactive branches retain recovery summaries, and the shared
-`jsondata_corpus._run_reader` projection also omits template field values.
-The template dataset therefore calls its small maintained reader directly.
-An Interactive receipt adapter would first need canonical publication to
-retain the owning reader's full result, then authenticate its current reader,
-native and source inputs. Summary-only rows cannot supply decoded values.
+Whole InteractiveData, LevelScript and Template classification retains the
+complete source-backed reader result. Summary-only rows from older readers
+cannot supply decoded values. The page independently replays these families
+through the complete current operation, sharing one authenticated ActionMap
+graph where applicable. Native, source, StringPool and reader exit gates must
+all pass before any pending records are published. A successful implementation
+or focused probe does not substitute for a current full-corpus receipt.
 
 - Publish a family's own reader boundary; never promote a partial frame to a
   complete one, and keep the frontend envelope unchanged.
@@ -303,10 +335,71 @@ native and source inputs. Summary-only rows cannot supply decoded values.
 - Add Characters deep links only after a decoder exposes an exact or explicitly
   typed character identity; filename resemblance is insufficient.
 
-Animation's pooled bone-mask projection is bounded to the independently gated
-first-five-field prefix. The page shows its layer names and numeric controller
-hash, while later fields stay opaque. It does not label an unread montage or
-curve collection empty. One matching pool is selected for the dataset, passed
-with the selected native root, signed before cache reuse and checked again
-with the current reader/native inputs before publication; late drift withholds
-records. The mask component does not certify the remaining Animation schema.
+Animation publication uses one fresh complete operation over the selected
+native root and reloaded matching StringPool. Every record retains all fifteen
+ordered root fields and reached children, including source-named Beyond and
+Unity keyframe words. Facts summarize actual controller hashes, mask names,
+ExtraData type and known collection counts; raw words and complete child trees
+remain in the reader payload. The legacy mask prefix cannot satisfy this lane,
+and a partial result, opaque suffix or failed exit stops publication. The
+post-exit receipt and attempted/closed owner counts stay in provenance; an old
+prefix page cache is never an admission source.
+
+The ordinary export preflight now produces the shared VFS audit and a separate
+`meta/evidence/animestudio/jsondata_source_current.json` source inventory, with
+its companion file ledger. This closes the shared missing-source-input gap for
+current owner reads; it does not manufacture the named-classification registry.
+Data additionally requests `jsondata-classified`. Its preparation runs
+`memorypack.current_family_evidence`, then JsonData classification. The family
+producer opens one selected current Sequence operation, proves Buff's root and
+concrete component readers on the same native image, and joins every selected
+Buff/Skill source to the independent inventory. The audited physical chunk MD5,
+current overlay selection, exported logical bytes, reader sources and native
+inputs must agree before publication. Source completeness grants no named
+schema. Classification and page consumers independently replay the current
+root and action receipts; saved JSON flags cannot replace the live operation.
+This removes the selected Buff root / complete corpus dependency cycle on
+first setup without activating historical formatter windows on a new build.
+Family v2 manifests pin compact, per-file gzip JSONL ledgers. Producers stage
+those ledgers until every native/source exit gate passes. Readers verify their
+hashes, exact ordered source set and all canonical rows with bounded memory.
+The v9 action manifest pins its Buff family and indexes source/action counts;
+action bodies are read from that family's verified ledger. Classification and
+Skill proof facts carry compact closure summaries rather than duplicating full
+root object graphs; Buff and action payloads retain their named stored fields.
+Current Buff roots include positive modifier, shield and timeline children,
+with independent concrete-reader, processor-union and list-induction proofs.
+SpecialAim positive lists retain their resource limit without treating it as
+an element byte width. A whole Buff record requires all thirty named members,
+the stored source ID and physical EOF; decoded children cannot promote a
+stopped parent. Native refusal or an unknown positive child still withholds
+whole-root status. The ordinary preparation regenerates these proofs and
+receipts from selected installed/export inputs without diagnostic directories.
+After opening child operations, the classifier restores a private native
+validation scope owned by that live current operation. Each distinct selected
+validator still proves its own program; only successful identical calls may be
+reused within this run. Lazy parameter operations retain their own fresh
+entry/exit proofs. These scopes close before the owning native, reader and
+source bookends and before any classification report can be published.
+
+These receipts and their cache live in the selected export's `meta/evidence/`.
+Exact current input sets, source/reader/native hashes, complete family status,
+registry replay and the page's independent admission gates still apply. A cache
+hit requires unchanged implementation/declarations, selected sources and output
+bytes; it rechecks family provenance and registry authentication. Interrupted
+steps do not advance their cache or run dependent producers.
+Within one page build the current Buff, Skill and action consumers share one
+fresh native operation through an explicit context. Each still replays its own
+report. The shared native, reader, pool, chunk and inventory exit gates close
+before publishing the page index; no live proof survives into the next build.
+
+Buff admission gates the current root, icon, dispel and component source proofs.
+An updated icon contract alone cannot admit older formatter proofs. The Data
+export's classified-evidence preparation requires both families to validate
+before VFS auditing or publication; missing/mismatched native inputs fail the
+export. The direct registry's unavailable-family projection remains a separate
+diagnostic behavior and does not satisfy a successful Data export. A selected
+export missing its entire game directory is rejected rather than published as
+an empty Data page.
+Source inventory remains separate from classification. Automatically preparing
+evidence does not update native contracts or supply runtime observations.

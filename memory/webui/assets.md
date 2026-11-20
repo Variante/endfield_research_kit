@@ -70,6 +70,18 @@ grouping under the chosen pose-insensitive policy, not byte equality, Unity
 identity or runtime equivalence. `--publish fbx-content` refreshes both keys without
 rebuilding other Assets projections and rejects stale/concurrent inputs.
 
+Assets' normal scan caches the two FBX comparison keys and the original first
+scene-root name in `reports/assets/fbx_metadata.sqlite`. The key binds the
+exported content SHA256, logical stem, and metadata readers' source bytes.
+Stored models use the Unity store's content digest before loading a payload;
+loose files still read and hash current bytes, including same-size changes
+with preserved timestamps. An unchanged stored model therefore avoids both
+payload reconstruction and FBX parsing on subsequent builds. Cold or changed
+inputs run the ordinary readers, and missing, invalid or busy cache storage
+falls back to them. This disposable cache does not change grouping policy,
+original-file identity or publication freshness checks. Large stored-model
+scans print progress and persistent-cache hits.
+
 OBJ and FBX previews share background presets and custom background/model
 color controls in both WebGL and the software fallback. Model color is a
 preview tint, not recovered material appearance.
@@ -89,15 +101,33 @@ Preview coordinates and winding remain in mesh local space.
 broad index without rescanning render media or rewriting ownership/media
 sidecars. It rejects a changed index during publication. A missing/stale
 receipt clears collision rows and retains an unavailable diagnostic; ordinary
-Assets rows keep their last publication. The optional receipt is produced by
-the raw-format corpus command, not by the page's ordinary `--from-game` scope.
+Assets rows keep their last publication. The raw-format corpus is prepared automatically before an ordinary Assets
+build, with or without `--from-game`. The wrapper discovers current Mesh
+identities from the selected export's asset maps (or generates owned discovery
+maps), excludes shadowed CABs through the current VFS ledger, and regenerates
+missing/stale Mesh and scene receipts before publication. No manual filter or
+audit path is required. Scene discovery uses current physical Bundle selectors;
+live activation and query observations still require real runtime evidence.
+The corpus producer retains exact selection and VFS audit/ledger copies alongside
+the extraction log, Mesh JSON/raw and cooked payloads in a unique directory under
+`<selected-export>/meta/evidence/assets/collision_evidence/`. It validates and invokes AnimeStudio against
+those retained paths, so consumers do not depend on the original temporary inputs.
+The evidence directory is part of the publication, not disposable work; custom
+`--work-root` paths must also be under the selected export's `meta/evidence/`. Installed-source, exporter and
+typed/raw hash gates still apply. Only a complete run replaces the published
+receipt; a failed refresh writes a `.failed.json` companion and preserves it.
+Ordinary export tasks never read `tmp/`, `scratch/`, `report/` or `reports/`,
+including transitive receipt dependencies. The Assets preparation step regenerates legacy receipts
+into the selected export metadata; copying a receipt alone is insufficient. Renaming missing paths or changing hashes cannot migrate
+lost evidence. The shared validator reports that recovery path to preview,
+runtime and authored-owner consumers.
 
 Runtime collision evidence is an optional separate metadata projection owned by
 `scripts/webui/assets/collision_runtime.py`. It replays the maintained geometry
 audit against explicitly selected installed native inputs, admitted capture
 journal/archive and authenticated stored Mesh receipts. It joins full CAB/PathID,
 physical source/offset, raw and cooked hashes, and dimensions; names never join.
-The input selection is generated under `reports/assets/`, contains paths rather
+The input selection is generated under `<selected-export>/meta/evidence/assets/`, contains paths rather
 than claims, and is revalidated on subsequent broad builds. It is not a saved
 audit whose status alone can authorize labels.
 

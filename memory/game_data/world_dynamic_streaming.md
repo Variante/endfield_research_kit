@@ -36,6 +36,7 @@ play.
 | Module | Owns |
 | --- | --- |
 | [`dynamic_main_native`](../../scripts/game_data/dynamic_main_native.py) | main `SingleGrid` vector widths; DataMask presence test |
+| [`dynamic_components_native`](../../scripts/game_data/dynamic_components_native.py), [`dynamic_components_binary`](../../scripts/game_data/dynamic_components_binary.py), [`dynamic_components_corpus`](../../scripts/game_data/dynamic_components_corpus.py) | complete stored main root and inline child graph, independently checked getter displacements and reverse builder writes, native alignment/zero-fill, authenticated current source roster and operation exit |
 | [`dynamic_data_index_native`](../../scripts/game_data/dynamic_data_index_native.py) | DataIndex layout; grid-local Type/Index partitions |
 | [`dynamic_scalar_components_native`](../../scripts/game_data/dynamic_scalar_components_native.py) | scalar and spatial inline component getters, builder field parameters, MissionCondition string-index consumer and current-corpus value census |
 | [`dynamic_group_components_native`](../../scripts/game_data/dynamic_group_components_native.py) | typed nested DataGroup component layouts and authenticated file-relative, grid-local child spans |
@@ -60,6 +61,35 @@ play.
 | [`dynamic_aux_pair_corpus`](../../scripts/game_data/dynamic_aux_pair_corpus.py), [`dynamic_aux_bridge_native`](../../scripts/game_data/dynamic_aux_bridge_native.py) | auxiliary pair relations and descriptor 21; native path-to-copy route |
 | [`dynamic_stream_area_corpus`](../../scripts/game_data/dynamic_stream_area_corpus.py), [`dynamic_stream_area_native`](../../scripts/game_data/dynamic_stream_area_native.py) | area framing; area records, relations, `CheckInArea` |
 | [`portal_center_join`](../../scripts/game_data/portal_center_join.py) | portal template and override destination vectors |
+
+## Complete stored main roots
+
+The complete main reader composes the existing main-vector gate with the
+reviewed `dynamic_components_native.json` stored-layout contract. Every named
+getter has its own native read/displacement witness; every child builder's
+flattened parameter identity and full reverse Prep/Put/Pad byte sequence must
+agree with the reached nominal layout. Nested types do not inherit a grammar
+from a matching stride. Current ResourceComp navigation/status fields belong
+to this complete stored layout; independent resource-state and runtime
+consumer contracts keep their own native gates.
+
+The raw reader closes the root, grid tables, vectors, UTF-8 count/body/NUL
+allocations and shared vtables/strings. Internal struct padding comes from
+explicit native zero-Pad writes. Remaining allocation gaps must equal the
+minimal alignment computed by the authenticated Prep/StartVector/CreateString/
+Finish programs, including the physical tail. Extra zero bytes are refused.
+All float32 source words are retained, including nonfinite payloads and signed
+zero. DataMask remains an uninterpreted stored UInt64; byte closure does not
+establish its meaning or runtime activation. Positive descriptor-table values
+remain outside the admitted grammar and cannot become empty vectors.
+
+The current corpus uses only the selected export's `meta/evidence/` VFS audit
+and ledger, selected CLI, native pair/adjacent UnityPlayer and raw main files.
+It requires exact roster equality and rechecks source/native/reader inputs
+before returning a completed operation. Data's authored associations add the
+independent RootComp/template proof; template freshness is scoped to the selected
+export's per-output MonoBehaviour/asset-map provenance and object manifest,
+without reading an investigation report or requiring a legacy export summary.
 
 ## Model instantiation and collider control
 
@@ -2258,3 +2288,67 @@ through descriptor, slot assignment and publication, including changed selector
 assignments. The ECS capture resource bodies own their current access path
 independently of the broader stored Streaming contracts; those older contracts
 still fail closed on this build.
+
+The retained Simple step-up sphere path selects Unity's default physics
+scene and Ignore trigger interaction. The native registration loop pairs the
+binding name and entry independently of method proximity. Its filter clears
+trigger selection on that branch, and its postfilter requires a positive hit
+scalar before returning the configured classification. A cooked-mesh contact
+with positive travel can satisfy these geometric conditions, but selected
+scene membership, downstream hit flags and runtime replacements remain
+independent evidence requirements.
+The named Physics.queriesHitBackfaces getter and setter independently
+identify the global byte that selects the sphere sweep's extra hit-flag
+bit. This establishes its engine-facing meaning without relying on an
+external flag catalog. Retained front-face candidates with positive travel
+give the same conditional restore pattern with either backface setting.
+That invariance does not establish actual query operands or live membership.
+The retained journal also contains stable actor and local-shape pose pairs
+matching the authored candidate, with a checked versioned ECS owner and the
+expected component ordinal. Observations before and after a query narrow
+the lifetime question but do not prove continuous presence, query-scene
+membership or the returned shape of an independently unobserved sphere cast.
+The matching retained conversions also join to query arguments from their
+active capsule invocation. Capsule movement and the Simple sphere helper
+read the same cached default-physics-scene binding on the checked original
+path. This identifies a common scene source and sampled mesh membership,
+while continuity between separate queries remains unresolved.
+The selected native registry insertion consumes a generation supplied by
+actor creation, which increments a global 32-bit counter. Free-slot reuse
+copies the new row instead of preserving the removed row's generation.
+The selected removal path clears generation and actor before returning the
+slot to the free list. Equal versioned samples are compatible with a retained
+allocation. Exhaustive writer coverage, outer synchronization, counter wrap
+and scene membership are separate from these creation/removal observations.
+The retained converter observer is scoped to active capsule movement. Paired
+capsule replay and authenticated frozen recorder source establish that the
+Simple sphere path executes outside that observer scope. Missing converter
+rows at a Simple restore cannot establish an empty sphere result. A combined
+successor capture needs the Simple query operands and returned identity in
+its owning FixedTick scope as well as the existing capsule observations.
+The successor declarations include a pipeline movement-pointer read tied
+to that FixedTick receiver. The dispatch observation sits before argument
+stores, so its saved register bank supplies the selected mask, radius and
+distance. Both declaration and wire validators reject altered ownership and
+read recipes. Synthetic native fixtures verify the reviewed stack-address
+and saved-register relocation forms, including rejection of changed stack
+displacements. These are instrumentation proofs and do not establish a
+gameplay query result.
+Simple sphere inspection joins observations by the owning FixedTick
+invocation and thread, with pipeline, stack, movement and saved-position
+agreement. A false predicate does not authorize decoding its hit buffer.
+Unwind and absent query stages remain explicit instead of becoming misses.
+Observed sphere results can be compared to restore writes and final position
+without establishing the hit's registry owner or authored resource identity.
+Expected final position must follow the observed sphere predicate independently
+of whether a restore write was observed. Selecting it from that write makes a
+missing or spurious restore validate its own incorrect position. Reader
+regressions cover both contradictions and keep branch agreement distinct from
+final-position agreement.
+Retained Simple movement return positions also agree with the next sampled
+FixedTick entry under the same movement/entity pointers and instance UID.
+The root's synchronized logical-position cache is a separate field and can
+differ at those endpoints. The original root fill helper reads movement
+logic XYZ, and its caller conditionally copies that output to the cache.
+Use the movement field for this state transition and keep root-cache update
+scheduling as a separate evidence requirement.

@@ -78,8 +78,36 @@ The language builder and its DialogTree connection projections use native
 citations and NPC consumers from one authenticated evaluation per language.
 The builder authenticates again before successful
 completion and refuses changed native inputs, claims, or complete raw-reader
-inputs. This keeps row generation consistent without a process-wide validation
+inputs. An explicit after-read refusal in the initial evaluation stops before
+the language outputs are touched; a stable missing installation still permits
+the existing degraded build. Entry/exit refusals write bounded diagnostics to
+`reports/story/build/story_native_inputs_<LANG>.failed.json`, including changed
+reader paths and hashes when available. Success is printed only after the exit
+gate passes. This keeps row generation consistent without a process-wide validation
 cache or repeated binary hashing for every row.
+
+Story's per-level UID binding scan shares successful child-native proofs and
+one explicitly selected StringPool through the raw LevelScript batch owner.
+The level's direct source roster, complete readers, pool and native bytes are
+checked before any batch results enter the Story cache. Numeric file order,
+typed payloads and per-file refusal diagnostics remain unchanged; batch drift
+withholds every row and is not cached as an empty success. The UID reader's
+root/list probe keeps null or empty maps on their existing cheap path: they
+have no child-native proofs to share and must not trigger an expensive batch.
+Explicit native selection also matters for correctness: a child whose contract
+requires a selected pair must receive the enclosing game's root, rather than
+becoming an avoidable `explicit-selected-inputs-required` refusal.
+This also applies to the later per-file UID reads for mission-state routes,
+action topology, dynamic HP spawners and patrol producers in `level_bindings.py`;
+the earlier per-level batch does not supply context to those separate calls.
+Raw summary, header, active-shape and embedded-action wrappers preserve that
+selection too, including downstream offline evidence and Audio template reads.
+An explicit native pair is adapted only when its paths describe the same game
+root; root-only readers must not silently switch to a default installation.
+The per-level cache uses the resolved source root and level id for both implicit
+and explicit default-root calls, so those spellings share a result while distinct
+exports remain separate. Receipt mismatch diagnostics name changed reader inputs
+and their expected/current hashes; the complete dependency scope remains intact.
 
 The source-only partial-order report likewise owns one native evaluation for
 one build operation. Its nested projections share that proof; standalone
@@ -94,6 +122,13 @@ source/native/reader checks finish before the queue is published; standalone
 helpers retain their own validation, and no proof survives the report.
 
 ## Story structure and media
+
+FMV binding publication replays the current pooled FMV owner directly. The
+generic Story-action scan excludes FMV rows and therefore cannot contribute
+bindings to that projection; it remains required by generic Story consumers
+and their coverage diagnostics. The narrow FMV path retains its native/source
+gates and conditional evidence tier, and never supplies an unused-cutscene
+coverage claim by itself.
 
 - DialogTree and Timeline recover local line order and explicit option routes.
   A local branch does not imply a cross-Story continuation.

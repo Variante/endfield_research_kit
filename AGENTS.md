@@ -13,6 +13,11 @@ recorded by earlier captures and replays. Do not recreate repository-root
 `tmp/character_recovery` or `scratch/character_recovery`.
 After validation, prune superseded renders, failed captures, and rebuildable
 intermediates. Keep the current WebUI inputs and the evidence needed to replay them.
+Before pruning Lab evidence, follow the active render recipe's plan, asset
+selection, and proof references through to their inputs. Keep authenticated
+reports used by that recipe even when their images have been superseded.
+Checking the WebUI alone verifies the published comparison's images and
+scores; rerun the recipe's input checks to verify that it can still render.
 
 ## Git Authorship
 
@@ -875,6 +880,16 @@ first. Establish which missing fields/phases can decide the question and what
 comparison will consume them. Do not request an unchanged repeat when its
 recipe lacks the needed operands or producer/consumer identity. Build/help,
 more rows, and zero queue loss alone do not establish capture sufficiency.
+
+For reconstruction captures, review the exact command and built runtime
+before handing it to the user. Trace the trigger through draw-local copies,
+readback, publication, and the offline same-Present join. Test the known
+failure against the recorder code and exercise the full receipt with retained
+evidence or a bounded local graphics fixture. Verify the output root and the
+binary selected by the launcher. Record which joins were exercised and which
+depend on the live client. Hold the command while a known defect remains
+or the tested runtime differs from the deployed one. The user starts the
+retail capture.
 
 Append every newly identified required game-data capture to
 [`memory/runtime_capture_requirements.md`](memory/runtime_capture_requirements.md).

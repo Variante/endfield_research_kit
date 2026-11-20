@@ -14,6 +14,11 @@ successes are saved for another operation. The standalone sequence collector
 opens its own fresh operation, and stored IDs still do not prove compiled
 triggers or Wwise requests.
 
+The page scheduler forwards its selected AnimeStudio path as `--audio-dumper`
+and its worker limit as `--decode-jobs`. An explicit single worker also keeps
+container-header indexing serial, so a serial page build cannot silently expand
+to CPU-count decode workers or a separate header thread pool.
+
 ## Inputs and recovery flow
 
 1. AnimeStudio reads AKPK/Wwise payloads from StreamingAssets with Persistent

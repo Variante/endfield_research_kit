@@ -137,6 +137,22 @@ are stored joins, not proof that the undecoded root `EnemyTemplateData` selects
 the component at runtime. The weekly override and dummy AI remain different
 variant declarations, never substitutes for this missing ownership proof.
 
+The retained raw Rodin object also supplies a structural root-to-registry
+join. Its complete raw digest matches targeted extraction. Inside the
+undecoded template root, a unique framed RID vector contains every other
+registry record exactly once, including the typed movement and AI records.
+Every reference resolves uniquely and the vector ends within the root span.
+This establishes stored reference membership. The serialized field name,
+component activation and live instance assignment remain unresolved. The
+movement record stores a negative step-offset override, compatible with the
+native enemy getter's height fallback when that record is selected.
+The selected native MovementData constructor independently initializes the
+override to a negative value. MemoryPack creation calls that constructor,
+and deserialization has an explicit override write, so the constructor and
+stored record cannot establish lifetime immutability. Simple step-up calls
+the component getter directly. A separate Charge pipeline override does not
+establish the operand selected by that Simple query.
+
 The same EnemyData's TypeTree-decoded `AbilitySystemData.skillDataBundle` lists
 active/passive skills, and its mode configuration defines `BattlePhase1` and
 `BattlePhase2`. Catalog order, `defaultEnable` and extra-passive flags do not
@@ -144,7 +160,7 @@ establish cast order, live initial phase or transition conditions. The canvas
 blackboard also stores typed `EnemyAISkillData.skillID` values naming
 `eny_0029_lbmob_normal_attack02` and `eny_0029_lbmob_battleact`: an enemy-name
 prefix filter misses real stored dependencies, while a stored value alone does
-not prove task use. The selected Rodin graph RIDs identify graph-data references
+not prove task use. The earlier ordinary Rodin snapshot's graph RIDs identify references
 whose exported `data` is empty; without `canvasGraph`, no compressed graph
 ordinal is admitted. Reuse the complete RID/PPtr requirements in
 `extend_data_graph_ai_corpus.py`; a similarly named graph cannot repair the gap.
@@ -161,6 +177,21 @@ are absent from its early-preference list, so a successful inferred decoder may
 return before the later exact fallback. A repair must test these two dispatch
 boundaries without weakening exact admission. No missing Rodin pointer is
 recovered by this code-path observation alone.
+
+The current weekly variant supplies a separate stored chain: the explicit
+EnemyTable AI override resolves to its weekly config and blackboard, whose
+exact TypeTree-decoded graph reference now has a nonnull local `canvasGraph`.
+The graph's stored string index and local object-reference children resolve to
+the weekly battle tree and related skill-sequence trees in the existing
+CompressData archive. Indexed source-file/path-ID lookups and decompressed
+object hashes distinguish this evidence from a name match; the earlier empty
+ordinary snapshot must not suppress a current exact weekly pointer.
+The selected decoded trees pass the maintained `extend_data_graph` and
+`extend_data_tasks` shape checks. Named CastSeqSkill parameters and a
+BattlePhase2 mode-change declaration can therefore enter the stored dependency
+catalog. These shape checks do not prove archive selection by the running game,
+condition-enum meaning, blackboard override resolution, scheduler timing or a
+health-triggered phase transition. No exporter refresh was needed for this join.
 
 ## Open join: spawner entry to live enemy
 

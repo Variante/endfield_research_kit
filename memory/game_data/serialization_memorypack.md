@@ -22,10 +22,178 @@ terminal state (vocabulary in its docstring). The current gate retains named
 schemas, bounded partials, framed, unclassified and unsupported identities.
 Missing or mismatched native gates withhold the affected family's historical
 decoder and receipt; a complete registry is not complete schema coverage.
+Full Data publication additionally authenticates every selected logical source,
+its exact file roster and the registry at entry and exit, and requires every
+terminal state to be `schema_decoded`. A successful standalone inventory sweep
+does not satisfy that publication gate by itself.
 Family gates own cursor, native and semantic claims. A type with a
 registered `MemoryPackFormatter` (`SerializeFieldDictionary` and siblings) is
 read from that formatter, never from its field list; see
 [`codecs/levelscript/action_map.py`](../../scripts/game_data/codecs/levelscript/action_map.py).
+
+A reference with no derived wrapper does not acquire an FF/null grammar from
+its reference representation. The current ErrorMemoryPackFormatter entry is
+an error path, not a null reader. An Interactive diagnostic that accepts FF for
+unsupported Unity or Graph references therefore remains diagnostic until the
+actual nominal formatter/callback and its byte consumption are independently
+joined. Do not promote that diagnostic's EOF result into a current schema.
+
+Interactive's closed `Optional<T>` representations have separate owners.
+`interactive_value_layouts.py` proves the actual closed carrier, complete
+whole-value getter/store, zero factories and named subfield writes. It does
+not use the open generic's placeholder offsets or the wrapper inventory's
+convenience value flag. Raw scalar Optional fields preserve all bits and
+padding through their parent's actual source and setter; reference Optional
+fields additionally need their own typed formatter and headered child grammar.
+A common managed width never grants either wire representation.
+`interactive_raw_optional_components.py` limits the raw representation to
+Variant's actual scalar fields. Its capture, closed carrier, whole source to
+field copy and padding must agree before a raw operation can be compiled.
+`interactive_managed_optional_sources.py` binds each actual closed value
+request and its eager wrapper pair to the complete actual hidden-result reader
+and compatible provider paths. The reader's compared shared Optional entry
+selects a branch whose own bytes are proved; no registered pointer is assigned
+another pointer's body. The actual interface ordinal/GetValue and complete
+padding-preserving copy are joined separately. Runtime provider/context
+selection stays conditional and the wire child still requires its own owner.
+`interactive_optional_components.py` additionally joins each Variant field's
+actual closed request, hidden result, complete managed field write and exact
+temporary lifetime in both positive caller frames. The ordinary LangKey child
+uses its own two-reference layout and MC1 pooled key; its nonserialized rawText
+does not become an extra wire field.
+
+`interactive_value_wrapper_sources.py` separately proves embedded value-wrapper
+fields, initialized entry guards, fresh allocation/whole-value zero, reuse and
+FF paths, including the actual inlined slot5 entry with its shifted argument
+ABI. An embedded value is not an Original reference holder. The generic
+record interpreter assigns that embedded receiver role only after checking
+the complete finite native field roster and its independently proved layout.
+
+Interactive static dictionaries retain each selected closed class MethodSpec,
+nominal key/value carrier and actual helper/callback source. Enum/string
+directions use their actual callback programs rather than borrowing the
+integer specialization's inline read. The parent additionally owns each null
+out-reference, its live frame home, current class-state guard and complete
+return; callback bodies and child grammars are separate obligations. The
+Graph parameter-list factory independently owns its inlined empty-list and
+holder writes, closed constructor context and reciprocal class VAR; it does
+not infer an executed Original constructor from equivalent defaults.
+The dictionary source format retains its actual owned byte regions and
+helper targets for independent replay, rather than accepting a saved success
+flag. Its parent join requires the literal fresh out-reference home, class
+guards, typed call, whole reference store and both positive frame proofs.
+Child callback grammars remain separate from this source and parent join.
+The Int32/string directions additionally bind the source's actual compared
+integer callback and the independently owned pooled-string callback. A
+reference-valued dictionary needs its exact Original/wrapper/GetValue
+transport, then recursive child closure. A dictionary's outer FF witness is
+not evidence for a negative count beneath a positive object header. A source
+proved only for null/empty children must refuse populated children.
+
+`interactive_mount_transfer_sources.py` proves NameMountPointDef's own
+managed value adapter, registered wrapper, interface/GetValue and actual array
+dispatcher. Its compiled byte shape shares the established mask transfer
+algorithm, but its nominal enum, padding and reference lane are independently
+proved. `interactive_component_union_sources.py` similarly owns the complete
+BaseComponentData table/cast/closed-reader/reference-return transport; concrete
+component grammars and the enclosing array still need their own admission.
+`interactive_array_components.py` joins the root's separate raw tag bulk copy,
+component references, managed mount values and pooled string array. The actual
+ReadUnmanagedArray request stays distinct from ReadArray. Ordinary reference
+fields also require their complete source-to-setter call, direct holder write
+or rich-program reference store and both positive restored frames; a field
+name and pointer-sized slot do not establish that transfer.
+
+Inherited Observer vector setters in Guide components require independently
+constructed compatible ancestor caches and both refresh paths, with the actual
+setter bytes replayed. PlungingAttackData separately owns its raw copy,
+Advance call, preserved nonvolatile vector register, named ancestor field and
+padding. A full stored copy never infers runtime gameplay effects.
+
+Interactive Audio's dictionary has its own signed enum key and closed
+pooled-string-list value. Its actual parent carrier and enum backing are
+proved separately from the authenticated Int32/reference source witness;
+missing closed registrations remain an explicit callback-selection condition,
+not an inferred pointer alias. General positive counts require identical
+complete iteration programs and a bounded signed-loop induction.
+The actual secondary enum callback match is independently proved against the
+own nominal enum callback source. It must not inherit the primary Int32
+callback merely because both copy a DWORD. The event-enum list likewise keeps
+its own nominal callback, list source and actual parent request.
+
+The current ActionMap operation routes BoolGetterMultiAnd and BoolGetterMultOr through a freshly
+compiled reader even when its older name-keyed declaration exists. Its
+Param<bool> array requires an independent Boolean Param source, exact closed
+array context, whole reference field transfer and four complete caller frames.
+The raw Boolean byte survives value projection. The Vector3 Param array
+retains its own child source and codec; a shared reference stride grants no
+interchangeability. This current route no longer relies on historical cursor
+evidence as its native proof.
+
+Every reached ActionMap node, including an existing reviewed route, also
+requires a fresh concrete caller, Original conversion and independently proved
+child fields. A second named value read must consume exactly the baseline
+node's extent. The graph belongs to the active source operation and shares its
+selected native inputs, pool and exit bookends; a retained operation attribute
+cannot introduce a graph. All action audit wrappers forward the explicit
+selected game root. Successful native audit reuse stays inside that lexical
+operation and never caches a failed or mismatched result.
+The selected native graph also owns one unmanaged-field layout index. Roots
+and nested action readers share it within that operation; they do not rescan
+the metadata type table per node. The cache only names already proved raw
+copies and carries no wire or publication authority. Closing the graph or
+changing its selected image refuses reuse.
+
+The finite action Param selection also composes the independently proved
+FunctionAreaPtr UInt64-id source, GlobalBuff ObjectPtr source, positive UInt64
+list source and each of the three nominal EnvTalk value-list sources. A shared
+width or similar type name grants no substitution. EnvTalk FF elements retain
+the default value structure (null id and zero odds), distinct from a null list
+or null outer Param. GlobalBuff retains its own ObjectPtr/default and empty
+GlobalBuff object markers rather than borrowing BuffPtr framing.
+AirWallPtr separately replays its reviewed raw-copy and Param programs, then
+joins its own canonical reference source. Its selected-image field layout
+names the proved raw copy while preserving all padding and scalar bits. A
+leading FF inside those raw bytes is data, not a nullable child marker.
+
+ETrackCameraTargetType uses the separately selected inline Int32 enum Param
+program also maintained for BitsetType. Each nominal independently proves its
+carrier, setter ABI and stores, typed allocations, both warm factories, all
+four reader paths, pooled tail and canonical formatter forwarder. Its constant
+read is inlined; there is no invented ReadUnmanaged MethodInfo. Fragmented
+functions retain complete owned windows while selected initialized-metadata
+and disabled-collector paths prove the actual field transfers and restored
+frames. Cold initialization, enabled collectors and refill/error paths remain
+outside that conditional proof.
+
+SendLuaEvent1 has a distinct manual Original formatter. Its complete caller
+and lifecycle prove the outer wrapper and the separately named Original
+fields; the manual value is not a recursive copy of the wrapper layout.
+Its inlined UTF-8 alias independently joins the authenticated collection-header
+and UTF-8 child programs. The object Param retains its serialized JSON text,
+ordered object pairs and original wire bytes after strict syntax validation.
+This proves stored JSON, not runtime deserialization of the Param object or
+execution of the Lua event. Formatter-provider and IFix selection remain
+explicit conditions, not observed runtime choices.
+
+The complete ActionMap value graph reuses each distinct Param owner rather
+than treating a shared reference stride as its constant grammar. ScriptTaskPtr
+keeps its own nullable key value; UInt32 and LsmPtr lists keep their separate
+element callbacks and count induction. EnvironmentVolumePtr proves its own
+UInt64 id, while SplinePtr independently proves a signed Int32 id and the
+complete EAX-to-setter transfer. A pointer-like type name cannot select either
+representation. Blackboard lists retain every named class field, null element,
+raw Boolean byte and floating-point bits after the selected reviewed source
+and canonical outer reference proof. These are stored inputs, not evaluated
+blackboard values.
+
+Camera initial-state Params separately prove the whole raw value copy and
+the selected-image field layout. Named Boolean and floating-point fields are
+projected only when that layout agrees with the native source's declaration;
+the complete raw copy retains padding without inventing its meaning. Common
+mask curves likewise retain the independently proved named Unity keyframe
+words as well as each complete raw key, including non-finite and signed-zero
+bits. Neither path establishes runtime camera or interpolation behavior.
 
 Family receipt filenames are defaults, not freshness authority. The registry
 can select an alternate complete Buff or Skill receipt through `--buff-report`
@@ -42,6 +210,22 @@ Explicitly loaded external metadata/mapper helpers still need their owning
 validator's source snapshots; this closure cannot discover dynamic loading.
 Do not repair a provenance mismatch by editing receipt pins or repeating a
 capture.
+
+StringPool auxiliary files have their own strict readers in `string_pool_aux`.
+The Counting file's leading size measures saved repeated UTF-8 bytes; its rows
+must exactly cover the selected pool with independently checked byte lengths
+and repeat arithmetic. SHPI HashIndex retains both seed hashes, displacement,
+slot and fingerprint arrays. Every stored slot is replayed against its actual
+selected-pool string using UTF-16 code units and wrapping UInt64 arithmetic.
+The reviewed native contract authenticates the selected original methods and
+format declarations. Neither auxiliary file can replace or repair a missing
+StringPool.
+
+DamageText's current native contract records a complete generated reader graph,
+including its nested typed lists and independently proved StringPathHash and
+Vector4 sources. Managed size alone grants no wire grammar. Selected native,
+reader and contract bookends must all pass; the resulting named stored values
+establish neither runtime formatter selection nor animation execution.
 
 The compact SubGame reader admits only the independently authenticated
 WorldChallenge variant and bounded child collections named by its current
@@ -78,6 +262,13 @@ unrelated family's required primary receipt.
 NativeImage and BodyIndex share immutable parsed indexes for the exact opened
 image. Every native gate and claim still evaluates against its selected inputs;
 sharing a parsed method/unwind table does not cache a validation result.
+The selected NativeImage seals its PE section declarations before indexing
+address ranges. Lookup retains overlapping-section rejection and raw-backed
+extent checks; virtual-only tails never become file bytes. Ordinary mutable PE
+fixtures keep the uncached path, and replacing the section collection bypasses
+the sealed index. Bounded raw-instruction reuse likewise returns independent
+rows and checks the decoder implementation and exact input bytes; ownership,
+window hashes, typed source joins and native publication remain caller duties.
 
 `buff_formatter_windows_regenerate` requires exact ownership of every reviewed
 window before rebuilding complete selected unwind families and matching their
@@ -260,6 +451,38 @@ both before publication. Reader additions/removals, source changes and pool
 drift fail with bounded file diagnostics. Historical cursor selection and its
 receipt validation keep their own path and gain no current-root admission.
 
+Current Skill provenance validation traverses the interned acyclic proof graph
+without materializing its expanded tree. Compact proof construction also
+preserves shared JSON-equivalent containers, then projects each object/role
+pair once. Shared nodes retain per-occurrence trace counts and path-depth
+checks; each reference, catalog closure and semantic field is still checked.
+Explicit full-trace normalization and proof expansion remain separate operations
+with independent output objects. These changes reduce repeated structural work
+without replacing fresh selected-image derivation, bidirectional declaration
+comparison or reader/native/StringPool entry and exit checks. Whole-operation
+timing must be measured separately from structural validation.
+
+The current operation can pass freshly derived child proofs to their exact
+parents, including Blackboard, root, selector and damage compositions. Parent
+typed requests and capability joins still run. Repeated dependency checks may
+reuse a successful same-image result only while the input pins, callable and
+complete declaration bytes remain identical; every parent binding and native
+publication gate still runs. Inner source snapshots can borrow the enclosing
+operation's pending identity through the existing direct-call frame guard.
+The outer entry and exit always enumerate and hash the complete source set and
+selected StringPool afresh; standalone or unrelated nested validators cannot
+borrow this identity. A source change refuses publication and reports the
+changed paths with their expected and actual fingerprints.
+
+Within the complete current native validator, generated concrete readers may
+reuse the initial small primitive/source preparation. Each consumer receives
+independent mutable caches, and standalone derivation still prepares afresh.
+This private scope ends before the validator's mandatory native, declaration
+and complete-reader-source exit checks; no successful admission is returned
+until those checks pass. It does not retain a large child proof or a result
+between operations. Performance profiling itself adds overhead, so acceptance
+uses the public batch reader with its real timeout and no profiler.
+
 AbilityActionData's canonical one-byte FF follows an independently proved
 current generic reference adapter. Its complete selected early return clears
 the full reference, advances the same reader by one byte and restores the
@@ -353,6 +576,20 @@ managed element width and supplies no substitute. The explicit
 `current_animation(..., families=('animation-config',))` operation now joins
 the complete fifteen-field source graph and requires physical EOF; its
 independent capability and exit receipt do not widen the legacy prefix.
+`animation_config_binary.complete_animation_reader` is the ordinary registry,
+Data and byte-coverage entry. It reloads the selected StringPool, requires all
+fifteen named fields and physical EOF for every attempted owner, and exposes
+its receipt only after the underlying native/Unity/source/pool exit checks.
+A caught record error still refuses the receipt. Explicit native paths must
+agree with the selected root; neither a legacy prefix nor a saved page cache
+supplies a missing complete result.
+
+Complete curve payloads retain each source-named keyframe word and both wrap
+words, including original IEEE bit patterns. Beyond's headerless keyframe and
+Unity's custom curve keyframe keep their independent field orders, widths,
+array counts and wrap order. Null curves, default Beyond values, null arrays
+and empty arrays remain distinct. Offset-only range metadata cannot replace
+the actual decoded key values in a complete Data publication.
 Neither stored framing nor a complete schema establishes playback.
 Raw, corpus, Data and coverage consumers pass the matching selected pool and
 native context. Data and coverage bookend their pool, native and reader
@@ -365,13 +602,26 @@ size. The reviewed
 [`npc_montage_native.json`](../../scripts/game_data/contracts/npc_montage_native.json)
 and matching validator join the owning root/body/clip source order, typed
 stores, scalar/pool/raw-value reads, generated reference adapters and factories.
-The maintained `memorypack.npc_montage` sparse reader admits only null or empty
-Deco, Dynamic and transition-override lists, preserving those two states;
-positive elements refuse at their actual count offset. Reference-list sharing
-is conditional on a coherent initialized typed context and normal metadata,
-allocator, constructor, Clear and pre-loop provider helpers. The empty path
-does not consume an element or use the provider's result; this does not prove
-live provider/cache/default selection or runtime playback.
+The maintained `memorypack.npc_montage` reader composes independently proved
+positive Deco/Dynamic/extra-effect reference lists with their actual parent
+requests and canonical element adapters. EventInfo and extra-effect records
+retain their own named fields, pooled strings and Vector3 sources. The Dynamic
+GUID copy saves and restores its whole inline value across the advance helper;
+it does not rely on volatile SIMD preservation. Reviewed child source windows
+live in `npc_montage_children_native.json`; current collection programs are
+freshly derived, never loaded from a generated report.
+
+Transition overrides have their own MC5 wire grammar and managed value layout.
+The two GameplayTags are direct raw values in this reader, not generated tag
+objects. The canonical FF route returns a complete default value; an FF
+reference element instead remains null. Positive lists preserve that distinction
+and require a bounded signed count, complete canonical callback/default/copy
+proofs, a byte-identical repeated loop and the actual Add storage program.
+Managed stride never selects wire width or another type's grammar. Reference
+and value list sharing remain conditional on coherent initialized nominal
+contexts, matching proved callbacks, normal helpers and fresh zeroed storage or
+an initially empty reused list with enough capacity. Live provider/cache/default
+selection and runtime playback remain unproved.
 
 Each lexical Montage operation validates fresh native semantics on enter and
 exit and checks native, Unity, complete reader-source and selected StringPool
@@ -379,8 +629,9 @@ bookends before returning a result. A closed decoder cannot be reused, and a
 late failure withholds its caller's receipt or decoded publication. The
 standalone VFS census independently joins all selected pool pages to the same
 authenticated source ledger as the streamed owners. Bounded physical-EOF
-success does not admit positive lists or change whole-family coverage; the
-canonical corpus gates own those denominators.
+success grants only the selected source-owned grammar; the canonical corpus
+gates own whole-family denominators. The post-exit operation receipt records
+attempted/closed/failed owners separately, and Data retains it in provenance.
 
 CharInteractPerform inserts the Boolean `replayLoopActions` between
 `preStartActions` and `startActions`. The explicit current-animation operation
@@ -395,6 +646,17 @@ shared resource budget. Its matching selected pool and complete source/native
 bookends belong to the lexical public operation; diagnostic graph reports
 cannot grant that authority. The legacy sparse facade retains its bounded
 null/empty and selected single-entry profiles independently.
+Ordinary JsonData classification and Data publication select
+`complete_perform_reader`, which opens the whole current graph through the
+explicit current-animation operation. Every selected root must close all
+twenty-eight fields at physical EOF; a failed child cannot fall back to a
+sparse prefix and still pass publication. The chosen native pair must agree
+with the explicit game root. Native/Unity, complete reader-source and selected
+pool bookends must pass before the operation receipt is available, and its
+decoder expires on exit. Source classification and page publication each open
+their own operation; a saved receipt or diagnostic graph grants no authority.
+The legacy sparse readers and `sparse_perform_reader` remain independent
+bounded entry points for callers that explicitly select those profiles.
 The nested `BodyTypeDef` serializes three fields in ten bytes while its native
 value occupies thirty-two bytes; its fourth runtime field is not serialized.
 The gate proves that hidden return, value adapter, conversion and full getter
@@ -449,7 +711,7 @@ object storage. This supports the initialized matching-holder path without
 claiming cold cache conversion, helper termination or live formatter selection.
 
 A successful Data publication does not establish complete schemas. Changed
-placed NPC inheritance, positive NPC montage collections and SubGame variants remain
+placed NPC inheritance and SubGame variants remain
 independent migration boundaries. The admitted NPC PrefabInfo partition describes roster definitions;
 it does not close placed proxy or montage payloads. Keep current refusals until
 their native read/cursor joins pass; setter declarations alone name fields but
@@ -568,8 +830,19 @@ carry an index from one export into another's pool.
 The current LevelData root keeps its declared order, but its scene ID is a
 signed pool index, proved by `serialization_roots_native.json`; missing pool
 pages never select inline text. Brief values include the inserted risk list.
-Their positive risk/property children remain bounded until independently
-proved, and searched ownership results no longer cache a native success.
+The legacy prefix keeps its bounded child profiles and searched ownership
+results never cache a native success. Ordinary JsonData classification and Data
+publication instead use `leveldata_binary.complete_leveldata_reader`, backed by
+`CurrentLevelScriptSource.from_source_inventory` and the current LevelData43
+cursor. This independently composes the current Brief, Interactive, conditions,
+FunctionArea, NPC, patrol, factory, geometry and other reached child sources.
+The source inventory authenticates logical bytes without granting a schema,
+so first setup has no dependency on the classification report being produced.
+Every selected LevelData source must close all forty-three fields and physical
+EOF. A missing child, partial source family or failed native/Unity, source,
+owner-byte or pool exit gate withholds the operation receipt and publication.
+The selected export/game roots and native pair remain authoritative; a saved
+receipt cannot reopen the operation or substitute for fresh native proof.
 `leveldata_function_area_native.json` proves the current base additions:
 `enableFactoryHide` and a nullable seven-field `factoryHideDesc`. Its five
 Boolean sources, owner enum storage and typed building-type list source are
@@ -583,7 +856,8 @@ before and after decoding or cache reuse. Exact EOF, bounded child stops and
 refused inputs remain distinct in the current corpus report.
 The shared child string helper accepts only signed pool indices; an unavailable
 positive index refuses that child instead of selecting inline UTF-8. Enemy and
-lock collections retain named stops until their pooled child codecs are migrated.
+lock collections in the legacy prefix retain their named stops. Their complete
+current operation uses independently joined pooled child codecs instead.
 The Interactive dictionary uses its separately gated sparse pooled profile.
 The current NPC Patrol lane is separately gated by
 `leveldata_npc_patrol_native.json`. It proves the inserted patrol Boolean,
@@ -675,11 +949,65 @@ The removed live provider probe yielded no admitted observation. A future witnes
 ## BuffData
 
 Current strings, including root id/icon spritePath, are signed StringPool indices; the icon has twenty members, adding `showProgressInEnemyHeadBar` before `showProgressInHpBar`.
-Root/icon/BlackboardDouble/addingCooldown/dispel/empty-tail and structural action migrations do not refresh historical attribute, stacking, DataPair, global, event or damage windows and remaining action layouts; the family still refuses on that drift.
+Root/icon/BlackboardDouble/addingCooldown/dispel/empty-tail and structural action migrations do not refresh historical attribute, stacking, DataPair, global, event or damage windows and remaining action layouts. Historical consumers still refuse on that drift; the current family operation composes freshly proved successor readers instead.
 Prefer build-derived declarations/order plus claims-style source proofs over new pinned windows. [Root framing](../../scripts/game_data/memorypack/buff.py) and [structural actions](../../scripts/game_data/memorypack/buff_actions.py) distinguish `structuralOnly` outer coverage from recursively named storage.
 Whole `exact` schema needs byte-zero traversal of all thirty fields, source-id equality and physical EOF, then complete authenticated family admission and fresh canonical replay. Historical complete sweeps apply only to their native/reader epoch.
 
 [Selected roots](../../scripts/game_data/memorypack/buff_selected_roots.py) own heal, BreakPassing, empty-condition/tag-ten and sword compositions; gradual and two-direction damage receipts retain independent source/child authority.
+Their formatter dependencies can be generated before the Buff census through
+`il2cpp.buff_native_audit`: the original native read-order, context and dispatcher
+validators plus generic-instance sweep produce a separate selected-native receipt.
+It reads no family corpus, grants no source/EOF authority, and does not replace
+the comprehensive context audit's corpus witnesses. This remains a historical
+selected-root tool; Data export uses the current source-owned family operation.
+The historical EffectAction receipt cannot be joined by its physical tag to a
+current dispatcher. Resolve its literal wrapper first and require both the tag
+and member count to agree: the current catalog assigns the old tag to another
+action and gives EffectAction a different member plan. Current named catalog
+role supersession does not activate that historical decoder or its nested
+grammar. The formatter-window regenerator also requires actual old unwind
+ownership for every fragment; an unattributed FF clear/epilogue fragment is a
+real historical migration hold, never permission to copy or resize a code window.
+
+`memorypack.current_buff_root` owns the current forward thirty-field composition.
+It binds each actual root request to the selected current child ABI, proves the
+new/existing/FF generated-reader paths for Buff-only concrete records, and joins
+each positive collection to its nominal callback and independent element grammar.
+The two-byte stacking enum requires the native backing type, exact word load,
+two-byte guard/cursor updates and word setter; a DWORD reader cannot substitute.
+`memorypack.current_family_evidence` authenticates the complete source inventory,
+current physical chunks against the VFS audit and the exact logical exports,
+then publishes only after native, pool, source and reader bookends pass. Fresh
+registry and page replay are required. Unknown positive children stop the root;
+source completeness never certifies their remaining fields or EOF.
+
+The current composition includes positive damage, heal and poise modifiers,
+shield/absorption records and timeline/force-sync animation records. Each owns
+its generated member program, ordinary Original conversion and typed child
+joins. `memorypack.buff_modifier_union_sources` independently proves Heal and
+Poise short-tag dispatch, FF clearing, concrete readers and inherited base
+getters; their tags are not AbilityActionData tags. Timeline's allocator-only
+wrapper factories are proved by `memorypack.buff_timeline_factory_sources`,
+including typed allocation, holder assignment, collector handling and complete
+frame restoration. Late nonvolatile saves and dead collector-table setup may
+be admitted only when their exact instructions preserve flags and the full
+reader frame proof also closes every path. No skipped constructor is inferred.
+SpecialAim collection limits bound the element count; the count limit is not a
+minimum byte width. Positive elements still require the selected union and
+sector grammars, bounded depth and exact cursor progression. These stored
+grammars establish neither runtime modifier arithmetic nor timeline execution.
+
+`memorypack.current_effect_action_receipt` selects the literal current wrapper
+through the live current dispatcher. Its twenty reads include
+`alignSpawnPhaseToTimeline` and `spawnPhaseAlignFrame`; the independently owned
+EffectActionCfg has eighty-six fields. Current action receipts distinguish
+tagged abstract action unions from the untagged concrete EffectActionData list
+inside StackBuffEffectData. Neither an exact action nor its child grammar grants
+an enclosing Buff root or a runtime effect claim. The current family v2 and v9
+action formats are separate from historical census and action formats.
+Family rows live in hash-pinned, bounded gzip JSONL ledgers. Every source still
+replays its complete recorded root and action fields under a fresh native
+operation; streaming changes memory ownership, not source or EOF admission.
 The recursive sword condition supersedes its earlier nonrecursive tiling limit; isolated children remain `selectedOnly` and `publicationEligible:false`, never direct registry admissions.
 [Event maps](../../scripts/game_data/memorypack/buff_event_maps.py) read event-before-sequences for AbilityActionMap and sequences-before-event for BuffActionMap; reusable routes are broader than selected fixture names.
 [Recursive actions](../../scripts/game_data/memorypack/buff_recursive_control_actions.py) and each `buff_*` domain owner require independent typed children on their original spans; unsupported unions, siblings and parent tails still refuse.
@@ -5895,6 +6223,59 @@ Missing, old or changed receipts invoke the maintained direct reader and bypass
 the older page cache. Native-input failure makes the dataset unavailable before
 either path. Receipt reuse does not promote partial owners or runtime meaning.
 
+The Data fallback uses `memorypack/levelscript_decode_batch.py` to share
+successful child-native validations inside one decode operation. The batch
+selects an explicit native pair and one StringPool, and checks the complete
+reader inputs, native/Unity bytes, source-file roster and bytes, and pool again
+before returning records. Only identical successful calls for that selected
+pair may reuse a proof; failures, foreign selections and later operations stay
+fresh. This avoids full dependency enumeration for every ActionMap node without
+granting a canonical receipt, whole-owner closure or additional schema coverage.
+Drift withholds the entire batch with a bounded structured diagnostic.
+ActionMap's required-native-route index uses the same selected operation;
+its declaration identity comes from current reader bytes, so preserved file
+timestamps cannot carry an old route index into a later batch. Standalone
+calls still check their own selected native inputs.
+The union-tag and ActionMap layout declarations also reuse immutable bytes
+inside this complete reader scope. Their first read must match the entry
+length/SHA256, reuse is memory-bounded and ends with the operation, and the
+fresh outer exit snapshot still rejects changed or added sources. Unlisted
+paths and standalone calls read current bytes. Native-input declaration JSON
+is parsed by content rather than per node; each caller receives its own pin
+dictionary. These are declaration caches, not native-proof substitutes.
+Data's LevelScriptTemplate fallback uses the same selected batch and pool.
+Its runtime reuse counters stay in provenance rather than the stable input
+signature, so a current template publication remains reusable.
+Sparse pooled Interactive dictionaries, nested SendLuaEvent string parameters,
+and the explicit spawner/camera route decoder use the same selected successful
+native-proof reuse. Payload checks still run for every value. Full reader
+snapshots resolve the repository root once per scan and avoid re-resolving the
+dependency collector's already resolved paths; non-source files are filtered
+before filesystem probes. Large JSON dependency declarations reuse immutable
+syntax by the length and SHA256 of freshly read bytes, avoiding repeated full
+JSON parsing. This is not a saved path roster or validation receipt: discovery,
+existence/escape checks and complete start/end content hashes remain fresh.
+The BuffPtr, CameraShake and EntityPtr-list parameter operations also own a
+fresh complete reader snapshot at each end. Their enclosed native validators
+borrow the owner's pending reader identity for direct snapshot calls, instead
+of scanning it twice again per validation. Entry and exit native proofs still
+execute independently, and the owner's final source/pool checks must pass;
+standalone validator calls and unrelated nested scans remain fresh.
+The fallback RollingStone/Launcher module dictionary also receives the owner's
+explicit native pair and uses this same operation-scoped validator. Positive
+module dictionaries must not resolve the default install or repeat the complete
+reader scan for each file. Standalone calls remain fresh, failed/foreign proofs
+are not reused, and batch exit drift still withholds all decoded records; this
+does not extend the legacy module grammar or admit the complete module graph.
+BuffPtr, CameraShake and positive EntityPtr-list fields may also borrow a lazy
+prepared parameter operation from that exact native scope and StringPool.
+Opening remains demand-driven so an unused child contract cannot invalidate a
+row. Each original child entry and exit proof runs with native-result reuse
+suspended; an exit refusal withholds the batch. Foreign roots/pools, nested
+native operations and standalone codecs retain independent validation. This
+avoids reopening a child operation, including its complete reader snapshots,
+for every field while preserving the existing prepared-capability checks.
+
 LevelScript native refusals remain distinct from unknown stored schemas. Module
 grammar failures carry an explicit `nativeContract` marker; task-condition
 failures retain their owning audit only when the authenticated current union
@@ -6503,6 +6884,54 @@ requires the reviewed current gate, explicit native pair, current exported
 source receipt and the same StringPool throughout. Historical `sourceReceipts`
 are evidence for their original bytes and reader; changing a build pin or
 reusing a successful tail cannot make them current owner evidence.
+
+The formal `levelscript_complete.complete_levelscript_reader` operation takes
+its selected families from the independent source inventory, so classification
+has no dependency on its own output. It requires every selected LevelScript,
+Template and optional LevelData owner to close in source order through physical
+EOF. The receipt is unavailable until all source, native, complete reader and
+pool exit checks pass; partial census rows cannot substitute for that receipt.
+
+`levelscript_template_sources` derives the complete current six-field Template
+caller and both ActionMap wrapper programs directly on the selected image.
+Its property and Task reuse requires the actual closed MethodSpec and E8 target
+to match independently proved children. The ActionMap's three nominal reference
+lists each have their own typed context, provider/callback source and positive
+loop induction. Shared erased targets or equal field names grant no grammar.
+The pooled blackboard retains its independent current native gate. These are
+conditional stored source claims: coherent initialized contexts, disabled
+collector, sufficient stable disjoint buffered storage and the proved callbacks
+are required; live provider selection and execution remain unobserved.
+
+The camera-target enum Param proof projects its authenticated immutable PE
+section mapping into a plain JSON object before the existing bidirectional
+contract comparison. Section identities, native windows, bitmap retry edges,
+owned setters and exact returned facts all remain checked; accepting a broader
+mapping in the contract comparator would conceal the producer defect.
+
+The current dedicated Param registry also admits a separately proved Boolean
+list, the existing nominal GlobalBuffId list, the independently bounded
+managed16 LangKey list and the ordinary LangKey value.
+Boolean list elements retain every raw byte; the byte callback, exact Add
+stores, count-sized allocation and bounded loop are independently proved.
+GlobalBuffId remains an MC1 pooled `id` value, even though its managed carrier
+is eight bytes. It reuses its owning list/child source, never an integer list
+or a managed-size wire inference. LangKey retains its managed key/raw-text
+distinction and its own reviewed source and canonical Param conversion.
+Its list revalidates the owning reviewed parent/child/provider declaration
+and bounded induction before joining the ordinary Param registry and actual
+parent request; nonserialized raw text never becomes a stored element field.
+
+`levelscript_set_buff_route_sources` owns Set<BuffPtr>'s additional union
+header and actual tag-zero SetBuff child. The ordinary outer ActionBase case
+does not supply that nested grammar. Its own formatter, FF/positive/null-child
+paths, typed child request, closed generic parent, eager adapter registration,
+derived interface conversion and cache-only posthook join the independently
+complete SetBuff reader and Param children. The constructed RCX-key registration
+profile keeps a separate reference-carrier gate from the ordinary CLASS
+profile. Extended tag 255 is never the canonical one-byte FF marker. These
+facts describe stored configuration under the same explicit normal helper and
+provider conditions, without claiming runtime selection or execution.
 
 ActionMap children may reuse the exact active operation's independently
 admitted Task condition graph and StringPool. That reuse supplies neither an
@@ -7530,6 +7959,33 @@ Graph indices are structural references, never tracked-contract or proof-JSON
 digests. A valid graph alone grants no native admission: the owner rederives
 the complete sources on the selected image and compares both directions.
 
+Composed Skill proof producers must preserve shared JSON-value subgraphs until
+publication. Root-component assembly formerly performed an eager whole-graph
+JSON round trip, duplicating shared child proofs before the CurrentSequence
+comparison projection could intern them. The composed nontrace path now uses
+the existing alias-preserving JSON normalizer; standalone publication retains
+its previous JSON-copy behavior. This changes representation cost, not native
+claims, root fields or admission. Bidirectional comparison and native/source/
+pool exit bookends remain mandatory. Diagnose an expensive native-enter stage
+separately from wire decoding, reuse a successful admitted decode, and do not
+interpret a timeout or serialization crash as missing gameplay source or as a
+reason to record again. Eliminating this measured expansion point does not by
+itself identify the C encoder's access-violation mechanism.
+
+Repeated unmanaged-size queries reuse one completed immutable table per exact
+opened NativeImage instance. Each caller receives a fresh dictionary; failed
+builds are not cached, and proxy/subclass lifetime checks retain their derivation
+path. This reuses a type-size calculation rather than native admission: source,
+selected-input, pool and operation-exit gates still run. Invocation-count tests
+establish reuse and isolation; no post-change end-to-end speedup is assumed.
+
+A diagnostic disassembler's absence of unknown-byte rows is not instruction
+framing proof. Memory operands must consume their entire ModRM/SIB/displacement
+encoding before the following instruction is interpreted. CRC investigation
+exposed a register-only XOR shortcut applied to a memory operand; older local
+candidate reports using that split do not grant mathematical admission. Native
+claims need independent complete byte framing, not only a whole-window hash.
+
 Current Skill comparison treats rendering details of an already rejected
 zero-candidate cache refresh as diagnostics. The legacy count and structured
 expected-one/actual-zero message normalize only after confirming a nonadmitted
@@ -8114,6 +8570,23 @@ ancestry alone cannot supply the readiness proof. Full wrapper publication,
 Original allocation, constructor call, both holder stores, class predicates and
 caller frame remain separate exact joins.
 
+The initialized 120-byte cached-wrapper constructor can allocate and initialize
+a separate base-holder object before allocating its own Original. Its exact
+saved-register homes and restored return frame, both typed allocations, the
+base holder field and both successful nominal casts are independently joined.
+Every inlined base default must match the complete current named base
+constructor's field-owned constant stores; a matching instruction pattern or
+base name supplies no default-value proof. Both collector cells remain required
+to select the already modeled disabled paths.
+
+A current Original constructor can tail-jump across a proved closed generic
+ancestor which has no named TypeDef. Such an ancestor supplies no constructor
+candidate or field layout. The actual native tail destination must still match
+exactly one named nongeneric ancestor constructor, whose ABI and complete
+reachable entry program are re-proved. Both direct and initializing tails retain
+this rule; unknown nongeneric ancestors, ambiguous targets and unowned field
+stores remain refusals.
+
 EnemyCheckAIMarkerInfo has its own Boolean/GameplayTag managed value with raw
 padding. Its observed ReadUnmanaged source loads and returns a complete QWORD
 and calls the independently proved Advance with eight. The finite field compiler
@@ -8121,6 +8594,11 @@ replays the actual and registered sources independently, preserves padding and
 all raw bits, and joins the ordinary parent's RAX-to-RDX transfer, named cached
 QWORD setter and both positive/full FF frames. This does not normalize the
 Boolean or borrow a Vector2, Int64 or MC2 wrapper grammar.
+The producer and pure field compiler both use the maintained called-Advance
+QWORD byte-program owner; a removed wrapper-local helper is not a compatibility
+entry point. The actual Advance source and both restored frames remain separate
+mandatory checks. Native CLI failures retain the failed check, selected paths,
+contract source hash and bounded diagnostic alongside their status.
 
 The separate RBP DWORD capture preserves the word across its actual Advance.
 LayerMask and GameplayTag each retain an independently proved nominal domain
@@ -8243,3 +8721,33 @@ joins the whole owned field and frames before emitting `animation-clip-raw36`.
 It preserves Boolean/padding bytes; initial FF is data. Adjacent fields confirm
 the packed extent, but neither marshal alignment nor wrapper framing supplies it.
 Montage activation, playback and runtime provider/helper effects remain open.
+
+### Complete SkillData stored-value projection
+
+The current root/action grammar and its named value projection are separate
+checks. `memorypack/skill_values.py` joins the generated wrapper's declared
+member types to the active native operation's actual ordered programs and
+union assignments. A matching whole-file cursor alone cannot authorize a
+name or a route. The independent raw replay records action/selector wrapper
+field extents; those and the root/other certified child spans must match the
+value reader exactly, and the raw ranges must partition the physical file.
+The current-family corpus format versions those retained named field traces.
+
+The value reader expands Unity AnimationCurve storage using the selected
+custom formatter's wrap words and named headerless keyframe layout. Null
+reference, null key collection and empty key collection are distinct. The
+selected native instance-size/field-offset tables name unmanaged fields only
+inside a separately proved raw wire copy. Managed layout never grants that
+copy or defines a new framing. Declared primitive signedness, float bit
+patterns, raw struct padding, ordered dictionary entries and duplicate keys
+are retained. These are exact stored facts; runtime provider selection and
+evaluated gameplay remain outside this proof.
+
+Data's required SkillData adapter freshly replays the complete authenticated
+family report and every source before decoding named values, then checks the
+stored identifier against the source filename. Partial roots, unproved types,
+wrong union assignments, changed spans, stale source/pool/reader/native inputs
+and incomplete source rosters refuse publication. A missing optional legacy
+receipt cannot authorize a derived-only fallback in this formal path. Required
+replay evidence is regenerated under the selected export's `meta/evidence/`,
+with no dependency on repository temporary, scratch or report directories.
