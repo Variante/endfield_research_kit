@@ -67,6 +67,7 @@ come from ``contracts/skill_cursor_observer_native.json``, which this audit
 requires to pin the same build.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 from scripts.common import EXPORT_LAYOUT
 import hashlib
@@ -153,7 +154,7 @@ def audit():
     skill_buff_path = ROOT / 'scripts/game_data/memorypack' / 'buff.py'
     skill_core_path = ROOT / 'scripts/game_data/memorypack' / 'core.py'
     buff_actions_path = ROOT / 'scripts/game_data/memorypack' / 'buff_actions.py'
-    buff_path=ROOT/'reports/animestudio/buffdata_current_latest.json'
+    buff_path=ExportLayout.configured().evidence_dir / 'animestudio/buffdata_current_latest.json'
     buff_sha=sha(buff_path);buff_corpus=json.loads(buff_path.read_text(encoding='utf-8'))
     verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
     require(buff_corpus['inputSetSha256'],corpus['inputSetSha256'],buff_path)

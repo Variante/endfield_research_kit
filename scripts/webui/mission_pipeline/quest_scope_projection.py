@@ -23,7 +23,7 @@ from scripts.common import read_json_strict as _read_json
 from scripts.common import repo_path as _repo_path
 
 ROOT = REPO_ROOT
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_graph'
 
 AUTHORITATIVE_LEVELDATA_MISSION_RELATIONS = frozenset({
     "authoritative_scope_leveldata_mission_context",

@@ -239,7 +239,7 @@ def _properties(entry: dict[str, Any], label: str) -> dict[str, dict[str, Any]]:
 
 
 def _templates(
-    root: Path, union_rows: dict[str, dict[str, Any]],
+    root: Path, union_rows: dict[str, dict[str, Any]], *, game_root: Path,
 ) -> tuple[dict[str, dict[str, Any]], int]:
     directory = root / "game/Json/Interactive/InteractiveData"
     paths = sorted(directory.glob("*.json"))
@@ -248,7 +248,7 @@ def _templates(
     templates: dict[str, dict[str, Any]] = {}
     for path in paths:
         raw = path.read_bytes()
-        result = decode_interactive_template_memorypack(path, raw, len(raw))
+        result = decode_interactive_template_memorypack(path, raw, len(raw), game_root=game_root)
         if result is None:
             raise PortalCenterJoinError(f"{path}: InteractiveData template is unrecognized")
         decoded = result["decoded"]
@@ -405,7 +405,7 @@ def audit(
         raise PortalCenterJoinError("selected InteractiveComponentType enum lacks a portal component")
     if len({enum_ids[name] for name in PORTAL_TYPES.values()}) != len(PORTAL_TYPES):
         raise PortalCenterJoinError("selected portal enum IDs alias")
-    templates, template_files = _templates(export_root, unions)
+    templates, template_files = _templates(export_root, unions, game_root=game_root)
     instances, level_files, matched_files = _instances(export_root, templates, enum_ids)
     return {
         "format": FORMAT,

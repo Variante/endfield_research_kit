@@ -147,6 +147,10 @@ inspection interpreter; immutable native bytes do not make those validators
 current.
 Public native results and source-receipt validations must not be cached by
 paths or arguments alone: every call checks the selected build and sources.
+Installed-native path discovery walks the existing configuration priority
+lazily: a valid environment or local-paths pair avoids parsing the export
+summary. It rechecks candidate existence on each call and retains the same
+fallback order; this is path discovery, not native-proof reuse.
 Parsed union tables cache by their actual bytes; body and immutable wrapper
 indexes cache per authenticated image. Wrapper callers receive independent
 mappings. The impact audit follows top-level calls and explicit import aliases

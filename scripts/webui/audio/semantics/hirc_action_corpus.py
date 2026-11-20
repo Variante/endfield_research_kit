@@ -2075,7 +2075,27 @@ def aggregate_current_hirc_actions(
             f"outer={sorted(expected_excluded_pairs.items())} "
             f"audit={sorted(observed_excluded_pairs.items())}"
         )
-    if len(rows) != len(verified_rows) + len(excluded_rows):
+    # A block with no directory in either root is not installed by this client
+    # (the current build ships no AuditAudio); the outer ledger then declares
+    # none of its files either.
+    not_installed_rows = [row for row in rows if row.get("status") == "not_installed"]
+    declared_blocks = {
+        str(row.get("block") or row.get("blockName") or "")
+        for row in [*expected_files, *excluded_files]
+    }
+    for row in not_installed_rows:
+        block = str(row.get("block") or "")
+        if not block or block in declared_blocks:
+            raise ValueError(
+                f"AKPK audit reports {block or 'an unnamed block'} as not installed, "
+                "but the outer ledger declares files for it"
+            )
+    if int(audio_summary.get("notInstalled", 0)) != len(not_installed_rows):
+        raise ValueError(
+            "AKPK not-installed summary mismatch: "
+            f"rows={len(not_installed_rows)} summary={audio_summary.get('notInstalled')}"
+        )
+    if len(rows) != len(verified_rows) + len(excluded_rows) + len(not_installed_rows):
         raise ValueError("AKPK audit contains a nonterminal or unclassified row")
     for row in excluded_rows:
         block = str(row.get("block") or "")

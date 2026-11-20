@@ -45,6 +45,7 @@ from scripts.webui.assets.table_asset_owners import build_table_asset_owner_payl
 from scripts.webui.assets.collision import add_collision_publication, publish_collision_previews
 from scripts.webui.assets.collision_runtime import apply_runtime_publication
 from scripts.webui.assets.collision_authored import apply_authored_publication
+from scripts.webui.assets.selections import prune_index_selections
 from scripts.common import ASSET_DIR, EXPORT_ROOT, ROOT, TABLE_DIR, rel_path, require_export_layout, write_json
 
 
@@ -233,6 +234,7 @@ def main(argv: list[str] | None = None) -> None:
     # viewer; the page fetches them on first use so the list loads without them.
     write_json(ASSET_DIR / "relations.json", {"relations": asset_payload.pop("relations", {})})
     write_json(asset_index_path, asset_payload)
+    report_pruned_selections(prune_index_selections(asset_payload, root=ROOT, asset_dir=ASSET_DIR))
     # Exact table-row ownership for the indexed assets. The scan is the full
     # index, not the focused Story/Wiki projection, so the sidecar describes
     # every exported asset regardless of the published index mode.
@@ -308,6 +310,12 @@ def publish_collision_only(args: argparse.Namespace) -> None:
     if hashlib.sha256(index_path.read_bytes()).digest() != hashlib.sha256(original).digest():
         raise ValueError("Assets index changed during collision publication; rerun against its new publication")
     write_json(index_path, payload)
+    report_pruned_selections(prune_index_selections(payload, root=ROOT, asset_dir=ASSET_DIR))
+
+
+def report_pruned_selections(removed: list[Path]) -> None:
+    if removed:
+        print("Removed superseded selections:", ", ".join(rel_path(path, ROOT) for path in removed), flush=True)
 
 
 def publish_runtime_metadata(payload: dict, args: argparse.Namespace) -> None:

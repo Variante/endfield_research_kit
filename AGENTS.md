@@ -312,6 +312,25 @@ A contract whose pinned build differs from the installed one returns
 recorded `nativeInputs` against the selected build before treating its rows,
 or a consumer's empty result, as current.
 
+### Formal export input boundary
+
+The wrapper prepares required VFS/JsonData source and static Collision evidence
+automatically with `scripts/game_data/extraction/build_evidence.py`, before page
+publication. `--from-game` controls refreshing `game/`, not whether missing
+evidence is repaired. Configured game/export/tool roots are authoritative and
+propagate to every child; a missing configured native pair never falls back to
+another installation.
+
+Ordinary `export.bat` tasks must not read repository `tmp/`, `scratch/`,
+`report/` or `reports/` as inputs, including transitive receipt dependencies.
+Diagnostic outputs may remain in `reports/`. Authenticated extraction evidence
+and all retained replay inputs belong to the selected export's `meta/evidence/`;
+the extraction summary belongs to `meta/extraction/summary.json`. Page build
+intermediates, caches and source graphs belong to `webui/data/_build/`.
+Update producers and consumers together; never migrate evidence by inventing
+missing inputs or weakening hashes/native/freshness gates. This ownership rule
+supersedes older report-location guidance for data consumed by ordinary builds.
+
 ## Commands
 
 **The command surface lives in [`scripts/README.md`](scripts/README.md)** --
@@ -323,9 +342,18 @@ what a reader of that file would still get wrong.
 
 - Export and rebuild commands are long-running. Give them a generous timeout
   and wait; do not poll or re-check while one is still running.
-- `scripts/webui/story/build.py` takes about 3 minutes for the default CN
-  lean build. Multi-language or forced timeline recovery takes longer -- allow
-  10-15 minutes (`timeout_ms` of at least `900000`).
+- Run memory-heavy rebuilds serially. Use `--webui-jobs 1` for full export
+  validation, and do not launch separate Assets, Story and Data rebuilds
+  together. Measure peak memory before increasing concurrency.
+- Check free disk space at long-build boundaries and regularly remove obsolete
+  validation backups and failed exports after confirming that current receipts
+  do not reference them. Delete superseded backups once their replacements pass
+  validation; retain current replay evidence and the configured previous export
+  used for version comparisons. Stream large inventories and cleanup operations.
+- Warm lean Story timings do not predict a cold native-backed recovery run.
+  Give `scripts/webui/story/build.py` a generous timeout and let its native/source
+  exit checks finish. For an unexpectedly long phase, take a bounded stack and
+  resource sample to locate repeated work before launching another build.
 - Before starting a WebUI server, check whether the default
   `http://127.0.0.1:8765/` server is already running and reuse it. Do not start
   a second `serve.py` on `8765` or another port unless asked.
@@ -552,7 +580,8 @@ Setup and export internals:
   `--fallback-assets <FALLBACK_ASSETS>`. `dump`, `stream`, and `vfs-index` accept repeated
   `--block-type` flags plus repeated `--file-regex` filters; `stream` exposes the
   same targeted VFS filtering for JSONL byte streaming.
-- **Plain `export.bat` extracts nothing**; `--from-game` extracts the union of
+- **Plain `export.bat` does not refresh `game/`** (it prepares missing/stale source
+  and static collision evidence under `meta/evidence/`); `--from-game` extracts the union of
   the named pages' inputs (every page when none is named), and `debug` extracts
   `scope.EVERYTHING`. The setup path is `export.bat story --from-game
   --animestudio-story-monobehaviour-names`; that name filter is refused for

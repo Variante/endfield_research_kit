@@ -20,6 +20,7 @@ from scripts.game_data.shader.instruction_corpus import collect as collect_instr
 from scripts.game_data.shader.metadata import material_shader_info
 from scripts.game_data.unity_scene import scene_identity
 from scripts.repo_paths import REPO_ROOT
+from scripts.webui.assets.selections import prune_superseded_selections
 
 SCHEMA='endfield.assets-shader-analysis.v3'
 
@@ -63,7 +64,7 @@ def publish(report,*,root=REPO_ROOT,asset_dir=None):
         if (p.stat().st_size,p.stat().st_mtime_ns)!=snapshot:raise ValueError('Material source artifact changed during shader publication')
     result=dict(schema=SCHEMA,status='validated',bindings=bindings,shaderCount=len(shaders),materialCount=len(bindings),
         evidenceBoundary='Current admitted Shader analyses bound only to exact Shader identity/hash references in unchanged published Material artifacts. Stored keyword candidates remain conditional; this does not renew the existing renderer/publication admission or prove runtime shading.')
-    write_json(destination/'index.json',result);return result
+    write_json(destination/'index.json',result);prune_superseded_selections(destination,stage);return result
 
 
 def main(argv=None):

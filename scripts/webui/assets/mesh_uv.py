@@ -21,6 +21,7 @@ from scripts.game_data.unity_mesh import read_surface
 from scripts.game_data.unity_scene import scene_identity
 from scripts.repo_paths import REPO_ROOT
 from scripts.webui.assets.collision_render_assets import _obj
+from scripts.webui.assets.selections import prune_superseded_selections
 from scripts.webui.assets.shader_analysis import _published_identity
 
 SCHEMA='endfield.assets-stored-mesh-uv.v2'
@@ -70,7 +71,8 @@ def main(argv=None):
         scenes.check_receipt_snapshot(scene)
         for report in receipts:scenes.check_receipt_snapshot(report)
         if path.read_bytes()!=raw:raise ValueError('Asset index changed during UV publication')
-        write_json(REPO_ROOT/'webui/data/assets/mesh_uv/index.json',result);write_json(REPO_ROOT/'reports/assets/stored_mesh_uv_current.json',result)
+        write_json(REPO_ROOT/'webui/data/assets/mesh_uv/index.json',result)
+        prune_superseded_selections(REPO_ROOT/'webui/data/assets/mesh_uv',REPO_ROOT/result['sourceRoot']);write_json(REPO_ROOT/'reports/assets/stored_mesh_uv_current.json',result)
         print('Stored UV1 projections:',len(result['bindings']),'; unavailable:',len(result['unavailable']),flush=True);return 0
     except (OSError,ValueError,KeyError,TypeError,OverflowError) as e:print('Stored Mesh UV projection failed:',str(e)[:1600],flush=True);return 1
 

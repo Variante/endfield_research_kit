@@ -4,6 +4,93 @@ This file is the maintenance entry point for the static WebUI. Page-specific
 recovery contracts live under [`webui/`](webui/README.md); frontend-only layout
 and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 
+## Build input ownership
+
+`export.bat` page tasks read the selected export, reviewed source/contracts and
+page-owned publications. Repository `tmp/`, `scratch/`, `report/` and `reports/`
+are never evidence or cache inputs, including paths nested inside receipts.
+The scheduler propagates `ENDFIELD_BUILD_INPUT_BOUNDARY=1` to Python tasks and
+nested builders; `scripts.build_inputs` refuses those reads, directory scans
+and SQLite connections. Diagnostic writes remain allowed. Optional evidence
+keeps its explicit unavailable result; required input failures remain visible.
+Isolated validation children also receive the originating workspace through
+`ENDFIELD_BUILD_INPUT_ADDITIONAL_REPO_ROOTS`; this extends the forbidden roots
+without removing the isolated checkout's own boundary.
+
+`ExportLayout.evidence_dir` owns retained authenticated extraction evidence in
+`<export>/meta/evidence/`. All replay inputs must survive together there; source,
+native and hash checks still apply. The extraction summary belongs to
+`<export>/meta/extraction/summary.json`, so cache/freshness decisions do not use a
+report from another export. Published-output source checks use
+`meta/extraction/provenance.json` and the stamps of the outputs they consume,
+rather than requiring a last-run summary that can be absent or cover another
+scope. Story's guide index requires matching MonoBehaviour and PlayableDirector
+source stamps and still authenticates the object-index signature and contents.
+Malformed provenance or conflicting stamps fail closed; only exports predating
+per-output provenance use their own extraction summary. No summary is invented.
+Builder caches, Story intermediates, Map recovery
+and source-graph databases live in `webui/data/_build/`; a missing cache is rebuilt
+from formal inputs. Sync state and staging also live below `_build/`.
+There is no implicit import of old report or temporary evidence. Before page
+publication, `extraction.build_evidence` runs once for the selected plan. It
+prepares the current VFS audit, an independent JsonData source inventory for
+pages that read JsonData, the classified Buff/Skill and action receipts for Data,
+and Mesh/scene collision receipts for Assets. Missing
+or stale receipts are rebuilt through their owning producers. Valid receipts
+are rechecked without rewriting them, preserving useful cache signatures.
+Failed required preparation stops page publication and is recorded in the build
+report. It never edits receipt hashes or substitutes source completeness for
+named-schema or runtime evidence.
+Data's current native operation and Buff component proofs are corpus-independent,
+so they precede family decoding on first setup. The independent source inventory
+grants no schema; selected physical chunks must still match the audit, and
+classification and page consumers freshly replay the named roots. Historical
+formatter windows do not become current through address relocation.
+The complete reader input roster includes new contract files, not only changes
+to files present at build start. Read-sharing leases on existing files do not
+freeze that roster. A final cold-build audit must use an isolated stable source
+checkout and retain fresh full path-set and byte checks at both ends. A source
+addition invalidates earlier family receipts; do not rewrite their provenance
+or exclude the new declaration to force a match. Buff/Skill input-drift failures
+name the affected family and bounded reader/native expected-versus-actual
+identities before any ledger rows are admitted.
+Classified Data preparation rejects native
+build mismatches before auditing or publishing; a diagnostic unavailable-family
+registry result cannot satisfy a successful Data export.
+
+`--export-root` (`--output` alias), `--game-root` and `--animestudio` select the
+same paths for extraction, evidence, freshness and all page children. Explicit
+flags override environment variables; `endfield_paths.bat` supplies only unset
+defaults. A configured game root remains authoritative when missing: native
+resolution must report that path instead of using another installed client.
+Story's Timeline fallback and Story-object/native auxiliary readers use the same
+selected AnimeStudio CLI; a missing explicit tool never triggers discovery of a
+different local binary. Map provenance keeps export/tool paths outside the
+checkout as absolute paths instead of assuming a repository-relative layout.
+Map's installed Streaming calls and Story's single-corpus Lua router select Persistent as primary and StreamingAssets
+as the absent-file fallback, matching the authenticated source inventory. Reversing
+them would retain base metadata even when the selected client has a hot update.
+Original-source collectors bind paths to the selected export's game tree;
+legacy logical `export_full/` references never select another on-disk export.
+
+Ordinary Story source-backed UID reads use the same current source operation
+as Data, authenticated against the selected export's source inventory. A UID
+view projects already framed nodes only after independent current native-value
+verification and complete physical owner EOF; the historical reviewed route
+table cannot stand in for that source. Unknown routes or missing current
+evidence abort before publication. Initial binding caches fill one selected
+family in a batch and become visible only after every exit check passes.
+Later mission-state, callback and topology passes also own their source scopes.
+The outer batch rechecks the native pair's actual bytes, UnityPlayer, complete
+reader inputs, StringPool and source roster after the nested source operation
+has closed. Native proofs stay inside their operation. Byte-only or explicitly
+prepared calls retain their caller's original scope and framing refusals.
+Typed Story control-flow projection belongs inside those same bookends, after
+UID decoding and before the exit checks. Reuse each physical record's outgoing
+edges only in that owned per-file context; standalone graph calls keep fresh
+edge evaluation. Never publish a semantic cache entry before the source, pool,
+reader and native exit checks pass.
+
 ## Active pages
 
 Display names are defined in `webui/README.md`: 人物汇总, 文本表格,

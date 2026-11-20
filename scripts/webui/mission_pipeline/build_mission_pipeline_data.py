@@ -39,6 +39,7 @@ from scripts.common import (
     read_bytes_cached,
     read_json,
     resolve_installed_game_data_root,
+    resolve_installed_native_inputs,
     write_report_json,
     write_text_if_changed,
 )
@@ -183,7 +184,7 @@ DEFAULT_LEVEL_SCRIPT_DATA_ROOT = (
 # default overlay has one root; callers may still pass several.
 DEFAULT_LEVEL_SCRIPT_DATA_ROOTS = (DEFAULT_LEVEL_SCRIPT_DATA_ROOT,)
 DEFAULT_PROTOCOL_REGISTRY_AUDIT = (
-    ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
+    ROOT / 'webui/data/_build/story/recovery/protocol_registry_audit.json'
 )
 DEFAULT_ACTIVITY_STAGE_TABLE = DEFAULT_TABLE_ROOT / "ActivityConditionalMultiStageTable.json"
 DEFAULT_ACTIVITY_DUNGEON_FIGHTING_STAGE_TABLE = (
@@ -201,11 +202,11 @@ DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT = (
     EXPORT_LAYOUT.unity_type_dir("TextAsset")
 )
 DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
-DEFAULT_ORDER_REPORT_ROOT = ROOT / "reports" / "mission_order"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/build'
+DEFAULT_ORDER_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_order'
 DEFAULT_STORY_ORDER_OVERRIDE = ROOT / "webui" / "overrides" / "story_order.json"
 DEFAULT_STORY_ORDER_OCR = ROOT / "webui" / "data" / "story_order_ocr.json"
-DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_MISSION_GRAPH_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_graph'
 DEFAULT_SOURCE_STORY_GAP_QUEUE = (
     DEFAULT_ORDER_REPORT_ROOT / "source_story_gap_queue_CN.json"
 )
@@ -3539,7 +3540,7 @@ def exact_native_receiver_playback_gate(
     source_file: str,
 ) -> dict[str, Any]:
     """Build a UI-safe exact gate without specializing Story ids or objects."""
-    validation = decode_levelscript_action_header_validation(data, header_local_id, source_path=ROOT / source_file)
+    validation = decode_levelscript_action_header_validation(data, header_local_id, source_path=ROOT / source_file, game_root=resolve_installed_native_inputs()[1].parents[2])
     predicate_type = str(validation.get("predicateType") or "")
     predicate = validation.get("predicate")
     if not validation or not isinstance(predicate, dict):
@@ -6416,7 +6417,7 @@ def level_script_source_evidence(
                 f"sources={overlay['searchedSources']!r}"
             )
         data = read_bytes_cached(source_path)
-        records = extract_levelscript_uid_records(data, source_path=source_path)
+        records = extract_levelscript_uid_records(data, source_path=source_path, game_root=resolve_installed_native_inputs()[1].parents[2])
         action_map = decode_levelscript_action_map_lists(data, records)
         native_control_evidence = level_script_native_control_evidence(
             data,

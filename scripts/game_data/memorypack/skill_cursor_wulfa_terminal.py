@@ -11,6 +11,7 @@ import json
 import sys
 from collections.abc import Mapping
 from pathlib import Path
+from scripts.source_paths import ExportLayout
 from typing import Any
 
 from scripts.game_data.contracts import CONTRACTS_DIR
@@ -25,7 +26,7 @@ from scripts.repo_paths import REPO_ROOT
 
 SELECTION_CONTRACT = CONTRACTS_DIR / "skill_cursor_wulfa_terminal_selection.json"
 TARGET_CONTRACT = CONTRACTS_DIR / "skill_cursor_capture_wulfa_ultimate_target.json"
-CORPUS_REPORT = REPO_ROOT / "tmp/audio-skilldata/try_teleport_squad_unknown_current.json"
+CORPUS_REPORT = ExportLayout.configured().evidence_dir / "animestudio/try_teleport_squad_unknown_current.json"
 NATIVE_CONTEXT = REPO_ROOT / "reports/animestudio/skill_cursor_native_context_wulfa_ultimate_latest.json"
 VERIFICATION = REPO_ROOT / "reports/animestudio/skilldata_cursor_wulfa_ultimate_verification_latest.json"
 OUTPUT = REPO_ROOT / "reports/animestudio/skilldata_cursor_wulfa_terminal_latest.json"

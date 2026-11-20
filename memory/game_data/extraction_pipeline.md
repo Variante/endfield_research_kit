@@ -17,6 +17,9 @@ blocks and packs their `Json/LipSync` payloads into `game/GameFiles.sqlite`.
 The corpus registry joins these identities by block ID, catalog name and language
 path. A language block whose chunks are all absent is explicitly excluded;
 present chunks retain normal integrity checks, including partial absence.
+The JsonData classifier derives its native data root once from the authenticated
+VFS audit's `primaryAssets` and forwards it to both named JSON and binary
+readers. A missing selected native pair never selects another installation.
 
 ## Ownership
 
@@ -26,7 +29,18 @@ present chunks retain normal integrity checks, including partial absence.
 | Installed-game orchestration, scope, worker isolation, provenance | `scripts/game_data/extraction/export_full_from_game.py` |
 | Story/Text, Map, Characters, Gameplay, Audio, Assets, Data publication | owning Python builders under `scripts/` |
 | Stable CLI mechanics and VFS evidence index | `.codex/skills/animestudio-workflow/references/animestudio.md` |
-| Per-build counts, hashes, failures, and audits | `reports/animestudio/` and `reports/export/` |
+| Authenticated ordinary-build evidence and retained replay inputs | selected export's `meta/evidence/` |
+| Page caches, source graphs and intermediates | `webui/data/_build/` |
+| Diagnostic inventories, timings, failures and audits | `reports/animestudio/` and `reports/export/` |
+
+Command stdout/stderr that the exporter parses are build intermediates under the
+selected export's `work_dir/command_logs/<run>/<layer>/`, inside
+`webui/data/_build/`. Diagnostic summaries may be written to `reports/`, but
+restricted builds never reopen or enumerate that directory; diagnostic retention
+is separate housekeeping. An interrupted `writing` layout is resumed by the
+export writer, never relabeled complete to run readers. Installed VFS audit can
+be authenticated independently before resuming that writer.
+
 
 Do not move page semantics into AnimeStudio. Improve AnimeStudio when extraction
 omits or misdecodes source bytes; improve the owning builder when extracted
@@ -294,6 +308,12 @@ the failed run, revalidate saved parts and their selected signatures, and publis
 only the completed scopes through the maintained publishers and provenance
 writer before the final freshness gate. Never repair a stale receipt by editing
 its recorded fingerprint.
+Chunk-selection sweeps reuse filesystem observations only inside one snapshot:
+every file row still validates its declared physical path, layer and root, while
+unique chunks and resolved aliases are observed again before return. A later
+snapshot starts fresh, so a newly present primary layer cannot reuse an earlier
+fallback choice. Full source hashes and the owning corpus bookends remain
+required independently of this lookup cache.
 An `Export <Type>:<Name> error` may be object-local even when the process
 continues; a nonzero subprocess return code fails the wrapper. Metadata-only or
 `$partial` output is useful evidence, not a completeness claim.
@@ -437,8 +457,45 @@ physical source chunks, allowing selected fallback chunks beneath an overlaid
 catalog. Version-1 single-root receipts remain readable with their original
 input-directory check. Saved receipts are reusable only while the metadata,
 native inputs, physical chunks and exporter closure still agree. Inventories,
-hashes and run receipts stay in
-`reports/assets/cooked_collision_current_latest.json` and `reports/animestudio/`.
+hashes and retained replay inputs consumed by ordinary exports stay under the
+selected export's `meta/evidence/`; `reports/` remains diagnostic output only.
+
+Collision Mesh identity discovery is bound to the current audit's physical
+Bundle slots. An export map containing inactive same-installation slots triggers
+a fresh CLI discovery over those audited slots; it never grants admission to the
+old rows. The selection, resulting map and zero-warning/error discovery log are
+retained together under `meta/evidence/assets/discovery/`, and their input and
+output hashes govern reuse. A foreign installation, an unowned discovered Mesh
+or a target parse diagnostic still refuses the selection.
+
+The CLI forwards explicit filter data into AssetMap, CABMap and combined-map
+loaders as well as ordinary exports. Replacing a filter invalidates its offset
+index even when the row count is unchanged, and each map operation releases its
+scope. Unknown class IDs outside an explicit requested type set remain opaque
+metadata without becoming target-parser diagnostics; broad and explicitly
+requested unknown classes still report them. Requested object parsing, raw byte
+bounds and corpus coverage checks are unchanged.
+
+Scene evidence uses `--group_assets BySource`: JSON and raw objects retain the
+same physical-source/CAB directory hierarchy. A single type directory can put
+millions of identically prefixed Transform filenames into NTFS's short-name
+namespace and cause severe metadata/write overhead. Source grouping changes
+only output placement; the reader checks the declared layout against each
+object's source metadata and requires mirrored raw paths, hashes and complete
+raw/typed coverage. Receipt replay uses its recorded grouping, including the
+pinned ByType default of older receipts. It never guesses a layout from files
+or changes a saved extraction command to admit a different tree.
+
+Full-corpus receipt replay must not keep duplicate decoded receipt documents,
+whole-file JSON byte copies or a second inventory of Path objects alive. A
+single owned decoded document is reused only while its receipt SHA256 remains
+unchanged; raw/typed bodies and all derived joins are still freshly checked.
+Canonical path identities and input size/mtime bookends retain the complete
+source set. JSON parsing and its source digest use the same input bytes, and
+corpus publication streams the same canonical JSON bytes atomically while
+preserving unchanged cache timestamps. Reader-source bookends stream every
+selected file through SHA256 with a bounded buffer; reducing allocation never
+narrows the reader roster, source coverage or native/freshness checks.
 
 This establishes stored collision surfaces and acceleration/physical-property
 metadata. Runtime collider ownership, selected transforms/scales, renderer

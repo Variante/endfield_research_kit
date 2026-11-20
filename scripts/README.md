@@ -147,7 +147,9 @@ Behaviour `--help` does not give you:
   AnimeStudio workers; `--full-source-graph` adds exhaustive PathID work.
   Options the wrapper does not own go to `export_full_from_game` and require
   `--from-game`. Keep wrapper files CRLF. Timings and a process-tree
-  benchmark go to `reports/export/`.
+  benchmark go to `reports/export/`. Each builder command streams to its own
+  retained log under `reports/export/build_logs/`; the timing reports link
+  those logs and keep a bounded output tail for failed commands.
 
 ### Exporter scope, provenance and stores
 
@@ -192,7 +194,8 @@ python -m scripts.game_data.sprite_crops check
 | Low-level delta and snapshot helpers | `game_data/extraction/export_changed_game_data.py`, `export_sync.py` | authenticated delta state and snapshot utilities; separate from the page export workflow |
 | Export freshness | `game_data/extraction/verify_export_freshness.py` | validation result |
 | Cooked collision readers | `python -m scripts.game_data.cooked_collision PAYLOAD --obj tmp/collision.obj`; `python -m scripts.game_data.cooked_convex PAYLOAD --obj tmp/hull.obj` | complete supported PhysX triangle/BV4 or convex/Gauss payload checks and local collision OBJ; triangle `--prefix-only` leaves its tail explicitly opaque |
-| Selected cooked collision corpus | `python -m scripts.game_data.cooked_collision_corpus --selection FILTER --outer-summary AUDIT --outer-ledger LEDGER --expected-input-set-sha256 SHA` | fresh identity-filtered Mesh JSON/raw export under `tmp/`, exact payload joins and complete-reader census under `reports/assets/`; selection and current VFS audit define coverage |
+| Build evidence preparation | `python -m scripts.game_data.extraction.build_evidence --game-root GAME --export-root EXPORT --family collision` (or `jsondata-source`, `jsondata-classified`) | automatically invoked once by `export.bat` for selected pages; Data prepares current native Buff/Skill roots and action receipts through `memorypack.current_family_evidence`, then classification with fresh canonical replay; all retained inputs stay under selected export metadata; required native failures stop publication |
+| Selected cooked collision corpus | `python -m scripts.game_data.cooked_collision_corpus --selection FILTER --outer-summary AUDIT --outer-ledger LEDGER --expected-input-set-sha256 SHA` | retains exact selection/audit/ledger copies plus fresh Mesh JSON/raw, payloads and log under `<export>/meta/evidence/assets/collision_evidence/`; complete receipt under `<export>/meta/evidence/assets/`, failed refresh writes `.failed.json` without replacing it; `--work-root` must remain under the selected export's `meta/evidence/` |
 | Collision declaration validation | `python -m scripts.game_data.collision_capture_prepare --game-root GAME --plan PLAN` | selected native declarations under `reports/runtime_capture/collision-current/`; PLAN binds current stored Model frames through the narrow native source contract; historical prefab/cooked-mesh joins remain separate |
 | Saved collision inspection | `python -m scripts.game_data.collision_capture_inspect --session SESSION` | bounded queries, resource/CAB and ECS ownership, getter/cache and PGS/TGS contact evidence; v16 connects public-Scene execution and native phase/collide-step/narrowphase producers to the downstream task lifecycle; adds original destruction load/request/prepare/callback/submit stages, typed counts and manager returns alongside pinned-body rechecks; parent inspection owns admission and leaves missing step/lifetime fields explicit |
 | Runtime ECS collision provenance | `python -m scripts.game_data.collision_runtime_ecs --session SESSION [--export-root EXPORT] [--output REPORT]` | reuses admitted capture bytes; strictly decodes owned definitions and separately projects schema-sized unbound prefixes with opaque tails/unknown length units; joins source callbacks or original Entity setters to versioned query identities; optional current AssetBundle PPtr joins supply input paths; shape geometry and solver contacts remain separate |
@@ -223,9 +226,9 @@ python -m scripts.game_data.sprite_crops check
 | Streaming Mesh container candidates | `python -m scripts.game_data.streaming.collision_mesh_candidates --collision-receipt REPORT --scene-receipt REPORT --game-root GAME` | reuses an authenticated selected scene extraction, joins exact Bundle main-asset Mesh PPtrs and complete cooked buffers to stored manifest candidates; `##subasset` selection and live hit ownership stay unresolved; report under `reports/animestudio/` |
 | Selected collider scene corpus | `python -m scripts.game_data.unity_scene_corpus --selection FILTER --outer-summary AUDIT --outer-ledger LEDGER --expected-input-set-sha256 SHA` | fresh scene/Mesh/AssetBundle JSON/raw exports, raw body/container-prefix checks, local or uniquely resolved external Mesh links and stored TRS chains; Mesh selectors require object coverage, AssetBundle selectors with PathID=0 select physical spans only; `--reuse-extraction REPORT` checks source and raw/JSON receipts; live placement remains unresolved |
 | WebUI orchestration | `webui/export.py` (page registry `webui/pages.py`) | extraction, freshness, and every page's data |
-| Story | `webui/story/build.py`, `refresh_evidence.py`, `source_links.py` | `webui/data/lang/<LANG>/`, `reports/story/` evidence, localized reference data |
+| Story | `webui/story/build.py`, `refresh_evidence.py`, `source_links.py` | `webui/data/lang/<LANG>/`, `webui/data/_build/story/` evidence, localized reference data; the verified LevelScript UID decode that Story and Map share is kept under `webui/data/_build/work/levelscript_uid_sources/` (`webui/story/uid_source_store.py` states its key and gates; deleting it only costs one fresh decode, `ENDFIELD_LEVELSCRIPT_UID_STORE=0` disables it) |
 | Gameplay | `webui/gameplay/build_gameplay.py` | Gameplay datasets; `--stage items` publishes items, buildings and recipe shards under `data/lang/<LANG>/gameplay/items/`; its `asset-refs` stage joins the last Gameplay and Assets publications and is the sole writer of `webui/data/assets/gameplay_refs.json` |
-| Map | `webui/map/build_map_recovery_data.py` (its docstring documents the `export.bat map` sequence, `--with-preview`, `--preview-only`, `--jobs` and the render cache) | `reports/assets/map_recovery/`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `webui/data/map_recovery/` |
+| Map | `webui/map/build_map_recovery_data.py` (its docstring documents the `export.bat map` sequence, `--with-preview`, `--preview-only`, `--jobs` and the render cache) | `webui/data/_build/map/`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `webui/data/map_recovery/` |
 | Characters | `webui/characters/build_character_data.py` | character indexes, per-identity appearance sidecars, and versioned final-catalog snapshots |
 | Text | `webui/story/build.py` (shared with Story) | localized reference tables under `webui/data/lang/<LANG>/reference/` |
 | Audio | `webui/audio/build_audio.py` | decoded/relinked audio plus compact semantic evidence and shards |
@@ -486,6 +489,10 @@ and OBJ downloads. Per-collider stored Transform chains include the root TRS;
 disabled definitions stay included. Coverage is selected MeshColliders and
 separately admitted boxes, not other primitive/custom colliders or live placement. Assembly failures retain valid
 owner/Model/runtime metadata and clear only assembly links.
+
+Collision, CollisionPrefab, StoredRender, Shader-analysis and UV projections
+stage each build in a fresh `selection-*` folder; once the index naming it is
+written, `webui/assets/selections.py` deletes that folder's older selections.
 
 `python -m scripts.game_data.unity_box_corpus --scene-receipt PATH` collects a
 supplemental raw/typed BoxCollider scope from that scene's admitted physical
