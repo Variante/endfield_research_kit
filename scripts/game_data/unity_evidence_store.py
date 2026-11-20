@@ -103,11 +103,24 @@ class EvidencePath:
             if len(relative.parts) == len(PurePosixPath(pattern).parts) and relative.match(pattern):
                 yield EvidencePath(self.database, name)
 
-    def rglob(self, pattern):
+    def row_names(self):
+        """Stored row names below this folder, in the order ``rglob`` walks them."""
+        return _store(self.database).iter_relative_names(str(self.relative))
+
+    def matching(self, names, pattern):
+        """The ``rglob`` selection over an explicit slice of ``row_names``.
+
+        A sweep that shards a store over worker processes hands each worker a
+        contiguous slice, so the selection and its order stay those of
+        ``rglob`` without each worker listing the whole store.
+        """
         prefix = str(self.relative).rstrip("/") + "/"
-        for name in _store(self.database).iter_relative_names(str(self.relative)):
+        for name in names:
             if PurePosixPath(name[len(prefix):]).match(pattern):
                 yield EvidencePath(self.database, name)
+
+    def rglob(self, pattern):
+        yield from self.matching(self.row_names(), pattern)
 
 
 def evidence_path(value):

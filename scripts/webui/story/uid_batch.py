@@ -3,6 +3,11 @@
 The installed-format reader remains in game_data. These operations select
 current source files and the explicit native build; they grant no owner EOF
 or corpus authority, and keep no native proof across calls.
+
+Current-owner reads may reuse rows an earlier fully verified batch decoded
+from the same inputs (see ``uid_source_store``): the decoded rows are kept,
+never a proof, and each reuse re-authenticates the selected source inventory
+and re-measures every decode input before and after projecting.
 """
 from __future__ import annotations
 
@@ -11,6 +16,7 @@ from dataclasses import dataclass
 import hashlib
 import os
 from pathlib import Path
+import pickle
 
 from scripts.common import resolve_installed_native_inputs
 from scripts.game_data.codecs.levelscript.uid_records import (
@@ -20,8 +26,10 @@ from scripts.game_data.codecs.levelscript.uid_records import (
 )
 from scripts.game_data.levelscript_binary import levelscript_action_map_membership
 from scripts.game_data.memorypack.levelscript_decode_batch import (
-    LevelScriptDecodeBatchError, decode_levelscript_batch,
+    LevelScriptDecodeBatchError, decode_levelscript_batch, measure_batch_inputs,
+    verified_projection_scope,
 )
+from scripts.webui.story import uid_source_store
 
 
 @dataclass(frozen=True)
@@ -56,6 +64,76 @@ def _signature(raw):
     return dict(length=len(raw), sha256=hashlib.sha256(raw).hexdigest().upper())
 
 
+def _replay_stored_sources(store, owner, *, family, pool_root, game_root, wanted, entry,
+                           project, progress):
+    """Project rows a verified batch already decoded from these exact inputs.
+
+    Returns ``None`` when the fresh decode must run instead: nothing has been
+    projected at that point, so the caller's state is untouched. Once
+    projection has started every failure raises, exactly as a drifting fresh
+    batch would, and no result is returned before the exit measurements.
+    """
+    def note(text):
+        if progress:
+            progress(text)
+
+    def measure():
+        inputs = measure_batch_inputs(game_root, pool_root)
+        return inputs, dict(
+            key=uid_source_store.key_inputs(family=family, pool_root=pool_root,
+                game_root=game_root, batch_inputs=inputs),
+            sourceFiles=uid_source_store.source_files(owner.summary, owner.ledger))
+
+    try:
+        inputs, before = measure()
+    except (OSError, ValueError):
+        return None  # the fresh batch reports the unusable input with its own gate
+    reader, reason = store.lookup(before['key'], entry)
+    if reader is None:
+        note(f'verified UID source store: {reason}; decoding afresh')
+        return None
+    try:
+        reader.verify(wanted)
+    except (OSError, LookupError, EOFError, ValueError, pickle.UnpicklingError) as error:
+        note(f'verified UID source store unreadable ({str(error)[:200]}); decoding afresh')
+        return None
+    try:
+        receipt = uid_source_store.canonical_digest(owner.authenticate_selected_source())
+    except (OSError, ValueError):
+        return None  # the fresh batch raises the source gate's own diagnostic
+    if receipt != reader.source_receipt:
+        note('verified UID source store: source inventory receipt changed; decoding afresh')
+        return None
+    note(f'reusing {len(wanted)} verified UID sources; reader, native, StringPool and '
+         'source inventory re-authenticated')
+    accepted = {}
+    with verified_projection_scope(game_root, inputs):
+        for path in wanted:
+            raw = _read(path)
+            if entry[path] != _signature(raw):
+                raise LevelScriptDecodeBatchError('selected-source-read-drift', path,
+                    entry[path], _signature(raw))
+            try:
+                records, membership = pickle.loads(reader.payload(path, entry[path]))
+            except (OSError, LookupError, EOFError, ValueError, pickle.UnpicklingError) as error:
+                raise LevelScriptDecodeBatchError('reused-source-row', path,
+                    'the stored row verified at entry', str(error)[:1000]) from error
+            source = UidSource(raw, records, membership)
+            accepted[path] = source if project is None else project(path, source)
+    _inputs, after = measure()
+    if after != before:
+        raise LevelScriptDecodeBatchError('reused-source-input-drift', pool_root,
+            'unchanged reader, native, StringPool and source inventory inputs',
+            sorted(f'{group}.{name}' for group in before for name in before[group]
+                   if before[group][name] != after[group].get(name)))
+    for path in wanted:
+        current = _signature(_read(path))
+        if entry[path] != current:
+            raise LevelScriptDecodeBatchError('selected-source-read-drift', path, entry[path], current)
+    note(f'reused {len(accepted)} verified UID sources; entry/exit input checks passed')
+    return accepted
+
+
 def load_uid_sources(paths, *, game_root=None, expected_data=None, progress=None,
                      preserve_failures=False, project=None, _current_sources=False):
     """Decode selected files together, returning nothing before exit checks.
@@ -87,6 +165,7 @@ def load_uid_sources(paths, *, game_root=None, expected_data=None, progress=None
         entry = {}
         refused = set()
         owner = None
+        writer = None
         needs_native = _current_sources
         for path in wanted:
             raw = _read(path)
@@ -136,6 +215,10 @@ def load_uid_sources(paths, *, game_root=None, expected_data=None, progress=None
                 else:
                     raise
             else:
+                if writer is not None:
+                    # Staged before projection, so a later reader receives the
+                    # row exactly as the decoder produced it.
+                    writer.add(path, entry[path], records, membership)
                 source = UidSource(raw, records, membership)
             if selected_root is None and source.records:
                 raise LevelScriptDecodeBatchError('empty-source-child-records', pool_root,
@@ -159,17 +242,42 @@ def load_uid_sources(paths, *, game_root=None, expected_data=None, progress=None
                     metadata=selected_root / 'il2cpp_data/Metadata/global-metadata.dat',
                     summary_path=evidence / 'jsondata_source_current.json',
                     ledger_path=evidence / 'jsondata_source_files_current.jsonl.gz')
-                rows, audit = decode_levelscript_batch(source_root, decode,
-                    game_root=selected_root, json_root=pool_root, progress=progress,
-                    operation=owner)
-                closed = (len(owner.template_closed) if _family == 'LevelScriptTemplateData'
-                          else len(owner.closed))
-                audit['nativeValidationReuse'] = owner.native_validation_reuse
-                if closed != len(wanted):
-                    raise LevelScriptDecodeBatchError('current-owner-physical-EOF', pool_root,
-                        len(wanted), closed)
+                store = (uid_source_store.UidSourceStore(pool_root, _family)
+                         if uid_source_store.enabled() else None)
+                if store is not None:
+                    reused = _replay_stored_sources(store, owner, family=_family,
+                        pool_root=pool_root, game_root=selected_root, wanted=wanted,
+                        entry=entry, project=project, progress=progress)
+                    if reused is not None:
+                        result.update(reused)
+                        continue
+                    writer = store.writer()
+                try:
+                    rows, audit = decode_levelscript_batch(source_root, decode,
+                        game_root=selected_root, json_root=pool_root, progress=progress,
+                        operation=owner)
+                    closed = (len(owner.template_closed) if _family == 'LevelScriptTemplateData'
+                              else len(owner.closed))
+                    audit['nativeValidationReuse'] = owner.native_validation_reuse
+                    if closed != len(wanted):
+                        raise LevelScriptDecodeBatchError('current-owner-physical-EOF', pool_root,
+                            len(wanted), closed)
+                except BaseException:
+                    if writer is not None:
+                        writer.discard()
+                    raise
                 if progress:
                     progress(f'current native owners at physical EOF: {closed}; source/native exit proofs passed')
+                if writer is not None:
+                    # Keyed by the batch's own bookends: the inputs these rows
+                    # were decoded from, not a later measurement.
+                    skipped = writer.commit(
+                        uid_source_store.key_inputs(family=_family, pool_root=pool_root,
+                            game_root=selected_root, batch_inputs=audit['inputs']),
+                        uid_source_store.canonical_digest(owner.receipt_before))
+                    if progress:
+                        progress('verified UID source store '
+                            + ('updated' if skipped is None else f'not updated ({skipped})'))
             else:
                 rows, audit = decode_levelscript_batch(source_root, decode,
                     game_root=selected_root, json_root=pool_root, progress=progress)

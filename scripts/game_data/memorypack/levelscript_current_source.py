@@ -19,6 +19,7 @@ import struct
 from scripts.game_data import levelscript_current_owner_native as native
 from scripts.game_data.jsondata_source_provenance import (
     authenticate_current_jsondata_receipt, authenticate_current_jsondata_source_inventory)
+from scripts.game_data.levelscript_union_tags import authenticated_tables
 from scripts.game_data.levelscript_reader_inputs import (
     snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes)
 from scripts.game_data.memorypack import pooled_source_helper
@@ -143,6 +144,21 @@ class CurrentLevelScriptSource:
     def _receipt(self):
         return self._authenticate_source(self.proof)
 
+    def authenticate_selected_source(self):
+        """Authenticate the selected source inventory without opening the operation.
+
+        Returns the receipt ``receipt_before`` would hold on entry: the selected
+        native pair passes its reviewed-identity gate and the summary, ledger
+        and exported Json tree are verified afresh. It validates no native
+        owner and grants no decode capability.
+        """
+        if self.active:raise CurrentLevelScriptSourceError('operation-active',self.root)
+        if self.gameassembly is None or self.metadata is None:
+            raise CurrentLevelScriptSourceError('explicit-native-pair-required',self.root)
+        identity=_reviewed_native_identity(gameassembly=self.gameassembly,metadata=self.metadata)
+        self.summary_raw=self.summary.read_bytes();self.summary_sha=hashlib.sha256(self.summary_raw).hexdigest().upper()
+        return self._authenticate_source(identity)
+
     def _open_source_rows(self,identity):
         self.summary_raw=self.summary.read_bytes();self.summary_sha=hashlib.sha256(self.summary_raw).hexdigest().upper()
         self.receipt_before=self._authenticate_source(identity)
@@ -190,6 +206,21 @@ class CurrentLevelScriptSource:
             finally:self._native_validation_ambient.__exit__(*sys.exc_info())
             raise
 
+    def _enter_union_tag_scope(self):
+        """Hold one authenticated union-tag table scope for the whole operation.
+
+        Every decoded node asks the tag contract for names. Outside a scope each
+        lookup re-reads the declaration and re-gates the native pair; the scope
+        hashes the declaration and both selected binaries here and again when the
+        operation exits, and serves the same tables in between. A pair the scope
+        does not admit leaves the per-call gates in charge; exit drift refuses the
+        operation.
+        """
+        scope=authenticated_tables(gameassembly=self.gameassembly,metadata=self.metadata)
+        try:scope.__enter__()
+        except(ValueError,OSError):return False
+        self.stack.push(scope);return True
+
     def _enter_fresh_source(self):
         if self.active:raise CurrentLevelScriptSourceError('operation-active',self.root)
         if self.gameassembly is None or self.metadata is None:
@@ -206,6 +237,7 @@ class CurrentLevelScriptSource:
                 raise CurrentLevelScriptSourceError('selected-owner-source',self.root,'validated',self.proof)
             if any(self.proof.get(k)!=identity[k]for k in('nativeInputs','nativeSources')):
                 raise CurrentLevelScriptSourceError('selected-native-identity-drift',self.root)
+            self.union_tag_scope=self._enter_union_tag_scope()
             self._confirm_source_rows()
             self.narrative_component_key=self.proof['narrativeComponent']['id']
             string_kind=self.proof.get('paramStringType')

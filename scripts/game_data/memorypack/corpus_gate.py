@@ -81,8 +81,13 @@ def _fingerprint(path: Path) -> dict[str, Any]:
 def _chunk_fingerprints(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
     by_path: dict[str, Path] = {}
     expected_md5: dict[str, str] = {}
+    # Many rows name one chunk; resolve each distinct spelling once.
+    resolved: dict[str, Path] = {}
     for row in rows:
-        path = Path(str(row.get("physicalChunkPath") or "")).resolve()
+        declared_path = str(row.get("physicalChunkPath") or "")
+        path = resolved.get(declared_path)
+        if path is None:
+            path = resolved[declared_path] = Path(declared_path).resolve()
         key = os.path.normcase(str(path))
         by_path[key] = path
         declared = str(row.get("fileChunkMd5LittleEndianHex") or "").upper()

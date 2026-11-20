@@ -30,6 +30,7 @@ from scripts.game_data.unity_evidence_store import (
 from scripts.game_data.cooked_collision import read_triangle_mesh
 from scripts.game_data.cooked_convex import read_convex_mesh
 from scripts.game_data.corpus_common import atomic_write_text, validate_provenance
+from scripts.game_data.row_pool import batches, ordered_map
 from scripts.repo_paths import REPO_ROOT
 
 DEFAULT_CLI = configured_animestudio_cli()
@@ -401,62 +402,87 @@ def receipt_payloads(row: dict):
         raise ValueError("collision receipt cooked-buffer coverage differs")
 
 
+_EXPORT_ERRORS = (ValueError, KeyError, TypeError, OSError, struct.error)
+_EXPORT_BATCH = 256
+
+
+def _inspect_export_pair(source, raw_path, payload_root) -> dict:
+    """Decode one exported Mesh; a refusal is the row's ``failed`` status."""
+    row = {"jsonPath": str(source), "rawPath": str(raw_path)}
+    try:
+        typed = source.read_bytes()
+        data = json.loads(typed.decode("utf-8-sig"))
+        identity = data["$animestudio"]
+        row.update(identity={k: identity[k] for k in ("pathId", "sourceFile", "sourceOriginalPath", "sourceOffset")},
+                   name=data["m_Name"], jsonSha256=hashlib.sha256(typed).hexdigest(), rawSha256=identity["rawDataSha256"],
+                   collisionOnly=data["m_CollisionMeshOnly"], baked=data["m_CollisionMeshBaked"],
+                   convex=data["m_CollisionMeshConvex"], renderVertexCount=data["m_VertexCount"])
+        raw = evidence_path(row["rawPath"]).read_bytes()
+        if len(raw) != identity["rawDataLength"] or hashlib.sha256(raw).hexdigest() != identity["rawDataSha256"]:
+            raise ValueError("raw object length/SHA256 differs from typed export identity")
+        cooked = []
+        for kind, field in (("triangle", "TriangleCollision"), ("convex", "ConvexCollision")):
+            info = data[field]
+            if info["ByteCount"] == 0:
+                if info.get("Sha256") is not None or info.get("HeaderHex") != "":
+                    raise ValueError(f"{field}: empty buffer has a digest/header")
+                continue
+            offset, payload = extract_payload(raw, info, kind)
+            item = dict(kind=kind, offset=offset, byteCount=len(payload), sha256=info["Sha256"])
+            if payload_root:
+                payload_root.mkdir(parents=True, exist_ok=True)
+                dest = payload_root/(source.stem+f".{kind}.bin")
+                dest.write_bytes(payload); item["payloadPath"] = str(dest)
+            if kind == "triangle":
+                mesh = read_triangle_mesh(payload)
+                item.update(vertexCount=len(mesh.geometry.vertices), triangleCount=len(mesh.geometry.triangles),
+                            flags=mesh.geometry.flags, midphase=mesh.geometry.midphase,
+                            indexWidth=mesh.geometry.index_width, bvhSlots=len(mesh.metadata["bvh"]["slots"]),
+                            bvhQuantized=mesh.metadata["bvh"]["quantized"],
+                            minimumZeroClampCount=len(mesh.metadata["bvh"]["minimumZeroClamps"]),
+                            edgeFlagValues=sorted(set(mesh.metadata["edgeFlags"])))
+            else:
+                mesh = read_convex_mesh(payload)
+                item.update(vertexCount=len(mesh.vertices), polygonCount=len(mesh.polygons),
+                            gpuEdges=bool(mesh.metadata["gpuEdges"]),
+                            gaussMap=mesh.metadata["gaussMap"] is not None,
+                            planeResidualMax=max(mesh.metadata["planeVertexResiduals"]),
+                            volume=mesh.metadata["volume"])
+            item.update(bytesConsumed=mesh.metadata["bytesConsumed"], spans=mesh.spans)
+            cooked.append(item)
+        row["payloads"] = cooked
+        row["status"] = "decoded" if cooked else "noCookedData"
+    except _EXPORT_ERRORS as error:
+        row.update(status="failed", diagnostic=str(error))
+    return row
+
+
+def _inspect_export_batch(_shared, pairs) -> list:
+    return [_inspect_export_pair(source, raw_path, None) for source, raw_path in pairs]
+
+
 def inspect_exports(json_root: Path, raw_root: Path, *, payload_root: Path | None = None,
                     export_pairs=None) -> dict:
+    """Decode every exported Mesh pair, in pair order.
+
+    Each pair is independent, so a caller-selected pair list without payload
+    output is decoded in worker processes (`row_pool.ordered_map`); rows,
+    counts and failures are still assembled here in pair order, which makes
+    the report the single-process one.
+    """
     results, failures, groups = [], [], Counter()
     pairs = export_pairs if export_pairs is not None else (
         (source, raw_root / (source.stem+".dat"))
         for source in sorted(json_root.glob("*.json"), key=lambda p: p.name))
-    for source, raw_path in pairs:
-        row = {"jsonPath": str(source), "rawPath": str(raw_path)}
-        try:
-            typed = source.read_bytes()
-            data = json.loads(typed.decode("utf-8-sig"))
-            identity = data["$animestudio"]
-            row.update(identity={k: identity[k] for k in ("pathId", "sourceFile", "sourceOriginalPath", "sourceOffset")},
-                       name=data["m_Name"], jsonSha256=hashlib.sha256(typed).hexdigest(), rawSha256=identity["rawDataSha256"],
-                       collisionOnly=data["m_CollisionMeshOnly"], baked=data["m_CollisionMeshBaked"],
-                       convex=data["m_CollisionMeshConvex"], renderVertexCount=data["m_VertexCount"])
-            raw = evidence_path(row["rawPath"]).read_bytes()
-            if len(raw) != identity["rawDataLength"] or hashlib.sha256(raw).hexdigest() != identity["rawDataSha256"]:
-                raise ValueError("raw object length/SHA256 differs from typed export identity")
-            cooked = []
-            for kind, field in (("triangle", "TriangleCollision"), ("convex", "ConvexCollision")):
-                info = data[field]
-                if info["ByteCount"] == 0:
-                    if info.get("Sha256") is not None or info.get("HeaderHex") != "":
-                        raise ValueError(f"{field}: empty buffer has a digest/header")
-                    continue
-                offset, payload = extract_payload(raw, info, kind)
-                item = dict(kind=kind, offset=offset, byteCount=len(payload), sha256=info["Sha256"])
-                if payload_root:
-                    payload_root.mkdir(parents=True, exist_ok=True)
-                    dest = payload_root/(source.stem+f".{kind}.bin")
-                    dest.write_bytes(payload); item["payloadPath"] = str(dest)
-                if kind == "triangle":
-                    mesh = read_triangle_mesh(payload)
-                    item.update(vertexCount=len(mesh.geometry.vertices), triangleCount=len(mesh.geometry.triangles),
-                                flags=mesh.geometry.flags, midphase=mesh.geometry.midphase,
-                                indexWidth=mesh.geometry.index_width, bvhSlots=len(mesh.metadata["bvh"]["slots"]),
-                                bvhQuantized=mesh.metadata["bvh"]["quantized"],
-                                minimumZeroClampCount=len(mesh.metadata["bvh"]["minimumZeroClamps"]),
-                                edgeFlagValues=sorted(set(mesh.metadata["edgeFlags"])))
-                else:
-                    mesh = read_convex_mesh(payload)
-                    item.update(vertexCount=len(mesh.vertices), polygonCount=len(mesh.polygons),
-                                gpuEdges=bool(mesh.metadata["gpuEdges"]),
-                                gaussMap=mesh.metadata["gaussMap"] is not None,
-                                planeResidualMax=max(mesh.metadata["planeVertexResiduals"]),
-                                volume=mesh.metadata["volume"])
-                item.update(bytesConsumed=mesh.metadata["bytesConsumed"], spans=mesh.spans)
-                cooked.append(item)
-            row["payloads"] = cooked
-            row["status"] = "decoded" if cooked else "noCookedData"
-            groups[row["status"]] += 1
-        except (ValueError, KeyError, TypeError, OSError, struct.error) as error:
-            row.update(status="failed", diagnostic=str(error))
-            groups["failed"] += 1
-            failures.append({"source": str(source), "diagnostic": str(error)})
+    if export_pairs is not None and payload_root is None:
+        rows = (row for rows in ordered_map(_inspect_export_batch, batches(pairs, _EXPORT_BATCH))
+                for row in rows)
+    else:
+        rows = (_inspect_export_pair(source, raw_path, payload_root) for source, raw_path in pairs)
+    for row in rows:
+        groups[row["status"]] += 1
+        if row["status"] == "failed":
+            failures.append({"source": row["jsonPath"], "diagnostic": row["diagnostic"]})
         results.append(row)
     return dict(status="complete" if not failures else "failed", selectedCount=len(results),
                 counts=dict(groups), failures=failures, objects=results)

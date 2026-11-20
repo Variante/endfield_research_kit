@@ -8,6 +8,7 @@ from contextvars import ContextVar
 import copy
 import hashlib
 import inspect
+import os
 from pathlib import Path,PurePath,PosixPath,WindowsPath,PurePosixPath,PureWindowsPath
 import struct
 import sys
@@ -38,6 +39,13 @@ def _argument(value,active=None):
     finally:active.remove(id(value))
 
 
+def _scope_path(scope,value):
+    """Resolve one supplied path spelling once per scope, as its entry did."""
+    key=os.fspath(value);found=scope.resolved.get(key)
+    if found is None:found=scope.resolved[key]=Path(key).resolve()
+    return found
+
+
 def _selected_call(function,args,kwargs,scope):
     try:
         signature=inspect.signature(function);bound=signature.bind(*args,**kwargs).arguments
@@ -47,11 +55,11 @@ def _selected_call(function,args,kwargs,scope):
         ga=supplied.get('gameassembly');md=supplied.get('metadata',supplied.get('metadata_path'))
         root=supplied.get('game_root')
         if root is not None:
-            root=Path(root).resolve()
+            root=_scope_path(scope,root)
             if(root.parent/'GameAssembly.dll',root/'il2cpp_data/Metadata/global-metadata.dat')!=scope.paths:return False
-        if supplied.get('metadata_path')is not None and Path(supplied['metadata_path']).resolve()!=scope.paths[1]:return False
+        if supplied.get('metadata_path')is not None and _scope_path(scope,supplied['metadata_path'])!=scope.paths[1]:return False
         if ga is not None or md is not None:
-            return ga is not None and md is not None and(Path(ga).resolve(),Path(md).resolve())==scope.paths
+            return ga is not None and md is not None and(_scope_path(scope,ga),_scope_path(scope,md))==scope.paths
         return root is not None
     except(TypeError,ValueError,OSError):return False
 
@@ -74,14 +82,14 @@ def _proof_identity(audit,scope):
     if sources is not None:
         try:
             if not isinstance(sources,dict)or set(sources)!={'GameAssembly.dll','global-metadata.dat'}:return False
-            if tuple(Path(sources[name]).resolve()for name in('GameAssembly.dll','global-metadata.dat'))!=scope.paths:return False
+            if tuple(_scope_path(scope,sources[name])for name in('GameAssembly.dll','global-metadata.dat'))!=scope.paths:return False
         except(TypeError,ValueError,OSError):return False
     return True
 
 
 class _ValidationScope:
     def __init__(self,gameassembly,metadata,native_inputs,reader_inputs=None):
-        self.paths=Path(gameassembly).resolve(),Path(metadata).resolve()
+        self.paths=Path(gameassembly).resolve(),Path(metadata).resolve();self.resolved={}
         self.pins={key:value.upper()for key,value in native_inputs.items()}
         self.cache={};self.calls=self.hits=self.misses=self.entries=self.bypasses=0;self.closed=False
         # Only the enclosing public operation supplies its freshly captured
@@ -178,7 +186,7 @@ def _owned_reader_source_inputs(paths):
     scope=_CURRENT.get()
     if scope is None or scope.closed or scope._reader_source_rows is None:return None
     try:
-        selected=tuple(Path(path).resolve().as_posix()for path in paths)
+        selected=tuple(_scope_path(scope,path).as_posix()for path in paths)
         if not selected or len(set(selected))!=len(selected):return None
         return tuple(scope._reader_source_rows[path]for path in selected)
     except(KeyError,TypeError,ValueError,OSError):return None

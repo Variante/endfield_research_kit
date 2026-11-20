@@ -206,6 +206,9 @@ def main(argv: list[str] | None = None) -> None:
     scan = scan_exported_media_assets(
         root=ROOT, export_root=EXPORT_ROOT,
         build_fbx_content=args.mode != "focused" and args.publish != "story-media",
+        # Story media is images and videos only, and nothing else is published
+        # from this scan, so the model corpus is not opened for it.
+        include_models=args.publish != "story-media",
     )
     asset_payload, video_payload, story_payload, full_asset_payload = build_output_payloads(
         scan,

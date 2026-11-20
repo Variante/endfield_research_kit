@@ -4,10 +4,16 @@ This operation only shares successful child-native proofs. It grants no owner
 EOF or source-receipt authority: the supplied reader retains every refusal.
 No decoded result escapes until the native pair, UnityPlayer, complete reader
 sources, StringPool and selected LevelScript file roster pass the exit checks.
+
+``audit["inputs"]`` returns the reader, native and StringPool measurements the
+bookends compared, so a caller that keeps decoded rows can name exactly the
+inputs they were decoded from. ``measure_batch_inputs`` takes the same
+measurements without decoding, and ``verified_projection_scope`` opens a proof
+scope over them for projecting such rows; neither carries a proof forward.
 """
 from __future__ import annotations
 
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 import hashlib
 import json
 from pathlib import Path
@@ -74,6 +80,39 @@ def _unchanged(gate, source, before, after):
         raise LevelScriptDecodeBatchError(gate, source, "unchanged complete input set", changes)
 
 
+def measure_batch_inputs(game_root, json_root):
+    """Measure the reader, native and StringPool inputs a batch bookends.
+
+    The result equals ``audit["inputs"]`` of a batch run on unchanged inputs.
+    It decodes nothing and validates no owner.
+    """
+    selected = Path(game_root).resolve()
+    pool_root = Path(json_root).resolve()
+    with _suspend_native_validation():
+        try:
+            return dict(reader=snapshot_complete_reader_inputs(), native=_native_inputs(selected),
+                        pool=snapshot_string_pool_inputs(pool_root))
+        except OSError as error:
+            raise LevelScriptDecodeBatchError("input-read", error.filename or pool_root,
+                                             "readable current input", str(error)[:1000]) from error
+
+
+@contextmanager
+def verified_projection_scope(game_root, inputs):
+    """Open a fresh proof scope over inputs ``measure_batch_inputs`` returned.
+
+    Child proofs made while projecting already decoded rows are shared inside
+    this scope only; it inherits none and none leaves it.
+    """
+    selected = Path(game_root).resolve()
+    with _suspend_native_validation(), _native_validation_scope(
+        gameassembly=selected.parent / "GameAssembly.dll",
+        metadata=selected / "il2cpp_data/Metadata/global-metadata.dat",
+        native_inputs=inputs["native"], reader_inputs=inputs["reader"],
+    ) as scope:
+        yield scope
+
+
 def decode_levelscript_batch(source_root, decode, *, game_root, progress=None,
                             json_root=None, recursive=True, operation=None):
     """Return ``(records, audit)`` after decoding the current family's files.
@@ -136,7 +175,9 @@ def decode_levelscript_batch(source_root, decode, *, game_root, progress=None,
             reuse = scope.statistics()
             reuse["entryExitBookendsPassed"] = True
             return records, dict(sourceCount=total, nativeValidationReuse=reuse,
-                                 paramOperationReuse=params.statistics())
+                                 paramOperationReuse=params.statistics(),
+                                 inputs=dict(reader=reader_before, native=native_before,
+                                             pool=pool_before))
         except OSError as error:
             raise LevelScriptDecodeBatchError("input-read", error.filename or root,
                                              "readable current input", str(error)[:1000]) from error

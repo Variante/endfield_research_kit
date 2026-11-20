@@ -1,6 +1,7 @@
 from __future__ import annotations
 from scripts.source_paths import ExportLayout
 
+import contextlib
 import copy
 import hashlib
 import json
@@ -21,6 +22,7 @@ from scripts.webui.story.uid_batch import (
     extract_uid_records as extract_levelscript_uid_records,
     load_current_uid_sources as load_uid_sources,
 )
+from scripts.webui.story import uid_source_store
 from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 from scripts.common import (
@@ -3398,6 +3400,33 @@ def _load_leveldata_named_entries(path: Path) -> list[dict]:
     return entries
 
 
+def _levelscript_binding_sources(root: Path) -> tuple[list[Path], list[Path]]:
+    """The level folders and source files one binding decode selects."""
+    levels = sorted(path for path in root.iterdir() if path.is_dir())
+    return levels, [path for level in levels
+        for path in sorted(level.glob('*.json'), key=_levelscript_file_sort_key)]
+
+
+def prime_levelscript_binding_sources(level_script_root: Path | None = None) -> bool:
+    """Leave one verified binding decode for worker processes to reuse.
+
+    A builder that fans out over processes calls this first, so its workers
+    project the stored rows instead of each decoding the corpus concurrently.
+    It populates no in-process cache and returns False when the reuse store is
+    disabled, in which case every worker decodes for itself as before.
+    """
+    if not uid_source_store.enabled():
+        return False
+    root = (level_script_root or LEVELSCRIPT_DIR).resolve()
+    if not root.is_dir():
+        return False
+    _levels, paths = _levelscript_binding_sources(root)
+    selected = resolve_installed_native_inputs()[1].parents[2]
+    load_uid_sources(paths, game_root=selected, project=lambda _path, _source: None,
+        progress=lambda message: print(f"[story:levelscript] {message}", flush=True))
+    return True
+
+
 def _load_levelscript_binding_data(
     level_id: str,
     level_script_root: Path | None = None,
@@ -3413,10 +3442,8 @@ def _load_levelscript_binding_data(
 
     if not (root / level_id).is_dir():
         return empty()
-    levels = sorted(path for path in root.iterdir() if path.is_dir())
+    levels, paths = _levelscript_binding_sources(root)
     staged = {level.name: empty() for level in levels}
-    paths = [path for level in levels
-        for path in sorted(level.glob('*.json'), key=_levelscript_file_sort_key)]
 
     def project(path, source):
         if source.failure is not None:
@@ -5161,6 +5188,83 @@ def _resolve_levelscript_named_entityptr_initial_value(
     }
 
 
+class ActionTargetInputDrift(RuntimeError):
+    """Native or reader inputs changed while one action-target operation ran."""
+
+
+class _ActionTargetOperation:
+    """Inputs and contracts gated once for every level one process builds."""
+
+    __slots__ = ("pair", "native", "contracts")
+
+    def __init__(self, pair, native, contracts):
+        self.pair = pair
+        self.native = native
+        self.contracts = contracts
+
+
+_ACTION_TARGET_OPERATION: _ActionTargetOperation | None = None
+
+
+def _load_action_target_contracts(selected_pair: dict) -> tuple:
+    """The six pointer-consumer contracts, in the order the builder unpacks."""
+    return (
+        load_action_entity_field_contract(**selected_pair),
+        load_entityptr_script_slot_contract(**selected_pair),
+        load_entityptr_output_alias_contract(**selected_pair),
+        load_entityptr_getter_contract(**selected_pair),
+        load_spawnerptr_getter_contract(**selected_pair),
+        load_entityptr_property_initialization_contract(**selected_pair),
+    )
+
+
+@contextlib.contextmanager
+def registered_action_target_operation():
+    """Gate the pointer-consumer contracts once for every level of one process.
+
+    ``build_levelscript_registered_action_target_index`` proves its six
+    native contracts and the complete reader inputs for each level it is
+    given.  The contracts read only the selected native pair and reviewed
+    JSON inside the reader snapshot, so a caller that builds many levels and
+    publishes nothing until it returns can hold one proof for all of them:
+    entry gates the pair, takes one reader snapshot and loads the contracts;
+    exit repeats the native gate and the snapshot and raises
+    ``ActionTargetInputDrift`` on any difference, which withholds every level
+    built inside.  Each level still gates the native pair, its string pool
+    and its own authored sources at entry and exit.
+
+    Yields False, holding nothing, when the selected pair is not validated;
+    each level then reports that through its own gate.
+    """
+    global _ACTION_TARGET_OPERATION
+    if _ACTION_TARGET_OPERATION is not None:
+        raise RuntimeError("registered-action-target operation is already open")
+    selected_ga, selected_md = resolve_installed_native_inputs()
+    pair = dict(gameassembly=selected_ga, metadata=selected_md)
+    native = check_installed_native_inputs(**pair)
+    if native.status != "validated":
+        yield False
+        return
+    reader_before = snapshot_complete_reader_inputs()
+    _ACTION_TARGET_OPERATION = _ActionTargetOperation(
+        pair, native, copy.deepcopy(_load_action_target_contracts(pair))
+    )
+    try:
+        yield True
+    finally:
+        _ACTION_TARGET_OPERATION = None
+    native_after = check_installed_native_inputs(
+        native.gameassembly_sha256, native.metadata_sha256, **pair
+    )
+    reader_changed = reader_before != snapshot_complete_reader_inputs()
+    if native_after.status != "validated" or reader_changed:
+        raise ActionTargetInputDrift(
+            "registered-action-target:operation-input-drift: "
+            f"nativeStatus={native_after.status}; readerInputsChanged={reader_changed}; "
+            "every level built in this operation is withheld"
+        )
+
+
 def build_levelscript_registered_action_target_index(
     level_id: str,
     *,
@@ -5188,7 +5292,16 @@ def build_levelscript_registered_action_target_index(
     selected_native = check_installed_native_inputs(**selected_pair)
     if selected_native.status != "validated":
         return {ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY: [{"state": "unresolved", "failedCheck": "selected_native_inputs", "nativeStatus": selected_native.status, "detail": selected_native.detail}]}
-    reader_before = snapshot_complete_reader_inputs()
+    # Inside ``registered_action_target_operation`` the reader inputs and the
+    # contracts are proved once for the whole operation, not per level.
+    operation = _ACTION_TARGET_OPERATION
+    held = (
+        operation is not None
+        and operation.pair == selected_pair
+        and operation.native.gameassembly_sha256 == selected_native.gameassembly_sha256
+        and operation.native.metadata_sha256 == selected_native.metadata_sha256
+    )
+    reader_before = None if held else snapshot_complete_reader_inputs()
     pool_before = snapshot_string_pool_inputs(levelscript_root.parent)
     strings = export_string_pool(levelscript_root.parent)
     def source_inputs():
@@ -5197,17 +5310,18 @@ def build_levelscript_registered_action_target_index(
             paths.update(folder.rglob("*.json"))
         return {str(path): hashlib.sha256(path.read_bytes()).hexdigest().upper() if path.is_file() else None for path in sorted(paths)}
     sources_before = source_inputs()
-    field_contracts, field_contract_audit = load_action_entity_field_contract(**selected_pair)
-    _slot_contract, slot_contract_audit = load_entityptr_script_slot_contract(**selected_pair)
-    output_alias_contracts, output_alias_contract_audit = (
-        load_entityptr_output_alias_contract(**selected_pair)
-    )
-    getter_contracts, getter_contract_audit = load_entityptr_getter_contract(**selected_pair)
-    spawner_getter = load_spawnerptr_getter_contract(**selected_pair)
     (
-        _property_initialization_contract,
-        property_initialization_audit,
-    ) = load_entityptr_property_initialization_contract(**selected_pair)
+        (field_contracts, field_contract_audit),
+        (_slot_contract, slot_contract_audit),
+        (output_alias_contracts, output_alias_contract_audit),
+        (getter_contracts, getter_contract_audit),
+        spawner_getter,
+        (_property_initialization_contract, property_initialization_audit),
+    ) = (
+        copy.deepcopy(operation.contracts)
+        if held
+        else _load_action_target_contracts(selected_pair)
+    )
     slot_contract_valid = slot_contract_audit.get("status") == "validated"
     info = (
         _load_levelscript_binding_data(level_id)
@@ -5796,7 +5910,7 @@ def build_levelscript_registered_action_target_index(
         ),
     )
     native_after = check_installed_native_inputs(selected_native.gameassembly_sha256, selected_native.metadata_sha256, **selected_pair)
-    if (native_after.status != "validated" or reader_before != snapshot_complete_reader_inputs()
+    if (native_after.status != "validated" or (not held and reader_before != snapshot_complete_reader_inputs())
             or pool_before != snapshot_string_pool_inputs(levelscript_root.parent) or sources_before != source_inputs()):
         return {ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY: [{"state": "unresolved", "failedCheck": "pointer_consumer_input_bookend", "nativeStatus": native_after.status, "detail": "Selected native/Unity, reader, pool or authored source inputs changed; all pointer rows withheld."}]}
     return result

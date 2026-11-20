@@ -707,15 +707,24 @@ def scan_exported_media_assets(
     root: Path,
     export_root: Path,
     build_fbx_content: bool = True,
+    include_models: bool = True,
 ) -> AssetScanResult:
-    """Scan exported media once and derive image/model/video indexes from it."""
+    """Scan exported media once and derive image/model/video indexes from it.
+
+    ``include_models=False`` is the image/video projection: no model entry,
+    model container or Material relation is built, so no model is opened. An
+    image or video entry is the same either way -- duplicate marking groups by
+    kind, and relations are kept apart from the entries -- which is what lets
+    a publication that shows only images and videos skip the model corpus.
+    """
+    build_fbx_content = build_fbx_content and include_models
     cache = FbxMetadataCache(root / 'webui/data/_build/assets/fbx_metadata.sqlite') if build_fbx_content else nullcontext(None)
     with cache as fbx_cache:
         return _scan_exported_media_assets(root=root, export_root=export_root,
-            build_fbx_content=build_fbx_content, fbx_cache=fbx_cache)
+            build_fbx_content=build_fbx_content, fbx_cache=fbx_cache, include_models=include_models)
 
 
-def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cache):
+def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cache, include_models=True):
     asset_entries: list[dict] = []
     video_entries: list[dict] = []
     counts = defaultdict(int)
@@ -736,7 +745,7 @@ def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cac
     # for the Material -> texture relations; material_roots names the logical
     # root their ``Unity/Material/<name>`` refs belong to.
     material_roots = resolve_material_source_roots(export_root)
-    unity_store = open_store_if_present(export_root) if material_roots else None
+    unity_store = open_store_if_present(export_root) if material_roots and include_models else None
     media_root_labels = {source: rel_path(path, root) for source, path in asset_roots}
     asset_root_labels = {
         source: rel_path(path, root)
@@ -754,12 +763,12 @@ def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cac
     # Animator FBX exports are Unity store rows (their meshes are stored once
     # across files); they are listed at the place their folder takes in the walk.
     pending_stored_models = (
-        sprite_store.rows(STORED_MODEL_TYPE) if sprite_store is not None else []
+        sprite_store.rows(STORED_MODEL_TYPE) if sprite_store is not None and include_models else []
     )
     stored_model_names = {row.name for row in pending_stored_models}
     # Export names drop prefab paths. Keep each model's exact type/PathID
     # container memberships, including shared Mesh objects.
-    model_containers = asset_map_containers(export_root, (STORED_MODEL_TYPE, "Mesh"))
+    model_containers = asset_map_containers(export_root, (STORED_MODEL_TYPE, "Mesh")) if include_models else {}
     stored_sha_by_rel: dict[str, str] = {}
     fbx_fingerprints: dict[tuple[str, str], tuple[str, str, str]] = {}
 
@@ -840,7 +849,7 @@ def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cac
             include_regular_assets=include_regular_assets,
             include_media=include_media,
         )
-        if not kind:
+        if not kind or (kind == "model" and not include_models):
             return
 
         rel_suffix = path.relative_to(source_root).as_posix()
@@ -993,7 +1002,7 @@ def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cac
             entry["p"] = preview_rel
             preview_proxy_count += 1
 
-    for source, _source_root in material_roots:
+    for source, _source_root in material_roots if include_models else ():
         material_rows = [] if unity_store is None else unity_store.rows("Material", "*.json")
         for material_row in sorted(material_rows, key=lambda item: item.name):
             try:

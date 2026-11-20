@@ -139,7 +139,9 @@ def _excluded_chunk_absences(rows, outer):
 
 
 def _audit_chunks(ledger_path, selected):
-    wanted = {os.path.normcase(str(Path(row["physicalChunkPath"]).resolve())) for row in selected}
+    # Many rows name one chunk; resolve each distinct spelling once.
+    wanted = {os.path.normcase(str(Path(path).resolve()))
+        for path in {row["physicalChunkPath"] for row in selected}}
     found = {}
     with gzip.open(ledger_path, "rt", encoding="utf-8") as stream:
         for line in stream:

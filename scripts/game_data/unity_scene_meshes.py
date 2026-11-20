@@ -28,7 +28,9 @@ from scripts.game_data.cooked_collision import read_triangle_mesh
 from scripts.game_data.cooked_convex import read_convex_mesh
 from scripts.game_data.cooked_collision_corpus import check_receipt_snapshot as check_mesh_snapshot, receipt_payloads
 from scripts.game_data.unity_scene import read_scene_object, scene_identity
-from scripts.game_data.unity_scene_corpus import check_receipt_snapshot, _check_typed, _external_mesh_target
+from scripts.game_data.unity_scene_corpus import (
+    check_receipt_snapshot, _cab_locations, _check_typed, _external_mesh_target,
+)
 
 SCHEMA = "endfield.stored-collider-mesh-joins.v1"
 
@@ -53,6 +55,7 @@ def join_mesh_receipt(scene: dict, meshes: dict) -> dict:
         if source is not None and (source["type"] != "Mesh" or source["rawSha256"] != mesh["rawSha256"]):
             raise ValueError(f"scene/Mesh receipts disagree on physical object: {mesh['identity']}")
     sources.update(targets)
+    cab_locations = _cab_locations(sources)
     checked, joined, counts = {}, [], Counter()
     for source_row in scene["colliders"]:
         if source_row["status"] != "mesh_external_unresolved":
@@ -72,7 +75,8 @@ def join_mesh_receipt(scene: dict, meshes: dict) -> dict:
         _check_typed(body, document, "MeshCollider")
         row = dict(source_row)
         try:
-            target = _external_mesh_target(key, body["mesh"], document["$animestudio"], sources)
+            target = _external_mesh_target(key, body["mesh"], document["$animestudio"], sources,
+                                           cab_locations)
         except ValueError as error:
             row["diagnostic"] = str(error)[:800]
             counts["externalUnresolved"] += 1

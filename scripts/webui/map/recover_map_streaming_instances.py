@@ -214,7 +214,8 @@ def _mesh_candidates(
     diagnostics: dict[str, dict] | None = None,
 ) -> dict[str, list[dict]]:
     """Offer name-family geometry candidates without asserting prefab ownership."""
-    wanted = {base.casefold(): base for base in bases if base}
+    # Sorted so candidate and diagnostic key order does not follow set hashing.
+    wanted = {base.casefold(): base for base in sorted(bases) if base}
     wanted_bodies: dict[str, list[str]] = {}
     for folded, original in wanted.items():
         wanted_bodies.setdefault(re.sub(r"^[sp]_", "", folded), []).append(original)

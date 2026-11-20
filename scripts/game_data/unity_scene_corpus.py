@@ -39,9 +39,11 @@ from scripts.game_data.cooked_collision_corpus import (
     _selected_ledger, _selection_input, _verify_fingerprints, inspect_exports,
 )
 from scripts.game_data.unity_evidence_store import (
-    evidence_path, evidence_roots, native_store_args, snapshot_path, storage_receipt, validate_storage,
+    EvidencePath, evidence_path, evidence_roots, native_store_args, snapshot_path, storage_receipt,
+    validate_storage,
 )
 from scripts.game_data.corpus_common import atomic_write_json
+from scripts.game_data.row_pool import batches, ordered_map
 from scripts.game_data.unity_scene import read_scene_object, scene_identity, trace_collider
 from scripts.game_data.unity_asset_bundle import read_container_prefix
 from scripts.repo_paths import REPO_ROOT
@@ -56,8 +58,22 @@ def _pointer(document: dict) -> tuple[int, int]:
     return document["m_FileID"], document["m_PathID"]
 
 
-def _external_mesh_target(identity: tuple, pointer: tuple, metadata: dict, sources: dict) -> tuple | None:
-    """Resolve the exporter-observed external slot, never a bare PathID."""
+def _cab_locations(sources) -> dict:
+    """Physical locations of every CAB name among ``sources`` identities."""
+    locations = {}
+    for key in sources:
+        locations.setdefault(key[2], set()).add(key[:3])
+    return locations
+
+
+def _external_mesh_target(identity: tuple, pointer: tuple, metadata: dict, sources: dict,
+                          cab_locations: dict | None = None) -> tuple | None:
+    """Resolve the exporter-observed external slot, never a bare PathID.
+
+    ``cab_locations`` is `_cab_locations(sources)`, built once by a caller
+    that resolves many colliders against the same sources; without it the
+    locations are collected from ``sources`` for this one call.
+    """
     rows = [row for row in metadata.get("pptrReferences", []) if row.get("path") == "$.m_Mesh"]
     if len(rows) != 1:
         raise ValueError("external Mesh PPtr lacks one serialized external-table witness")
@@ -68,7 +84,8 @@ def _external_mesh_target(identity: tuple, pointer: tuple, metadata: dict, sourc
     external_path = row.get("expectedTargetExternalPath", "")
     if not cab or external_path.replace("\\", "/").rsplit("/", 1)[-1] != cab:
         raise ValueError("external Mesh slot CAB/path witness differs")
-    locations = {key[:3] for key in sources if key[2] == cab}
+    locations = ({key[:3] for key in sources if key[2] == cab} if cab_locations is None
+                 else cab_locations.get(cab, ()))
     if len(locations) > 1:
         raise ValueError(f"external Mesh target CAB has {len(locations)} physical locations")
     if not locations:
@@ -141,8 +158,118 @@ def _check_typed(body: dict, document: dict, kind: str) -> None:
                 raise ValueError(f"Rigidbody raw {field} differs from typed JSON")
 
 
+_ROW_ERRORS = (ValueError, KeyError, TypeError, OSError, OverflowError, struct.error)
+_SCENE_BATCH = 2000
+
+
+def _inspect_scene_row(path, json_root, raw_root, grouping, wanted_cabs):
+    """Check one exported object up to, and after, the cross-row duplicate gate.
+
+    Returns ``(raw_seen, refusal, candidate)``.  ``raw_seen`` is the raw row
+    this object accounted for once its bytes were read.  ``refusal`` is
+    ``(source, detail)`` when a check that precedes the duplicate gate refuses
+    the object.  Otherwise ``candidate`` is ``(key, source, row, meta,
+    mesh_pair, store, body, detail)``: the caller, which alone sees every
+    identity, applies the duplicate gate before admitting anything from it.
+    ``row`` is None when the source row could not be built, and ``detail`` is
+    that diagnostic or the body diagnostic of an admitted row.
+    """
+    raw_seen = None
+    try:
+        json_bytes = path.read_bytes()
+        json_sha = hashlib.sha256(json_bytes).hexdigest().upper()
+        document = json.loads(json_bytes.decode("utf-8-sig")); meta = document["$animestudio"]
+        del json_bytes
+        kind = meta["type"]
+        if kind not in (*SCENE_TYPES, "Mesh"):
+            raise ValueError(f"unexpected exported type/folder: {kind}/{path.parent.name}")
+        relative = path.relative_to(json_root)
+        expected_parent = ((kind,) if grouping == "ByType" else (
+            Path(meta["sourceOriginalPath"].replace("\\", "/")).name+"_export", meta["sourceFile"]))
+        if relative.parts[:-1] != expected_parent:
+            raise ValueError(f"exported path differs from {grouping} metadata: {relative}")
+        raw_path = raw_root / relative.with_suffix(".dat"); raw = raw_path.read_bytes()
+        raw_seen = os.path.normcase(str(raw_path.resolve()))
+        sha = hashlib.sha256(raw).hexdigest(); key = scene_identity(meta)
+        if (len(raw) != meta["rawDataLength"] or len(raw) != meta["byteSize"]
+                or sha != meta["rawDataSha256"]):
+            raise ValueError("raw object length/SHA256 differs from typed metadata")
+        if (key[0], key[1]) not in wanted_cabs:
+            raise ValueError("exported identity lies outside the selected physical CABs")
+        hash(key)  # the caller's duplicate lookup must not be the first to hash it
+    except _ROW_ERRORS as error:
+        return raw_seen, (str(path), str(error)[:800]), None
+    source = str(path)
+    try:
+        row = dict(identity={name: meta[name] for name in (
+            "sourceOriginalPath", "sourceOffset", "sourceFile", "pathId")},
+            type=kind, name=meta["name"], jsonPath=source, rawPath=str(raw_path),
+            rawSha256=sha, jsonSha256=json_sha, byteSize=len(raw))
+    except _ROW_ERRORS as error:
+        return raw_seen, None, (key, source, None, None, None, None, None, str(error)[:800])
+    held_meta = meta if kind == "MeshCollider" else None
+    mesh_pair = (path, raw_path) if kind == "Mesh" else None
+    store = body = detail = None
+    # Mesh has its own complete readers; Ex has no proved scene layout.
+    if kind not in ("Mesh", "MeshColliderEx"):
+        try:
+            if kind == "AssetBundle":
+                body = read_container_prefix(raw); _check_typed(body, document, kind)
+                store = "bundle"
+            else:
+                body = read_scene_object(kind, raw)
+                _check_typed(body, document, kind)
+                body = dict(body, kind=kind); store = "body"
+        except _ROW_ERRORS as error:
+            store = body = None; detail = str(error)[:800]
+    return raw_seen, None, (key, source, row, held_meta, mesh_pair, store, body, detail)
+
+
+def _inspect_scene_batch(shared, names) -> list:
+    json_root, raw_root, grouping, wanted_cabs = shared
+    return [_inspect_scene_row(path, json_root, raw_root, grouping, wanted_cabs)
+            for path in json_root.matching(names, "*.json")]
+
+
+def _scene_rows(json_root, raw_root, grouping, wanted_cabs):
+    """Per-object results in export order.
+
+    A stored corpus is listed once here and checked in worker processes, one
+    contiguous slice of store rows per task; loose folders are walked in this
+    process.  Both run `_inspect_scene_row`, and results arrive in walk order.
+    """
+    if not isinstance(json_root, EvidencePath):
+        for path in json_root.rglob("*.json"):
+            yield _inspect_scene_row(path, json_root, raw_root, grouping, wanted_cabs)
+        return
+    for rows in ordered_map(_inspect_scene_batch, batches(json_root.row_names(), _SCENE_BATCH),
+                            shared=(json_root, raw_root, grouping, wanted_cabs)):
+        yield from rows
+
+
+def _raw_coverage_batch(raw_root, names) -> list:
+    return [os.path.normcase(str(path.resolve())) for path in raw_root.matching(names, "*.dat")]
+
+
+def _raw_coverage(raw_root) -> set:
+    """Every raw row present below ``raw_root``, as `_inspect_scene_row` names it."""
+    if not isinstance(raw_root, EvidencePath):
+        return {os.path.normcase(str(path.resolve())) for path in raw_root.rglob("*.dat")}
+    actual = set()
+    for names in ordered_map(_raw_coverage_batch, batches(raw_root.row_names(), _SCENE_BATCH * 4),
+                             shared=raw_root):
+        actual.update(names)
+    return actual
+
+
 def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, grouping="ByType") -> dict:
-    """Inspect already authenticated exports; this function is not a source gate."""
+    """Inspect already authenticated exports; this function is not a source gate.
+
+    Every object is read, hashed and parsed independently (`_inspect_scene_row`,
+    in worker processes for a stored corpus); the duplicate-identity gate,
+    raw/JSON coverage, the Mesh join and the collider trace run here over the
+    rows in export order, so the report does not depend on the worker count.
+    """
     if grouping not in ("ByType", "BySource"):
         raise ValueError(f"unsupported scene export grouping: {grouping}")
     wanted_cabs = {(_path_key(row["Source"]), row["Offset"]) for row in selection}
@@ -150,53 +277,32 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, g
                      if row["Type"] == "Mesh"}
     source_rows, bodies, bundles, metadata_rows, failures, seen_raw = {}, {}, {}, {}, [], set()
     mesh_exports = []
-    for path in json_root.rglob("*.json"):
-        try:
-            json_bytes = path.read_bytes()
-            json_sha = hashlib.sha256(json_bytes).hexdigest().upper()
-            document = json.loads(json_bytes.decode("utf-8-sig")); meta = document["$animestudio"]
-            del json_bytes
-            kind = meta["type"]
-            if kind not in (*SCENE_TYPES, "Mesh"):
-                raise ValueError(f"unexpected exported type/folder: {kind}/{path.parent.name}")
-            relative = path.relative_to(json_root)
-            expected_parent = ((kind,) if grouping == "ByType" else (
-                Path(meta["sourceOriginalPath"].replace("\\", "/")).name+"_export", meta["sourceFile"]))
-            if relative.parts[:-1] != expected_parent:
-                raise ValueError(f"exported path differs from {grouping} metadata: {relative}")
-            raw_path = raw_root / relative.with_suffix(".dat"); raw = raw_path.read_bytes()
-            seen_raw.add(os.path.normcase(str(raw_path.resolve())))
-            sha = hashlib.sha256(raw).hexdigest(); key = scene_identity(meta)
-            if (len(raw) != meta["rawDataLength"] or len(raw) != meta["byteSize"]
-                    or sha != meta["rawDataSha256"]):
-                raise ValueError("raw object length/SHA256 differs from typed metadata")
-            if (key[0], key[1]) not in wanted_cabs:
-                raise ValueError("exported identity lies outside the selected physical CABs")
+    for raw_seen, refusal, candidate in _scene_rows(json_root, raw_root, grouping, wanted_cabs):
+        if raw_seen is not None:
+            seen_raw.add(raw_seen)
+        if refusal is None:
+            key, source, row, meta, mesh_pair, store, body, detail = candidate
             if key in source_rows:
-                raise ValueError("duplicate exported physical/CAB/PathID identity")
-            source_rows[key] = dict(identity={name: meta[name] for name in (
-                "sourceOriginalPath", "sourceOffset", "sourceFile", "pathId")},
-                type=kind, name=meta["name"], jsonPath=str(path), rawPath=str(raw_path),
-                rawSha256=sha, jsonSha256=json_sha, byteSize=len(raw))
-            # Only MeshCollider external slots participate in the join below.
-            # Retaining every object's redundant TypeTree metadata scales with
-            # the full scene directory instead of the collider evidence.
-            if kind == "MeshCollider":
-                metadata_rows[key] = meta
-            if kind == "Mesh":
-                mesh_exports.append((path, raw_path))
-            if kind in ("Mesh", "MeshColliderEx"):
-                continue  # Mesh has its own complete readers; Ex has no proved scene layout.
-            if kind == "AssetBundle":
-                body = read_container_prefix(raw); _check_typed(body, document, kind)
-                bundles[key] = body
-                continue
-            body = read_scene_object(kind, raw)
-            _check_typed(body, document, kind)
-            bodies[key] = dict(body, kind=kind)
-        except (ValueError, KeyError, TypeError, OSError, OverflowError, struct.error) as error:
-            failures.append(dict(check="scene_body", source=str(path), detail=str(error)[:800]))
-    actual_raw = {os.path.normcase(str(path.resolve())) for path in raw_root.rglob("*.dat")}
+                refusal = (source, "duplicate exported physical/CAB/PathID identity")
+            else:
+                if row is not None:
+                    source_rows[key] = row
+                    # Only MeshCollider external slots participate in the join below.
+                    # Retaining every object's redundant TypeTree metadata scales with
+                    # the full scene directory instead of the collider evidence.
+                    if meta is not None:
+                        metadata_rows[key] = meta
+                    if mesh_pair is not None:
+                        mesh_exports.append(mesh_pair)
+                    if store == "bundle":
+                        bundles[key] = body
+                    elif store == "body":
+                        bodies[key] = body
+                if detail is not None:
+                    refusal = (source, detail)
+        if refusal is not None:
+            failures.append(dict(check="scene_body", source=refusal[0], detail=refusal[1]))
+    actual_raw = _raw_coverage(raw_root)
     if actual_raw != seen_raw:
         failures.append(dict(check="raw_json_coverage", expected=len(seen_raw), actual=len(actual_raw),
                              detail=f"first unmatched: {next(iter(sorted(actual_raw ^ seen_raw)), '')}"))
@@ -215,6 +321,7 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, g
                     and bodies.get(target, {}).get("kind") == "GameObject"):
                 prefab_roots.setdefault(target, []).append(dict(path=entry["path"], bundle=source_rows[key]))
     colliders = []
+    cab_locations = _cab_locations(source_rows)
     for key, body in sorted(bodies.items()):
         if body["kind"] != "MeshCollider":
             continue
@@ -223,7 +330,8 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, g
             traced = trace_collider(key, bodies); row["trace"] = traced
             row["prefabAssets"] = prefab_roots.get(tuple(traced["chain"][-1]["gameObject"]), [])
             if traced["meshPointerStatus"] == "external_unresolved":
-                target = _external_mesh_target(key, body["mesh"], metadata_rows[key], source_rows)
+                target = _external_mesh_target(key, body["mesh"], metadata_rows[key], source_rows,
+                                               cab_locations)
                 if target is not None:
                     traced.update(mesh=target, meshPointerStatus="external_serialized_target")
             mesh = mesh_rows.get(traced["mesh"])
@@ -416,9 +524,23 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
     selection_path = Path(saved["selection"]["path"])
     summary = json.loads(summary_path.read_text("utf-8"))
     cli = Path(saved["extraction"]["command"][0])
-    snapshots, seen = {}, set()
+    snapshots, seen, stored_folders = {}, set(), set()
     def remember(filename):
+        # A stored row is "<database>/<row folder>/<row name>", and the
+        # database is chosen from the folder alone: evidence_path never reads
+        # the last component. One resolved row therefore settles its folder,
+        # which spares a Path walk for each of the millions of sibling rows.
+        # A name EvidencePath would refuse (":") still takes the full path.
+        folder = None
+        if isinstance(filename, str):
+            cut = max(filename.rfind("/"), filename.rfind("\\"))
+            if cut > 0 and filename[cut + 1:] not in ("", ".", "..") and ":" not in filename[cut + 1:]:
+                folder = filename[:cut]
+                if folder in stored_folders:
+                    return
         path = snapshot_path(filename)
+        if folder is not None and isinstance(evidence_path(filename), EvidencePath):
+            stored_folders.add(folder)
         name = str(path)
         identity = os.path.normcase(name)
         if identity not in seen:
@@ -437,7 +559,7 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
     for row in saved["rawSources"]:
         for field in ("jsonPath", "rawPath"):
             remember(row[field])
-    del seen
+    del seen, stored_folders
     token = _REPLAY_DOCUMENT.set((report_path.resolve(), original, saved))
     try:
         report = audit_selection(selection_path=selection_path, summary_path=summary_path,

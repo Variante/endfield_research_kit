@@ -400,27 +400,40 @@ GLOBAL_METADATA_REL = Path("il2cpp_data") / "Metadata" / "global-metadata.dat"
 # Hashes are frequently used as build gates while a single export process
 # walks many generated rows. Cache by the file's current identity so repeated
 # validation of the same immutable input does not reread the whole file.
-_SHA256_FILE_CACHE: dict[tuple[str, int, int, int], str] = {}
+_SHA256_FILE_CACHE: dict[tuple[str, int, int, int, int, int], str] = {}
 NATIVE_EVIDENCE_VALIDATED = "validated"
 NATIVE_EVIDENCE_MISSING = "missing"
 NATIVE_EVIDENCE_MISMATCHED = "mismatched"
 REQUIRE_NATIVE_EVIDENCE_ENV = "ENDFIELD_REQUIRE_NATIVE_EVIDENCE"
 
 
+_PATHS_BAT_GAME_ROOT_CACHE: dict[tuple[str, int, int, int, int], str] = {}
+
+
 def _game_data_root_from_paths_bat() -> Path | None:
-    """Read ENDFIELD_GAME_ROOT out of the checkout's endfield_paths.bat."""
+    """Read ENDFIELD_GAME_ROOT out of the checkout's endfield_paths.bat.
+
+    Native gates ask for the configured root on every check, so the parsed
+    value is kept while the file's identity, size and mtime are unchanged.
+    The file is still statted on every call; a rewritten file is read again.
+    """
+    path = ROOT / "endfield_paths.bat"
     try:
-        text = (ROOT / "endfield_paths.bat").read_text(
-            encoding="utf-8", errors="replace"
-        )
+        stat = path.stat()
+        cache_key = (str(path), stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
+        value = _PATHS_BAT_GAME_ROOT_CACHE.get(cache_key)
+        if value is None:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            match = re.search(
+                r'^\s*(?:if\s+not\s+defined\s+ENDFIELD_GAME_ROOT\s+)?set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
+                text,
+                flags=re.IGNORECASE | re.MULTILINE,
+            )
+            value = match.group(1).strip() if match else ""
+            _PATHS_BAT_GAME_ROOT_CACHE.clear()
+            _PATHS_BAT_GAME_ROOT_CACHE[cache_key] = value
     except OSError:
         return None
-    match = re.search(
-        r'^\s*(?:if\s+not\s+defined\s+ENDFIELD_GAME_ROOT\s+)?set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
-        text,
-        flags=re.IGNORECASE | re.MULTILINE,
-    )
-    value = match.group(1).strip() if match else ""
     return Path(value) if value else None
 
 
@@ -464,15 +477,21 @@ def _iter_installed_game_data_root_candidates(export_summary_path: Path) -> Iter
 
 
 def sha256_file(path: Path, *, chunk_bytes: int = 1024 * 1024) -> str:
-    """Return the lowercase SHA-256 of a file, read in bounded chunks."""
-    resolved = Path(path).resolve()
-    stat = resolved.stat()
-    cache_key = (str(resolved), stat.st_size, stat.st_mtime_ns, chunk_bytes)
+    """Return the lowercase SHA-256 of a file, read in bounded chunks.
+
+    A digest is reused only for the same file identity (volume and file
+    index), size and mtime. The identity comes from the ``stat`` every call
+    already makes, so a repeated gate does not also resolve the path: on
+    Windows that walk costs far more than the lookup it protects.
+    """
+    target = os.path.abspath(path)
+    stat = os.stat(target)
+    cache_key = (target, stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, chunk_bytes)
     cached = _SHA256_FILE_CACHE.get(cache_key)
     if cached is not None:
         return cached
     digest = hashlib.sha256()
-    with resolved.open("rb") as handle:
+    with open(target, "rb") as handle:
         for chunk in iter(lambda: handle.read(chunk_bytes), b""):
             digest.update(chunk)
     result = digest.hexdigest()
@@ -676,13 +695,18 @@ def check_installed_native_inputs(
     a step that only reads the current binary can pass none and still get the
     existence check plus the measured hashes for its report.
     """
-    resolved_gameassembly, resolved_metadata = resolve_installed_native_inputs(
-        export_summary_path
-    )
-    gameassembly = (
-        Path(gameassembly) if gameassembly is not None else resolved_gameassembly
-    )
-    metadata = Path(metadata) if metadata is not None else resolved_metadata
+    if gameassembly is None or metadata is None:
+        # Resolution walks the install candidates; a caller that selected
+        # both files has nothing for it to decide.
+        resolved_gameassembly, resolved_metadata = resolve_installed_native_inputs(
+            export_summary_path
+        )
+        if gameassembly is None:
+            gameassembly = resolved_gameassembly
+        if metadata is None:
+            metadata = resolved_metadata
+    gameassembly = Path(gameassembly)
+    metadata = Path(metadata)
     # Pinning the metadata hash implies the metadata is needed to check it.
     require_metadata = require_metadata or bool(expected_metadata_sha256)
 

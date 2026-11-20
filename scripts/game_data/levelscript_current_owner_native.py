@@ -1,6 +1,8 @@
 """Selected current LevelScript/Brief source paths; child grammar is separate."""
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import argparse
 from pathlib import Path
@@ -125,6 +127,21 @@ def _validate_on_image(image,pins,fact,semantic):
         wholeOwnerAdmitted=False,evidenceBoundary=BOUNDARY)
 
 
+# Proofs this process has derived, keyed by the bytes they came from: the
+# complete reader sources and the declaration, whose pins name the build.
+# The derivation is a pure function of those bytes and one owner entry spends
+# minutes on it, so a later entry over the same bytes takes a private copy.
+# A proof is kept only after its own entry passed every exit check, each
+# entry still hashes all of its inputs before and after, and nothing is
+# written to disk.
+_DERIVED_PROOFS={}
+
+
+def _proof_key(reader_inputs,contract_raw):
+    reader=json.dumps(reader_inputs,sort_keys=True,separators=(',',':')).encode('utf-8')
+    return hashlib.sha256(reader).hexdigest(),hashlib.sha256(contract_raw).hexdigest()
+
+
 def _gate(pins,*,game_root=None,gameassembly=None,metadata=None):
     if(gameassembly is None)!=(metadata is None):raise ValueError(LABEL+'.native:both-selected-paths-required')
     if gameassembly is None:
@@ -139,13 +156,16 @@ def validate_current_native_contract(*,game_root=None,gameassembly=None,metadata
         fact,semantic=_contract_and_semantic(path);pins=fact['nativeInputs'];gate=_gate(pins,game_root=game_root,gameassembly=gameassembly,metadata=metadata)
         if gate.status!='validated':return dict(status=gate.status,detail=gate.detail,owners={})
         if failure:=pooled_source_helper.check_unity_input(gate.gameassembly,pins):return dict(owners={},**failure)
-        result=_validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,fact,semantic)
+        key=_proof_key(before,raw);held=_DERIVED_PROOFS.get(key)
+        result=(copy.deepcopy(held)if held is not None else
+            _validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,fact,semantic))
         after=_gate(pins,gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return dict(status=after.status,detail='Native inputs changed: '+after.detail,owners={})
         if failure:=pooled_source_helper.check_unity_input(gate.gameassembly,pins):return dict(owners={},**failure)
         if raw!=path.read_bytes():raise ValueError(LABEL+'.contract:declaration-drift')
         changed=snapshot_complete_reader_inputs()
         if before!=changed:raise ValueError(LABEL+'.source:reader-drift:'+str(reader_input_changes(before,changed)))
+        if held is None:_DERIVED_PROOFS[key]=copy.deepcopy(result)
         return dict(result,nativeSources={'GameAssembly.dll':str(Path(gate.gameassembly).resolve()),
             'global-metadata.dat':str(Path(gate.metadata).resolve())})
     except(ValueError,KeyError,IndexError,TypeError,OSError,RuntimeError)as error:

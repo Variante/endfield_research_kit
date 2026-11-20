@@ -90,7 +90,7 @@ from scripts.webui.audio.semantics.decoded_payload_event_names import (
     collect_decoded_event_names,
     summarize_decoded_event_name_recovery,
 )
-from scripts.webui.audio.semantics.table_contexts import collect_table_audio_events
+from scripts.webui.audio.semantics.table_contexts import InteractiveContextScan, collect_table_audio_events
 from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
 from scripts.webui.audio.semantics import rtpc_contract
 from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES, json_dump, load_json_strict, normalize_posix, iter_asset_map_objects, display_path
@@ -4001,11 +4001,15 @@ def build_audio(args: argparse.Namespace) -> int:
     if not conv_dir.is_dir():
         # Audio reads Story's published conversations but never builds them.
         print(f"Story is not published ({conv_dir} is missing); no Story voice lines are linked")
+    table_game_root = native_game_data_root(
+        gameassembly=args.game_root.parent / "GameAssembly.dll",
+        metadata=args.metadata or args.game_root / "il2cpp_data/Metadata/global-metadata.dat",
+    )
+    # The semantic stage below needs the same interactive rows; it takes this
+    # scan rather than decoding the corpus a second time.
+    interactive_scan = InteractiveContextScan.collect(args.export_root, game_root=table_game_root)
     table_event_names, table_event_hashes = collect_table_audio_events(
-        args.export_root, game_root=native_game_data_root(
-            gameassembly=args.game_root.parent / "GameAssembly.dll",
-            metadata=args.metadata or args.game_root / "il2cpp_data/Metadata/global-metadata.dat",
-        ),
+        args.export_root, game_root=table_game_root, interactive_scan=interactive_scan,
     )
     stage.mark("collectTableAudioEvents")
     # Level, interactive and spawner payloads ship the same length-prefixed
@@ -4583,6 +4587,7 @@ def build_audio(args: argparse.Namespace) -> int:
         metadata_path=args.metadata.resolve() if args.metadata else metadata_path,
         gameassembly_path=args.game_root.parent / "GameAssembly.dll",
         cutscene_events=cutscene_audio_events,
+        interactive_scan=interactive_scan,
         native_entry_session=(args.native_entry_session.resolve() if args.native_entry_session is not None else None),
         native_entry_package_index=(args.native_entry_package_index.resolve() if args.native_entry_package_index is not None else None),
         native_entry_decode_witness=(args.native_entry_decode_witness.resolve() if args.native_entry_decode_witness is not None else None),

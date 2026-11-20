@@ -72,6 +72,8 @@ from scripts.webui.story.level_bindings import (
     build_levelscript_registered_action_target_index,
     build_levelscript_unhosted_reading_popup_receiver_index,
     decode_leveldata_npc_patrol_list,
+    prime_levelscript_binding_sources,
+    registered_action_target_operation,
 )
 from scripts.game_data.levelscript_binary import decode_levelscript_binary_summary
 from scripts.game_data.map_mark_relations import (
@@ -5799,7 +5801,12 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
 
 def _build_all_authenticated(language: str, only: set[str] | None = None) -> list[dict]:
     gameassembly, metadata = resolve_installed_native_inputs()
-    with authenticated_tables(gameassembly=gameassembly, metadata=metadata):
+    # One contract and reader-input proof covers every level this process
+    # builds; drift at exit raises, and nothing is published before return.
+    with (
+        authenticated_tables(gameassembly=gameassembly, metadata=metadata),
+        registered_action_target_operation(),
+    ):
         return build_all(language, only)
 
 
@@ -5831,11 +5838,16 @@ def build_all_parallel(language: str, jobs: int) -> list[dict]:
     indexes. Levels are dealt round-robin because per-level cost varies by more
     than an order of magnitude and contiguous blocks would leave one worker
     holding every expensive LevelScript.
+
+    The one setup too expensive to repeat is the current LevelScript binding
+    decode, which every shard needs in full. It is decoded (or re-verified)
+    once here and each worker then projects the verified rows.
     """
     levels = _buildable_level_ids()
     jobs = max(1, min(jobs, len(levels)))
     if jobs == 1:
         return _build_all_authenticated(language, None)
+    prime_levelscript_binding_sources()
     shards = [tuple(levels[index::jobs]) for index in range(jobs)]
     payloads: list[dict] = []
     with ProcessPoolExecutor(max_workers=jobs) as pool:

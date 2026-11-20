@@ -1608,9 +1608,11 @@ def _merge_scene_placement_row(existing: dict, incoming: dict) -> dict:
     out = dict(existing)
     out.setdefault("sceneKey", incoming.get("sceneKey") or existing.get("sceneKey") or "")
     out.setdefault("kind", incoming.get("kind") or existing.get("kind") or "")
-    for field in _PLACEMENT_COUNT_FIELDS:
+    # Sorted: a merged row's key order must not follow set iteration order,
+    # which changes with every interpreter start.
+    for field in sorted(_PLACEMENT_COUNT_FIELDS):
         out[field] = _as_int(out.get(field)) + _as_int(incoming.get(field))
-    for field in _PLACEMENT_LIST_FIELDS:
+    for field in sorted(_PLACEMENT_LIST_FIELDS):
         values = incoming.get(field)
         if values in (None, "", [], {}):
             continue

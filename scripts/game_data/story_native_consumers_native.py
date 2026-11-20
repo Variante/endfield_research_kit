@@ -156,7 +156,9 @@ def load_story_native_consumers(
     if drift:
         return drift
     write_canonical_json(Path(report_path), result)
-    return {"status": "validated", **result}
+    # Return what a later run reads back from the saved report, so a fresh
+    # evaluation and a reused one publish rows in the same key order.
+    return {"status": "validated", **json.loads(json.dumps(result, sort_keys=True))}
 
 
 def validated_group(name: str) -> dict[str, Any] | None:

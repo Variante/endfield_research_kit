@@ -20,11 +20,13 @@ runtime cue (see ``levelscript`` for the native boundary).
 from __future__ import annotations
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
+import copy
 import gzip
 import json
 import math
 import re
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -315,18 +317,55 @@ def _audio_global_config_from_object_index(
     return None
 
 
+@dataclass(frozen=True)
+class InteractiveContextScan:
+    """One interactive-component scan of a build, with the roots it read.
+
+    The build's first pass needs the Event names and its semantic stage needs
+    the rows. Both decode the same export through the same selected native
+    root, and one authenticated decode of that corpus takes minutes, so the
+    later pass takes this scan instead of repeating it. A caller with another
+    export or native root gets nothing and scans for itself.
+    """
+
+    export_root: Path
+    game_root: Path | None
+    contexts: dict[str, list[dict[str, Any]]]
+
+    @classmethod
+    def collect(cls, export_root: Path, *, game_root: Path | None = None) -> "InteractiveContextScan":
+        return cls(
+            Path(export_root).resolve(),
+            game_root,
+            interactive_components.collect_interactive_component_contexts(export_root, game_root=game_root),
+        )
+
+    def rows_for(self, export_root: Path, game_root: Path | None) -> dict[str, list[dict[str, Any]]] | None:
+        """Return a private copy of the rows when both roots are the scanned ones."""
+
+        if Path(export_root).resolve() != self.export_root or game_root != self.game_root:
+            return None
+        return copy.deepcopy(self.contexts)
+
+
 def collect_authored_runtime_config_contexts(
     export_root: Path,
     runtime_model: dict[str, Any] | None = None,
     *, game_root: Path | None = None,
+    interactive_scan: InteractiveContextScan | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Recover exact interactive-state and global lifecycle Event requests."""
 
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
-    for event_id, rows in interactive_components.collect_interactive_component_contexts(
-        export_root, game_root=game_root
-    ).items():
+    interactive_contexts = (
+        interactive_scan.rows_for(export_root, game_root) if interactive_scan is not None else None
+    )
+    if interactive_contexts is None:
+        interactive_contexts = interactive_components.collect_interactive_component_contexts(
+            export_root, game_root=game_root
+        )
+    for event_id, rows in interactive_contexts.items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
     trigger_state_names: dict[int, str] = {}
@@ -1301,6 +1340,7 @@ def collect_table_contexts(
     cue_semantics: dict[str, Any] | None = None,
     global_controls: dict[str, Any] | None = None,
     game_root: Path | None = None,
+    interactive_scan: InteractiveContextScan | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
@@ -1379,7 +1419,9 @@ def collect_table_contexts(
     for event_id, rows in global_controls.get("eventContexts", {}).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
-    for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model, game_root=game_root).items():
+    for event_id, rows in collect_authored_runtime_config_contexts(
+        export_root, runtime_model, game_root=game_root, interactive_scan=interactive_scan,
+    ).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
     # RemoteCommon audioId is an authored Wwise Event request, unlike the
@@ -1392,10 +1434,15 @@ def collect_table_contexts(
     return dict(contexts)
 
 
-def collect_table_audio_events(export_root: Path, *, game_root: Path | None = None) -> tuple[set[str], set[int]]:
+def collect_table_audio_events(
+    export_root: Path,
+    *,
+    game_root: Path | None = None,
+    interactive_scan: InteractiveContextScan | None = None,
+) -> tuple[set[str], set[int]]:
     """Return authored Event names and hashes from one table/config scan."""
 
-    contexts = collect_table_contexts(export_root, game_root=game_root)
+    contexts = collect_table_contexts(export_root, game_root=game_root, interactive_scan=interactive_scan)
     hashes: set[int] = set()
     for key in contexts:
         if not key.startswith("#0x"):
