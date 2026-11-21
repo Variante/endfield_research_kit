@@ -1,12 +1,14 @@
 """Fresh actual-switch, complete-source and child gates for ActionMap routes.
 
 Only literal family/tag selectors and explicit native inputs are accepted.
-The declaration contract supplies build pins, never a retained source proof.
+The declaration contract supplies build pins. A derived route is kept only
+for the rest of one export.bat run (scripts.export_run).
 """
 import json
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
+from scripts.export_run import proof_key, run_proof
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import open_native_image, native_validation_failure
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs, reader_input_changes
@@ -37,8 +39,12 @@ def validate(*, family, tag, game_root=None, gameassembly=None, metadata=None):
             return failed
         from scripts.game_data.memorypack import levelscript_action_route_components as sources
         from scripts.game_data.codecs.levelscript import current_generated_action_route as codec
-        image = open_native_image(gate.gameassembly, gate.metadata)
-        result = sources.derive(image, pins, family=family, tag=tag)
+        # Derived once per export.bat run (scripts.export_run); outside a run
+        # every call derives afresh.
+        result = run_proof('levelscript_action_routes', proof_key(family, tag, pins, raw, before),
+            lambda: sources.derive(open_native_image(gate.gameassembly, gate.metadata), pins,
+                                   family=family, tag=tag),
+            keep=lambda value: isinstance(value, dict))
         if (result.get('schema') != sources.SCHEMA or result.get('nativeInputs') != pins
                 or (result.get('family'), result.get('tag')) != (family, tag)
                 or result.get('wholeOwnerAdmitted') is not False):

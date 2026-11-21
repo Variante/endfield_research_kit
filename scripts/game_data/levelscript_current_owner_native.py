@@ -7,6 +7,7 @@ import json
 import argparse
 from pathlib import Path
 
+from scripts.export_run import proof_key, run_proof
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import native_validation_failure,open_native_image
@@ -132,8 +133,9 @@ def _validate_on_image(image,pins,fact,semantic):
 # The derivation is a pure function of those bytes and one owner entry spends
 # minutes on it, so a later entry over the same bytes takes a private copy.
 # A proof is kept only after its own entry passed every exit check, each
-# entry still hashes all of its inputs before and after, and nothing is
-# written to disk.
+# entry still hashes all of its inputs before and after. Inside one
+# export.bat run the proof is also shared with later processes of that run
+# through scripts.export_run and dropped when the run ends.
 _DERIVED_PROOFS={}
 
 
@@ -158,7 +160,9 @@ def validate_current_native_contract(*,game_root=None,gameassembly=None,metadata
         if failure:=pooled_source_helper.check_unity_input(gate.gameassembly,pins):return dict(owners={},**failure)
         key=_proof_key(before,raw);held=_DERIVED_PROOFS.get(key)
         result=(copy.deepcopy(held)if held is not None else
-            _validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,fact,semantic))
+            run_proof('levelscript_current_owner',proof_key(key,pins),
+                lambda:_validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,fact,semantic),
+                keep=lambda value:isinstance(value,dict)))
         after=_gate(pins,gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return dict(status=after.status,detail='Native inputs changed: '+after.detail,owners={})
         if failure:=pooled_source_helper.check_unity_input(gate.gameassembly,pins):return dict(owners={},**failure)

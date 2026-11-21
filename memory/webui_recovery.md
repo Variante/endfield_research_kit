@@ -83,7 +83,8 @@ family in a batch and become visible only after every exit check passes.
 Later mission-state, callback and topology passes also own their source scopes.
 The outer batch rechecks the native pair's actual bytes, UnityPlayer, complete
 reader inputs, StringPool and source roster after the nested source operation
-has closed. Native proofs stay inside their operation. Byte-only or explicitly
+has closed. Native proofs stay inside their operation, except that one
+`export.bat` run shares them across its steps (see `AGENTS.md`). Byte-only or explicitly
 prepared calls retain their caller's original scope and framing refusals.
 Typed Story control-flow projection belongs inside those same bookends, after
 UID decoding and before the exit checks. Reuse each physical record's outgoing

@@ -4,6 +4,18 @@ from scripts.game_data.il2cpp.formatter_value_paths import BytesPath
 from scripts.game_data.il2cpp.byte_copy_programs import prove_byte_copy_moves
 
 
+_ATOMS=(str,int,float,bool,type(None))
+
+
+def _copy_operation(value):
+ # Rows are JSON-shaped (no aliasing); anything else takes the deepcopy path.
+ kind=type(value)
+ if kind is dict:return {key:_copy_operation(item)for key,item in value.items()}
+ if kind is list:return [_copy_operation(item)for item in value]
+ if kind in _ATOMS:return value
+ return copy.deepcopy(value)
+
+
 def prove_bounded_copy(regions,entry,*,rows,tables,image_base):
  by_at={int(r['va'],16):r for r in rows};seen=set();cases=[];table_uses=set()
  def transfer_table(g,*,small,index):
@@ -19,7 +31,7 @@ def prove_bounded_copy(regions,entry,*,rows,tables,image_base):
   if not op:raise ValueError('boundedCopy.selected-memory-move')
   raw=bytes.fromhex(row['bytes'])
   if g.read(len(raw))!=raw:raise ValueError('boundedCopy.original-move')
-  op=copy.deepcopy(op);a=op['address'];base=a.get('base');index=a.get('index')
+  op=_copy_operation(op);a=op['address'];base=a.get('base');index=a.get('index')
   if a.get('scale')!=1 or index not in (None,'r8','r9') or base not in ('rax','rcx','rdx'):raise ValueError('boundedCopy.payload-address')
   a['displacement']+=(0 if base=='rax' else position)+(remaining if index=='r8' else rounded if index=='r9' else 0)
   a['index']=None

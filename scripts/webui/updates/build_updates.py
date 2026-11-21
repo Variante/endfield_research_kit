@@ -104,6 +104,9 @@ from scripts.webui.updates.page_records import build_page_updates
 from scripts.webui.game_tables import is_activity_table
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.game_data.fbx_normalize import normalize_fbx
+from scripts.game_data.levelscript_reader_inputs import fresh_complete_reader_inputs, reader_input_changes
+from scripts.export_run import export_run
+from scripts.repo_paths import REPO_ROOT
 
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
@@ -1868,6 +1871,16 @@ def prepare_export_diff_scanner_state(
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Decoding LevelScript payloads for the diff text runs the reader's native
+    # proofs. Inside one export run they are derived once and the reader
+    # snapshot is taken twice; outside a run every decoded file repeats both.
+    with export_run(REPO_ROOT / "webui" / "data" / "_build" / "export_run",
+                    reader_snapshot_fresh=fresh_complete_reader_inputs,
+                    reader_changes=reader_input_changes):
+        return _main(argv)
+
+
+def _main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     state_dir = args.state_dir.resolve()
     export_root = args.export_root.resolve()

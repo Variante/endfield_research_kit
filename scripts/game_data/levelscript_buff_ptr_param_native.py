@@ -19,6 +19,7 @@ import json,struct
 from contextlib import contextmanager
 from pathlib import Path
 from scripts.common import check_installed_native_inputs
+from scripts.export_run import proof_key,run_proof
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import open_native_image,native_validation_failure
 from scripts.game_data.il2cpp.rgctx_symbols import validate_claims
@@ -61,7 +62,7 @@ def validate_buff_ptr_param_native_contract(*,contract_path=DEFAULT_CONTRACT,gam
   if gate.status!='validated':return dict(status=gate.status,detail=gate.detail)
   failed=pooled_source_helper.check_unity_input(gate.gameassembly,pins)
   if failed:return failed
-  pool=pooled_source_helper.CONTRACT_PATH.read_bytes();_validate_native(open_native_image(gate.gameassembly,gate.metadata),fact)
+  pool=pooled_source_helper.CONTRACT_PATH.read_bytes();run_proof('levelscript_leaf_native',proof_key('buff_ptr',sources,raw,pool,str(gate.gameassembly),str(gate.metadata)),lambda:(_validate_native(open_native_image(gate.gameassembly,gate.metadata),fact),True)[1])
   after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
   if after.status!='validated':return dict(status=after.status,detail='Native inputs changed: '+after.detail)
   failed=pooled_source_helper.check_unity_input(gate.gameassembly,pins)

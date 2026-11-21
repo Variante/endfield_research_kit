@@ -5,6 +5,7 @@ component owns generic adapter/context/slot5/forwarder/conversion selection;
 no concrete field layout follows from reference kind or a registered name.
 """
 import copy
+import hashlib
 import json
 import struct
 
@@ -15,6 +16,23 @@ from scripts.game_data.il2cpp.formatter_registration import validate_eager_wrap_
 from scripts.game_data.il2cpp.generic_entries import GenericEntries
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.memorypack import pointer_param as pointer,reference_adapter_sources as adapter,scalar_param_native as scalar
+
+
+_MODEL_CONTRACT=[None,None]
+
+
+def _model_contract():
+    """Parse the model contract, reusing the parse while its bytes are unchanged.
+
+    The bytes are read on every call and compared by digest, so an edited
+    contract is always parsed afresh. Callers only read the result and
+    deep-copy what they change.
+    """
+    raw=(CONTRACTS_DIR/'model_view_state_controller_native.json').read_bytes()
+    digest=hashlib.sha256(raw).digest()
+    if _MODEL_CONTRACT[0]!=digest:
+        _MODEL_CONTRACT[:]=[None,json.loads(raw)];_MODEL_CONTRACT[0]=digest
+    return _MODEL_CONTRACT[1]
 
 
 def derive_adapter(image,pins,pair,wrapper,*,forwarder_prover=None,conversion_prover=None,wrapper_callback_prover=None):
@@ -37,7 +55,7 @@ def derive_adapter(image,pins,pair,wrapper,*,forwarder_prover=None,conversion_pr
     base=image.pe.image_base;md=image.metadata;ctx=NativeReferenceContext(image)
     original=wrapper.wrapped_type;name=wrapper.name
     need('nominal-reference-types',(False,False),(ctx.is_value_type(original),ctx.is_value_type(name)))
-    model=json.loads((CONTRACTS_DIR/'model_view_state_controller_native.json').read_bytes())
+    model=_model_contract()
     need('reference-source-build',pins,model['nativeInputs'])
     routes=copy.deepcopy(model['referenceRoutes']);routes['wrappers']=[]
     common=adapter.validate_reference_routes(image,routes,[])

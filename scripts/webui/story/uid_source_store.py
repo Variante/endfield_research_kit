@@ -8,8 +8,15 @@ here, and a later call may project those rows instead of decoding again.
 
 What a reuse proves, and what it does not:
 
-* The store key is the complete reader-input snapshot (all of
-  ``scripts/game_data`` plus its external dependencies), the selected
+* The store key binds the reader inputs a decode can depend on: every
+  non-Python reader input (all contracts and external helpers), the roster
+  of reader Python files, and the bytes of each reader module the deciding
+  process had loaded when its rows were committed (``sys.modules`` sees
+  static and ``import_module`` imports alike, so it is a superset of the
+  code the decode ran). An edit to a reader module the decode never loaded
+  therefore keeps the rows; any edit to loaded code, any contract edit, or
+  an added/removed module misses. Reuse still runs under the complete
+  reader snapshot's entry/exit bookends. The key also binds the selected
   ``GameAssembly.dll``/``global-metadata.dat``/``UnityPlayer.dll`` bytes, the
   exported StringPool pages, the code that framed the rows, and the
   interpreter. Each row is also bound to its own source bytes.
@@ -40,7 +47,7 @@ from pathlib import Path
 
 from scripts.common import WEBUI_BUILD_DIR
 
-SCHEMA = 'endfield.story-uid-source-store.v1'
+SCHEMA = 'endfield.story-uid-source-store.v2'
 STORE_ROOT = WEBUI_BUILD_DIR / 'work' / 'levelscript_uid_sources'
 DISABLE_ENV = 'ENDFIELD_LEVELSCRIPT_UID_STORE'
 PICKLE_PROTOCOL = 4
@@ -67,13 +74,41 @@ def canonical_digest(value) -> str:
                               separators=(',', ':'), default=str).encode('utf-8'))
 
 
-def key_inputs(*, family, pool_root, game_root, batch_inputs) -> dict:
+def loaded_reader_code(batch_inputs) -> list:
+    """Reader Python files this process has imported, as recorded snapshot paths."""
+    rows = {row['path'] for row in batch_inputs['reader']['files'] if row['path'].endswith('.py')}
+    loaded = set()
+    for module in list(sys.modules.values()):
+        origin = getattr(module, '__file__', None)
+        if origin:
+            path = Path(origin).resolve().as_posix()
+            if path in rows:
+                loaded.add(path)
+    return sorted(loaded)
+
+
+def reader_key(reader_snapshot, code_paths) -> str:
+    """Digest of the reader inputs a decode that loaded ``code_paths`` can depend on."""
+    code = set(code_paths)
+    files = reader_snapshot['files']
+    return canonical_digest(dict(
+        schema=reader_snapshot.get('schema'),
+        roster=sorted(row['path'] for row in files if row['path'].endswith('.py')),
+        data=[row for row in files if not row['path'].endswith('.py')],
+        code=[row for row in files if row['path'] in code],
+        missingCode=sorted(code - {row['path'] for row in files}),
+    ))
+
+
+def key_inputs(*, family, pool_root, game_root, batch_inputs, code_paths) -> dict:
     """Every cheap-to-measure decode input, as digests; equal inputs give an equal key.
 
     ``batch_inputs`` is the reader/native/StringPool measurement the guarded
-    batch uses as its own entry and exit bookends. The source inventory is not
-    part of the key: its authenticated receipt is recorded beside the rows and
-    must be reproduced by a fresh authentication before any reuse.
+    batch uses as its own entry and exit bookends; ``code_paths`` names the
+    reader modules the deciding decode had loaded (see ``reader_key``). The
+    source inventory is not part of the key: its authenticated receipt is
+    recorded beside the rows and must be reproduced by a fresh authentication
+    before any reuse.
     """
     return dict(
         schema=SCHEMA,
@@ -83,7 +118,7 @@ def key_inputs(*, family, pool_root, game_root, batch_inputs) -> dict:
         jsonRoot=Path(pool_root).as_posix(),
         gameRoot=Path(game_root).as_posix(),
         storeCode={path.name: _file_sha256(path) for path in _CODE_PATHS},
-        readerInputs=canonical_digest(batch_inputs['reader']),
+        readerInputs=reader_key(batch_inputs['reader'], code_paths),
         nativeInputs=dict(batch_inputs['native']),
         stringPool=canonical_digest(batch_inputs['pool']),
     )
@@ -121,9 +156,15 @@ class UidSourceStore:
                 or not isinstance(value.get('files'), dict)
                 or not isinstance(value.get('shards'), dict)
                 or not isinstance(value.get('keyInputs'), dict)
+                or not isinstance(value.get('readerCode'), list)
                 or not isinstance(value.get('sourceReceipt'), str)):
             return None
         return value
+
+    def recorded_code(self):
+        """Reader module paths the stored rows' decode had loaded, or ``None``."""
+        manifest = self._manifest()
+        return None if manifest is None else list(manifest['readerCode'])
 
     def lookup(self, key: dict, signatures: dict):
         """Return a reader for ``signatures`` (path -> length/sha256) or a miss reason."""
@@ -236,7 +277,7 @@ class _Writer:
     def discard(self) -> None:
         shutil.rmtree(self.staging, ignore_errors=True)
 
-    def commit(self, key: dict, source_receipt: str) -> str | None:
+    def commit(self, key: dict, source_receipt: str, code_paths) -> str | None:
         """Publish the staged rows. Returns a reason when nothing was published."""
         if self.failed:
             self.discard()
@@ -250,7 +291,8 @@ class _Writer:
             files, shards = dict(self.files), dict(self.shards)
             previous = store._manifest()
             if (previous is not None and previous['keyInputs'] == key
-                    and previous['sourceReceipt'] == source_receipt):
+                    and previous['sourceReceipt'] == source_receipt
+                    and previous['readerCode'] == list(code_paths)):
                 # Same inputs: keep rows of source folders this batch did not decode.
                 for name, row in previous['shards'].items():
                     shards.setdefault(name, row)
@@ -261,7 +303,7 @@ class _Writer:
             for row in self.shards.values():
                 os.replace(self.staging / row['file'], store.directory / row['file'])
             manifest = dict(schema=SCHEMA, keyInputs=key, sourceReceipt=source_receipt,
-                            files=files, shards=shards)
+                            readerCode=list(code_paths), files=files, shards=shards)
             pending = store.directory / f'manifest.{os.getpid()}.tmp'
             pending.write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True),
                                encoding='utf-8', newline='\n')

@@ -1,4 +1,7 @@
-"""Reuse successful native proofs only inside one freshly gated source scope.
+"""Reuse successful native proofs inside one gated source scope or export run.
+
+Inside an ``export.bat`` run (``scripts.export_run``) a validated selected
+proof is shared for the rest of that run and dropped when it ends.
 
 Payload decoders never enter this helper. Outside the private lexical scope,
 validators execute directly. Entry and exit gates run with reuse suspended.
@@ -9,9 +12,12 @@ import copy
 import hashlib
 import inspect
 import os
+import pickle
 from pathlib import Path,PurePath,PosixPath,WindowsPath,PurePosixPath,PureWindowsPath
 import struct
 import sys
+
+from scripts.export_run import proof_key,run_proof
 
 
 _CURRENT=ContextVar('levelscript_operation_native_validation',default=None)
@@ -87,6 +93,39 @@ def _proof_identity(audit,scope):
     return True
 
 
+_PLAIN_ATOMS=frozenset((str,int,float,bool,bytes,type(None)))
+_PLAIN_CONTAINERS=frozenset((dict,list,tuple,set,frozenset))
+
+
+def _is_plain(value,depth=0):
+    kind=type(value)
+    if kind in _PLAIN_ATOMS:return True
+    if kind not in _PLAIN_CONTAINERS or depth>200:return False
+    if kind is dict:return all(_is_plain(k,depth+1)and _is_plain(v,depth+1)for k,v in value.items())
+    return all(_is_plain(item,depth+1)for item in value)
+
+
+class _Snapshot:
+    """A private copy that hands out independent copies on demand.
+
+    Plain builtin data is kept as pickle bytes: a load rebuilds the same
+    values, order and internal aliasing as ``copy.deepcopy`` at C speed.
+    Anything else keeps the deep-copied object and is deep-copied per use.
+    """
+    __slots__=('_blob','_value')
+
+    def __init__(self,value):
+        self._blob=None;self._value=None
+        if _is_plain(value):
+            try:self._blob=pickle.dumps(value,protocol=pickle.HIGHEST_PROTOCOL);return
+            except Exception:self._blob=None
+        self._value=copy.deepcopy(value)
+
+    def copy(self):
+        if self._blob is not None:return pickle.loads(self._blob)
+        return copy.deepcopy(self._value)
+
+
 class _ValidationScope:
     def __init__(self,gameassembly,metadata,native_inputs,reader_inputs=None):
         self.paths=Path(gameassembly).resolve(),Path(metadata).resolve();self.resolved={}
@@ -97,7 +136,7 @@ class _ValidationScope:
         valid=(type(reader_inputs)is dict and reader_inputs.get('schema')=='endfield.levelscript-complete-reader-inputs.v1'
             and reader_inputs.get('scope')=='complete-raw-package-plus-external-reader-dependencies'
             and type(reader_inputs.get('files'))is list)
-        self._reader_inputs=copy.deepcopy(reader_inputs)if valid else None
+        self._reader_inputs=_Snapshot(reader_inputs)if valid else None
         self._reader_source_rows=None
         if valid:
             rows=reader_inputs['files']
@@ -172,7 +211,7 @@ def _owned_reader_snapshot(fresh):
         caller=sys._getframe(2)
         if caller.f_code is invocation[1] and caller.f_back is invocation[2]:
             scope.reader_snapshot_copies+=1
-            return copy.deepcopy(scope._reader_inputs)
+            return scope._reader_inputs.copy()
     return fresh()
 
 
@@ -217,6 +256,11 @@ def _read_reader_input(path):
     return raw
 
 
+def _shareable(result,scope):
+    audit=result if isinstance(result,dict)else result[1]if type(result)is tuple and len(result)==2 and isinstance(result[1],dict)else None
+    return isinstance(audit,dict)and audit.get('status')=='validated'and _proof_identity(audit,scope)and not scope.closed
+
+
 def validate_native(function,*args,**kwargs):
     """Call a native validator; reuse only an exact successful selected call."""
     scope=_CURRENT.get()
@@ -229,9 +273,15 @@ def validate_native(function,*args,**kwargs):
         scope.bypasses+=1;return function(*args,**kwargs)
     cached=scope.cache.get(key)
     if cached is not None and cached[0]is function:
-        scope.hits+=1;return copy.deepcopy(cached[1])
+        scope.hits+=1;return cached[1].copy()
     scope.misses+=1
-    result=_invoke_selected(scope,function,args,kwargs)
+    # Inside one export.bat run the installed game is fixed and the reader
+    # code is checked at the run's end, so a validated selected proof is
+    # derived once per run and shared with every later step and process.
+    result=run_proof('validate_native',
+        proof_key(function.__module__,function.__qualname__,args,kwargs,scope.pins),
+        lambda:_invoke_selected(scope,function,args,kwargs),
+        keep=lambda value:_shareable(value,scope))
     # This is a pure-validator API; a call that changes its own arguments or
     # closes/replaces the lexical scope cannot publish a reusable result.
     try:unchanged=key==(id(function),_argument(args),_argument(kwargs))
@@ -239,7 +289,7 @@ def validate_native(function,*args,**kwargs):
     if not unchanged or scope.closed or _CURRENT.get()is not scope:return result
     audit=result if isinstance(result,dict)else result[1]if type(result)is tuple and len(result)==2 and isinstance(result[1],dict)else None
     if not isinstance(audit,dict)or audit.get('status')!='validated'or not _proof_identity(audit,scope):return result
-    try:stored=copy.deepcopy(result);returned=copy.deepcopy(stored)
+    try:stored=_Snapshot(result);returned=stored.copy()
     except Exception:
         scope.bypasses+=1;return result
     scope.cache[key]=function,stored;scope.entries+=1

@@ -23,6 +23,7 @@ from scripts.webui.story.uid_batch import (
     load_current_uid_sources as load_uid_sources,
 )
 from scripts.webui.story import uid_source_store
+from scripts.webui.story import owner_projection_store
 from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 from scripts.common import (
@@ -9122,11 +9123,20 @@ def build_levelscript_interactive_narrative_story_contexts(
             raise ValueError("storyCurrentNarrative.both-selected-native-paths-required")
         if gameassembly is None:
             gameassembly, metadata = resolve_installed_native_inputs()
-        rows,audit=build(available_story_keys=available_story_keys,levelscript_root=levelscript_root,
-            reading_popup_path=reading_popup_path,interactive_table_parser=_parse_interactive_object_template_index,
-            gameassembly=gameassembly,metadata=metadata,
-            source_summary_path=source_summary_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json',
-            source_ledger_path=source_ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz')
+        summary=source_summary_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json'
+        ledger=source_ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz'
+        popup=Path(reading_popup_path)
+        rows,audit=owner_projection_store.reuse_or_build('levelscript-narrative',
+            json_root=Path(levelscript_root).parent,gameassembly=gameassembly,metadata=metadata,
+            summary_path=summary,ledger_path=ledger,source_roots=[levelscript_root],
+            extra=dict(availableStoryKeys=sorted(available_story_keys),levelscriptRoot=str(levelscript_root),
+                readingPopup=str(popup),readingPopupSha256=hashlib.sha256(popup.read_bytes()).hexdigest()
+                if popup.is_file() else None),
+            build=lambda:build(available_story_keys=available_story_keys,levelscript_root=levelscript_root,
+                reading_popup_path=reading_popup_path,interactive_table_parser=_parse_interactive_object_template_index,
+                gameassembly=gameassembly,metadata=metadata,source_summary_path=summary,source_ledger_path=ledger),
+            complete=lambda value:value[1].get('status')=='stored-configuration-complete',
+            progress=lambda text:print(text,flush=True))
     except (OSError,ValueError,KeyError,TypeError) as error:
         rows=[];audit=dict(status="validation_failed",narrativeConfigurationRows=0,
             runtimeNarrativeConsumerProved=False,playbackProved=False,absenceProved=False,
@@ -10868,27 +10878,38 @@ def build_leveldata_npc_patrol_radio_story_contexts(
         ledger = Path(source_ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz')
         if not summary.is_file() or not ledger.is_file():
             raise ValueError("storyNpcPatrol.authenticated-jsondata-receipt-required:" + str(summary) + ":" + str(ledger))
-        with CurrentNpcPatrolSource(leveldata_root.parent, gameassembly=gameassembly,
-                                   metadata=metadata, summary_path=summary,
-                                   ledger_path=ledger) as source:
-            for path in paths:
-                data = None
-                try:
-                    data = read_bytes_cached(path)
-                    frame = source.frame(path, data)
-                except (OSError, ValueError) as error:
-                    audit["failedFiles"] += 1
-                    if len(audit["failures"]) < 16:
-                        audit["failures"].append(failure(error, path, data))
-                    continue
-                if frame.get("schemaStatus") != "named_exact" or frame.get("bytesConsumed") != len(data):
-                    raise ValueError("storyNpcPatrol.complete-owner-eof-required")
-                audit["ownersClosed"] += 1
-                decoded = frame["fields"]["npcPatrol"]
-                rows.extend(_current_patrol_radio_configuration_rows(decoded, path, data, available_story_keys))
-            audit["sourceAudit"] = source.audit()
-        audit["radioConfigurationRows"] = len(rows)
-        audit["status"] = "partial" if audit["failedFiles"] else "stored_configuration_complete"
+        def build():
+            rows, fresh = [], copy.deepcopy(audit)
+            with CurrentNpcPatrolSource(leveldata_root.parent, gameassembly=gameassembly,
+                                       metadata=metadata, summary_path=summary,
+                                       ledger_path=ledger) as source:
+                for path in paths:
+                    data = None
+                    try:
+                        data = read_bytes_cached(path)
+                        frame = source.frame(path, data)
+                    except (OSError, ValueError) as error:
+                        fresh["failedFiles"] += 1
+                        if len(fresh["failures"]) < 16:
+                            fresh["failures"].append(failure(error, path, data))
+                        continue
+                    if frame.get("schemaStatus") != "named_exact" or frame.get("bytesConsumed") != len(data):
+                        raise ValueError("storyNpcPatrol.complete-owner-eof-required")
+                    fresh["ownersClosed"] += 1
+                    decoded = frame["fields"]["npcPatrol"]
+                    rows.extend(_current_patrol_radio_configuration_rows(decoded, path, data, available_story_keys))
+                fresh["sourceAudit"] = source.audit()
+            fresh["radioConfigurationRows"] = len(rows)
+            fresh["status"] = "partial" if fresh["failedFiles"] else "stored_configuration_complete"
+            return rows, fresh
+
+        rows, audit = owner_projection_store.reuse_or_build(
+            "leveldata-npc-patrol-radio", json_root=leveldata_root.parent,
+            gameassembly=gameassembly, metadata=metadata, summary_path=summary, ledger_path=ledger,
+            source_roots=[leveldata_root],
+            extra=dict(availableStoryKeys=sorted(available_story_keys), leveldataRoot=str(leveldata_root)),
+            build=build, complete=lambda value: value[1].get("status") == "stored_configuration_complete",
+            progress=lambda text: print(text, flush=True))
     except (OSError, ValueError, KeyError, TypeError) as error:
         rows = []
         audit.update(status="validation_failed", radioConfigurationRows=0,

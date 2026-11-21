@@ -22,6 +22,7 @@ import re
 import sys
 import tempfile
 
+from scripts.export_run import proof_key, run_dir, run_proof
 from scripts.game_data.game_file_store import GameFileStore, iter_game_tree, loose_packed_files
 from scripts.game_data.jsondata_blocks import JSON_BLOCKS, is_jsondata_identity
 from scripts.game_data.jsondata_source_provenance import (
@@ -288,8 +289,116 @@ def build_report(*, outer_path, ledger_path, export_root, expected_input_set_sha
     return report, result
 
 
+# Inventories this process has verified, keyed by the file-system identity of
+# everything the verification reads: the summary, the saved ledger, every
+# pinned outer/ledger/source/build/producer/chunk file, the export layout and
+# store (with its SQLite sidecars), and every entry of the exported Json tree
+# and of both assets roots' VFS trees (chunks and catalogs). A file counts as unchanged under the same
+# rule ``scripts.common.sha256_file`` applies: same path, volume, file index,
+# size and mtime. One Story build enters, replays and exits the same source
+# several times; each repeat is then a stat walk instead of a full byte
+# re-read of the export. A result is kept only when the identity taken after
+# a complete verification equals the one taken before it, and nothing is
+# written to disk, so every process still verifies the bytes once.
+_VERIFIED_INVENTORIES = {}
+_VERIFIED_INVENTORY_LIMIT = 4
+
+
+def _stat_identity(path):
+    path = os.path.abspath(os.fspath(path))
+    try:
+        observed = os.lstat(path)
+    except FileNotFoundError:
+        return (path, None)
+    return (path, observed.st_mode, observed.st_dev, observed.st_ino,
+            observed.st_size, observed.st_mtime_ns,
+            getattr(observed, "st_file_attributes", 0))
+
+
+def _tree_identity(root):
+    rows = []
+    pending = [os.fspath(root)]
+    while pending:
+        folder = pending.pop()
+        with os.scandir(folder) as entries:
+            for entry in entries:
+                observed = entry.stat(follow_symlinks=False)
+                link = entry.is_symlink() or getattr(entry, "is_junction", lambda: False)()
+                folder_entry = entry.is_dir(follow_symlinks=False)
+                # NTFS settles folder timestamps lazily; membership is already
+                # recorded by the walk, so only files contribute size and mtime.
+                rows.append((entry.path, observed.st_mode, link,
+                             getattr(observed, "st_file_attributes", 0),
+                             None if folder_entry else (observed.st_size, observed.st_mtime_ns,
+                                                        observed.st_ino)))
+                if folder_entry and not link:
+                    pending.append(entry.path)
+    return tuple(sorted(rows))
+
+
+def _verification_identity(summary, ledger_path):
+    provenance = summary["provenance"]
+    layout = ExportLayout(Path(summary["exportRoot"])).require()
+    outer_path = Path(provenance["outer"]["path"])
+    outer = json.loads(outer_path.read_bytes())
+    paths = [ledger_path, outer_path, provenance["ledger"]["path"], layout.layout_file,
+             layout.game_file_store_path,
+             *(str(layout.game_file_store_path) + suffix for suffix in ("-wal", "-shm", "-journal"))]
+    for role in ("producerInputs", "sourceFingerprints", "buildFingerprints",
+                 "selectedChunkFingerprints"):
+        paths.extend(row["path"] for row in provenance.get(role) or ())
+    vfs = []
+    for role in ("primaryAssets", "fallbackAssets"):
+        root = Path(outer[role]) / "VFS"
+        vfs.append((role, os.path.realpath(root), _tree_identity(root)))
+    return (_digest(summary), os.path.realpath(layout.json_dir),
+            tuple(_stat_identity(path) for path in paths),
+            _tree_identity(layout.json_dir), tuple(vfs))
+
+
 def verify_saved_inventory(summary, *, ledger_path):
-    """Recompute all source facts; a saved report never supplies grammar."""
+    """Recompute all source facts; a saved report never supplies grammar.
+
+    Within one process a repeat over unchanged files reuses the first complete
+    verification (see ``_VERIFIED_INVENTORIES``). Inside one ``export.bat`` run,
+    whose installed game and export are fixed once its pages start building,
+    the verification of a given saved summary and ledger is shared by every
+    later process of the run (``scripts.export_run``).
+    """
+    if run_dir() is not None:
+        try:
+            ledger = Path(ledger_path).resolve()
+            stat = ledger.stat()
+            key = proof_key(summary, ledger, stat.st_size, stat.st_mtime_ns)
+        except (OSError, TypeError, ValueError):
+            key = None
+        return run_proof("jsondata_inventory", key,
+                         lambda: _verify_in_process(summary, ledger_path),
+                         keep=lambda result: isinstance(result, dict))
+    return _verify_in_process(summary, ledger_path)
+
+
+def _verify_in_process(summary, ledger_path):
+    try:
+        identity = _verification_identity(summary, ledger_path)
+    except (OSError, KeyError, TypeError, ValueError, AttributeError, CensusGateError):
+        identity = None
+    if identity is not None and identity in _VERIFIED_INVENTORIES:
+        return dict(_VERIFIED_INVENTORIES[identity])
+    result = _verify_saved_inventory(summary, ledger_path=ledger_path)
+    if identity is not None:
+        try:
+            unchanged = _verification_identity(summary, ledger_path) == identity
+        except (OSError, KeyError, TypeError, ValueError, AttributeError, CensusGateError):
+            unchanged = False
+        if unchanged:
+            if len(_VERIFIED_INVENTORIES) >= _VERIFIED_INVENTORY_LIMIT:
+                _VERIFIED_INVENTORIES.clear()
+            _VERIFIED_INVENTORIES[identity] = dict(result)
+    return result
+
+
+def _verify_saved_inventory(summary, *, ledger_path):
     provenance = summary["provenance"]
     producer_inputs = provenance.get("producerInputs")
     if not isinstance(producer_inputs, list):

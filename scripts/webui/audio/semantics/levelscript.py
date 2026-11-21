@@ -592,7 +592,7 @@ def collect_levelscript_audio_semantics(export_root, *, decode_file=None, cue_se
            "AnnounceAudioOnTarget","PlayVoice","PlayVoiceNarrative"}
     options=dict(gameassembly=gameassembly,metadata=metadata,action_names=names)
     if family_receipt_path is not None:options['receipt_path']=family_receipt_path
-    try:
+    def build():
         with CurrentAudioSource(export_root,**options) as source:
             def decode(path,data):
                 try:frame=source.frame(path,data)
@@ -610,7 +610,26 @@ def collect_levelscript_audio_semantics(export_root, *, decode_file=None, cue_se
             result['sourceAudit']=source.audit()
             result['levelSequencePlayActions']=sequences.result(result['sourceAudit'])
             return result
+    def complete(result):
+        return (result.get('stats',{}).get('decodeFailures')==0 and not result.get('sourceDiagnostics')
+                and result['levelSequencePlayActions']['stats'].get('decodeFailures')==0
+                and result['levelSequencePlayActions']['stats'].get('status')=='current-authenticated-known-action-profile'
+                and result.get('sourceAudit',{}).get('status')=='current-authenticated-complete-owner-source')
+    try:
+        if family_receipt_path is not None:
+            return build()
+        from scripts.source_paths import ExportLayout as _Layout
+        from scripts.webui.story import owner_projection_store
+        layout=_Layout(export_root);evidence=layout.evidence_dir/'animestudio'
+        return owner_projection_store.reuse_or_build('audio-levelscript',json_root=layout.json_dir,
+            gameassembly=gameassembly,metadata=metadata,summary_path=evidence/'jsondata_source_current.json',
+            ledger_path=evidence/'jsondata_source_files_current.jsonl.gz',
+            source_roots=[layout.json_dir/'LevelScriptData'],
+            extra=dict(exportRoot=str(Path(export_root).resolve()),actionNames=sorted(names),
+                cueSemantics=owner_projection_store.digest(cue_semantics)),
+            build=build,complete=complete,progress=lambda text:print(text,flush=True))
     except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+        if 'OwnerProjectionStore' in str(error):raise
         from scripts.common import native_evidence_required
         if native_evidence_required():raise
         return dict(levelSequencePlayActions=sequences.result(error=error),eventContexts={},cueInvocations=[],dynamicEventBindings=[],resolvedDynamicEventBindings=[],

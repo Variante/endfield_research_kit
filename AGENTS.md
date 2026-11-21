@@ -454,6 +454,18 @@ report actionable diagnostics:
 Improve a validator's diagnostics before another full rebuild when its current
 result is only a generic status such as `validation_failed`.
 
+One `export.bat` run checks each input once. `scripts/webui/export.py` opens
+a run (`scripts/export_run.py`, `ENDFIELD_EXPORT_RUN`, a folder under
+`webui/data/_build/export_run/`) around evidence preparation and every page
+build. The installed game is assumed not to change during the run. The
+complete reader-code snapshot is taken at the run's start and end; checks in
+between compare against the start snapshot, and a reader change fails the run.
+A validated native proof (`validate_native`, the LevelScript owner proof, the
+action-route derivations) is derived once and shared with every later step,
+page and process of that run, then deleted with the run folder. No proof
+outlives its run. Outside `export.bat` (direct `python -m` builds, tests) each
+call keeps its own checks.
+
 Steps that read the installed IL2CPP binaries gate on
 `common.check_installed_native_inputs`, which resolves `GameAssembly.dll` and
 `global-metadata.dat` from `ENDFIELD_GAME_ROOT`, then `endfield_paths.bat`,

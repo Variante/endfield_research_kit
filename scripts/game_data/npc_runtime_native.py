@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs
+from scripts.export_run import proof_key,run_proof
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import open_native_image,native_validation_failure
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs,reader_input_changes
@@ -23,7 +24,8 @@ def validate(*,game_root=None,contract_path=CONTRACT_PATH,gameassembly=None,meta
         if failed:return failed
         paths={k:CONTRACTS_DIR/v for k,v in DEPENDENCIES.items()};before={k:p.read_bytes()for k,p in paths.items()};dependencies={k:json.loads(v)for k,v in before.items()}
         if any(v['nativeInputs']!=pins for v in dependencies.values()):raise ValueError('npcRuntime.dependency-native-inputs')
-        plan,proof=validate_components(open_native_image(gate.gameassembly,gate.metadata),pins,fact,dependencies)
+        plan,proof=run_proof('levelscript_leaf_native',proof_key('npc_runtime',reader,raw,before,str(gate.gameassembly),str(gate.metadata)),
+            lambda:validate_components(open_native_image(gate.gameassembly,gate.metadata),pins,fact,dependencies))
         after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return dict(status=after.status,detail='Native inputs changed: '+after.detail)
         failed=check_unity_input(gate.gameassembly,pins)

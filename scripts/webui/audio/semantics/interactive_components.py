@@ -101,11 +101,38 @@ def collect_interactive_component_contexts(
     if decoder is None and _current_reader is None and ExportLayout(export_root).layout_file.is_file():
         from scripts.game_data.memorypack.interactive_current_source import complete_interactive_reader
 
-        with complete_interactive_reader(export_root, game_root=game_root) as current_reader:
-            return collect_interactive_component_contexts(
-                export_root, table_decoder=table_decoder, game_root=game_root,
-                _current_reader=current_reader,
-            )
+        def build() -> dict[str, list[dict[str, Any]]]:
+            with complete_interactive_reader(export_root, game_root=game_root) as current_reader:
+                return collect_interactive_component_contexts(
+                    export_root, table_decoder=table_decoder, game_root=game_root,
+                    _current_reader=current_reader,
+                )
+
+        if table_decoder is not None:
+            return build()
+        # The reader raises on any refused owner, so every returned value is a
+        # complete scan and may be stored.
+        from scripts.common import resolve_installed_native_inputs
+        from scripts.webui.story import owner_projection_store
+
+        layout = ExportLayout(export_root)
+        if game_root is None:
+            gameassembly, metadata = resolve_installed_native_inputs(
+                export_summary_path=layout.root / "meta/extraction/summary.json")
+        else:
+            gameassembly = Path(game_root).resolve().parent / "GameAssembly.dll"
+            metadata = Path(game_root).resolve() / "il2cpp_data/Metadata/global-metadata.dat"
+        evidence = layout.evidence_dir / "animestudio"
+        return owner_projection_store.reuse_or_build(
+            "audio-interactive-components", json_root=layout.json_dir,
+            gameassembly=gameassembly, metadata=metadata,
+            summary_path=evidence / "jsondata_source_current.json",
+            ledger_path=evidence / "jsondata_source_files_current.jsonl.gz",
+            source_roots=[layout.json_dir / "Interactive", layout.json_dir / "LevelScriptData"],
+            extra=dict(exportRoot=str(Path(export_root).resolve()),
+                       gameRoot=str(Path(game_root).resolve()) if game_root is not None else None),
+            build=build, complete=lambda value: True, progress=lambda text: print(text, flush=True),
+        )
 
     if decoder is None:
         def decoder(_path: Path, data: bytes, _size: int) -> dict[str, Any]:

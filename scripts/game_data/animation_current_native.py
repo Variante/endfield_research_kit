@@ -9,6 +9,7 @@ from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.export_run import proof_key,run_proof
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes
 from scripts.game_data.memorypack import pooled_source_helper
 
@@ -136,7 +137,10 @@ def current_animation(*,game_root,strings,families=('char-interact',)):
     need('selected-native-paths',Path(gate.gameassembly).resolve()==root.parent/'GameAssembly.dll'
         and Path(gate.metadata).resolve()==root/'il2cpp_data/Metadata/global-metadata.dat')
     need('selected-UnityPlayer',pooled_source_helper.check_unity_input(gate.gameassembly,pins)is None)
-    proof=validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,families=families)
+    # One export run derives this image-only proof once for every process.
+    proof=run_proof('animation_current_native',proof_key('animation_current',source_before,pool_before,
+        tuple(families),pooled_source_helper.CONTRACT_PATH.read_bytes(),str(gate.gameassembly),str(gate.metadata)),
+        lambda:validate_on_image(open_native_image(gate.gameassembly,gate.metadata),pins,families=families))
     operation=_CurrentAnimationOperation(proof,root,strings,_grant=_PUBLIC_NATIVE_GRANT)
     try:yield operation
     finally:

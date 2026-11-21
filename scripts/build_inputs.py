@@ -23,6 +23,37 @@ _disposable_roots = tuple(os.path.normcase(os.path.realpath(os.path.join(root, n
                           for name in ("tmp", "scratch", "reports", "report"))
 
 
+# The audit hook sees every open; resolving each full path walks every
+# component. A plain (non-link) leaf resolves through its parent folder, and a
+# folder's resolution is reused within the process once seen as a directory.
+# A link or junction leaf is always resolved in full.
+_PARENT_REALPATHS: dict[str, str] = {}
+_PARENT_REALPATH_LIMIT = 65536
+_REPARSE_POINT = 0x400
+
+
+def _resolved(value: str) -> str:
+    absolute = os.path.abspath(value)
+    try:
+        observed = os.lstat(absolute)
+    except OSError:
+        observed = None
+    if observed is None or os.path.islink(absolute) or (
+            getattr(observed, "st_file_attributes", 0) & _REPARSE_POINT):
+        return os.path.realpath(absolute)
+    parent, leaf = os.path.split(absolute)
+    if not leaf:
+        return os.path.realpath(absolute)
+    real_parent = _PARENT_REALPATHS.get(parent)
+    if real_parent is None:
+        real_parent = os.path.realpath(parent)
+        if os.path.isdir(parent):
+            if len(_PARENT_REALPATHS) >= _PARENT_REALPATH_LIMIT:
+                _PARENT_REALPATHS.clear()
+            _PARENT_REALPATHS[parent] = real_parent
+    return os.path.join(real_parent, leaf)
+
+
 def disposable_input(path) -> bool:
     if isinstance(path, int) or path is None:
         return False
@@ -32,7 +63,7 @@ def disposable_input(path) -> bool:
         value = unquote(urlsplit(value).path)
         if os.name == 'nt' and value.startswith('/') and len(value) > 2 and value[2] == ':':
             value = value[1:]
-    absolute = os.path.normcase(os.path.realpath(value))
+    absolute = os.path.normcase(_resolved(value))
     return any(absolute == root or absolute.startswith(root + os.sep)
                for root in _disposable_roots)
 

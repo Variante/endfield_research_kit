@@ -26,6 +26,8 @@ from pathlib import Path
 if __package__ in {None, ""}:
     raise SystemExit("Run this maintained entry point as: python -m scripts.webui.export")
 
+from scripts.export_run import export_run
+from scripts.game_data.levelscript_reader_inputs import fresh_complete_reader_inputs, reader_input_changes
 from scripts.common import require_export_layout, resolve_installed_game_data_root
 from scripts.game_data.extraction import benchmark_export
 from scripts.game_data.extraction.export_changed_game_data import exclusive_workflow_lock
@@ -313,6 +315,29 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
 
+def _build_pages(args: argparse.Namespace, plan: BuildPlan, game_root: Path, export_root: Path,
+                 cli: Path, evidence_phases: list) -> tuple[int, list]:
+    """Prepare evidence and build the pages inside one export run."""
+    returncode = 0
+    if plan.evidence_families:
+        stage("Preparing current source evidence")
+        command = [sys.executable, "-m", "scripts.game_data.extraction.build_evidence",
+                   "--game-root", str(game_root), "--export-root", str(export_root),
+                   "--animestudio", str(cli)]
+        for family in plan.evidence_families:
+            command += ["--family", family]
+        result = run_task(TaskSpec("build_evidence", (CommandSpec(tuple(command)),)))
+        returncode = result["returnCode"]
+        evidence_phases.append({"name": "evidence", "tasks": [{"name": "build_evidence", "seconds": 0,
+            **result, "after": [], "status": "failed" if returncode else "ok"}]})
+
+    runs = []
+    if not returncode:
+        stage(f"Building {', '.join(PAGES[page].title for page in plan.pages)}")
+        returncode, runs = run_graph(plan.tasks, args.webui_jobs)
+    return returncode, runs
+
+
 def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, export_root: Path) -> int:
     # Children resolve the installed client and export root from these, so a
     # --game-root run agrees across every stage.
@@ -350,22 +375,15 @@ def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, e
     started = time.perf_counter()
     evidence_phases = []
     returncode = 0
-    if plan.evidence_families:
-        stage("Preparing current source evidence")
-        command = [sys.executable, "-m", "scripts.game_data.extraction.build_evidence",
-                   "--game-root", str(game_root), "--export-root", str(export_root),
-                   "--animestudio", str(cli)]
-        for family in plan.evidence_families:
-            command += ["--family", family]
-        result = run_task(TaskSpec("build_evidence", (CommandSpec(tuple(command)),)))
-        returncode = result["returnCode"]
-        evidence_phases.append({"name": "evidence", "tasks": [{"name": "build_evidence", "seconds": 0,
-            **result, "after": [], "status": "failed" if returncode else "ok"}]})
-
     runs = []
-    if not returncode:
-        stage(f"Building {', '.join(PAGES[page].title for page in plan.pages)}")
-        returncode, runs = run_graph(plan.tasks, args.webui_jobs)
+    try:
+        with export_run(REPO_ROOT / "webui" / "data" / "_build" / "export_run",
+                        reader_snapshot_fresh=fresh_complete_reader_inputs,
+                        reader_changes=reader_input_changes):
+            returncode, runs = _build_pages(args, plan, game_root, export_root, cli, evidence_phases)
+    except RuntimeError as exc:
+        log(f"export run check failed: {exc}")
+        returncode = returncode or 1
     wall_seconds = round(time.perf_counter() - started, 3)
     phases = evidence_phases + phase_payloads(runs)
     serial = round(sum(task["seconds"] for phase in phases for task in phase["tasks"]), 3)

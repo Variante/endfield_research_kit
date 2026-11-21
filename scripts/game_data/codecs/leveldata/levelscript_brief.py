@@ -158,6 +158,11 @@ def _find_offsets(data: bytes, needle: bytes) -> list[int]:
 def find_levelscript_brief_data_entries(data: bytes, script_id: int) -> list[dict[str, Any]]:
     if not data or data[0] != 0x2B or check_root_native_inputs().status != "validated":
         return []
+    return _find_gated_entries(data, script_id)
+
+
+def _find_gated_entries(data: bytes, script_id: int) -> list[dict[str, Any]]:
+    """Entries for one id once the caller has checked the tag and native gate."""
     return [
         entry
         for offset in _find_offsets(data, script_id.to_bytes(8, "little", signed=False))
@@ -170,9 +175,12 @@ def find_levelscript_brief_data_entries(data: bytes, script_id: int) -> list[dic
 def parse_leveldata_levelscript_brief_dictionary(
     data: bytes, candidate_script_ids: set[int],
 ) -> dict[int, dict]:
+    # One native gate per dictionary: a failed gate empties every id alike.
+    if not data or data[0] != 0x2B or check_root_native_inputs().status != "validated":
+        return {}
     entries: list[dict[str, Any]] = []
     for script_id in sorted(candidate_script_ids):
-        entries.extend(find_levelscript_brief_data_entries(data, script_id))
+        entries.extend(_find_gated_entries(data, script_id))
     entries.sort(key=lambda entry: int(entry["keyOffset"]))
     if not entries or len({int(row["keyOffset"]) for row in entries}) != len(entries):
         return {}

@@ -21,8 +21,18 @@ SCHEMA = "endfield.levelscript-complete-reader-inputs.v1"
 
 
 def snapshot_string_pool_inputs(json_dir: Path) -> dict[str, Any]:
-    """Bind saved path resolutions to the complete selected exported page set."""
-    root=(Path(json_dir)/'StringPool').resolve();rows=[]
+    """Bind saved path resolutions to the complete selected exported page set.
+
+    Inside one export.bat run the export is fixed, so the page set is
+    measured once per run (``scripts.export_run``).
+    """
+    root=(Path(json_dir)/'StringPool').resolve()
+    from scripts.export_run import proof_key, run_proof
+    return run_proof('string_pool_inputs', proof_key(root), lambda: _measure_string_pool(root))
+
+
+def _measure_string_pool(root: Path) -> dict[str, Any]:
+    rows=[]
     for path in sorted(root.glob('StringPool*.byte')):
         if not PAGE_RE.fullmatch(path.name):continue
         raw=path.read_bytes()
@@ -58,7 +68,18 @@ def snapshot_complete_reader_inputs() -> dict[str, Any]:
     Delegated results confer no completed receipt before those outer checks.
     """
     from scripts.game_data.memorypack.operation_native_validation import _owned_reader_snapshot
+    from scripts.export_run import reader_snapshot
+    # One export.bat run snapshots the reader code at its start and end; every
+    # check in between compares against that start snapshot.
+    shared = reader_snapshot()
+    if shared is not None:
+        return shared
     return _owned_reader_snapshot(_snapshot_complete_reader_inputs_fresh)
+
+
+def fresh_complete_reader_inputs() -> dict[str, Any]:
+    """Hash the complete reader set now, ignoring any shared run snapshot."""
+    return _snapshot_complete_reader_inputs_fresh()
 
 
 def _snapshot_complete_reader_inputs_fresh() -> dict[str, Any]:

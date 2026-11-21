@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 import struct
+import threading
 from pathlib import Path
 from typing import Any, Callable
 
@@ -41,6 +43,43 @@ from scripts.game_data.string_pool import StringPool, export_string_pool
 READER_ERRORS = (IndexError, KeyError, TypeError, ValueError, struct.error)
 
 JSON_ROOT = "game/Json/"
+
+
+_POOLS: dict[str, tuple[tuple, StringPool | None]] = {}
+_POOLS_LOCK = threading.Lock()
+
+
+def _pool_pages_fingerprint(pool_dir: Path) -> tuple:
+    try:
+        with os.scandir(pool_dir) as entries:
+            return tuple(sorted(
+                (entry.name, stat.st_size, stat.st_mtime_ns)
+                for entry in entries
+                if entry.is_file() and (stat := entry.stat())
+            ))
+    except FileNotFoundError:
+        return ()
+
+
+def _export_pool(export_root: Path) -> StringPool | None:
+    """The export's string pool, reused while its page files are unchanged.
+
+    Opening a pool reads every page header and each decoded page again, so a
+    fresh pool per payload made one Updates scan read the whole pool once per
+    file. The pool is reopened when any page's name, size or mtime changes, so
+    a rewritten pool is never served from the cache.
+    """
+
+    json_dir = Path(export_root) / "game" / "Json"
+    fingerprint = _pool_pages_fingerprint(json_dir / "StringPool")
+    key = os.path.normcase(os.path.abspath(json_dir))
+    with _POOLS_LOCK:
+        cached = _POOLS.get(key)
+        if cached is not None and cached[0] == fingerprint:
+            return cached[1]
+        pool = export_string_pool(json_dir)
+        _POOLS[key] = (fingerprint, pool)
+        return pool
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -129,11 +168,7 @@ def render_decoded_payload(
         return None
     decoder, call = route
     try:
-        strings = (
-            export_string_pool(export_root / "game" / "Json")
-            if export_root is not None
-            else None
-        )
+        strings = _export_pool(export_root) if export_root is not None else None
         result = call(rel_path, data, strings)
     except READER_ERRORS:
         return None

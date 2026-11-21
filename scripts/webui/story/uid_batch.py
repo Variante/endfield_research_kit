@@ -2,7 +2,9 @@
 
 The installed-format reader remains in game_data. These operations select
 current source files and the explicit native build; they grant no owner EOF
-or corpus authority, and keep no native proof across calls.
+or corpus authority. Outside an ``export.bat`` run they keep no native proof
+across calls; inside one, proofs are shared for the rest of that run only
+(``scripts.export_run``).
 
 Current-owner reads may reuse rows an earlier fully verified batch decoded
 from the same inputs (see ``uid_source_store``): the decoded rows are kept,
@@ -77,11 +79,17 @@ def _replay_stored_sources(store, owner, *, family, pool_root, game_root, wanted
         if progress:
             progress(text)
 
+    code_paths = store.recorded_code()
+    if code_paths is None:
+        note('verified UID source store: no usable store; decoding afresh')
+        return None
+
     def measure():
         inputs = measure_batch_inputs(game_root, pool_root)
         return inputs, dict(
             key=uid_source_store.key_inputs(family=family, pool_root=pool_root,
-                game_root=game_root, batch_inputs=inputs),
+                game_root=game_root, batch_inputs=inputs, code_paths=code_paths),
+            reader=uid_source_store.canonical_digest(inputs['reader']),
             sourceFiles=uid_source_store.source_files(owner.summary, owner.ledger))
 
     try:
@@ -124,8 +132,10 @@ def _replay_stored_sources(store, owner, *, family, pool_root, game_root, wanted
     if after != before:
         raise LevelScriptDecodeBatchError('reused-source-input-drift', pool_root,
             'unchanged reader, native, StringPool and source inventory inputs',
-            sorted(f'{group}.{name}' for group in before for name in before[group]
-                   if before[group][name] != after[group].get(name)))
+            sorted(group if not isinstance(before[group], dict) else f'{group}.{name}'
+                   for group in before if before[group] != after[group]
+                   for name in (before[group] if isinstance(before[group], dict) else (group,))
+                   if not isinstance(before[group], dict) or before[group][name] != after[group].get(name)))
     for path in wanted:
         current = _signature(_read(path))
         if entry[path] != current:
@@ -271,10 +281,12 @@ def load_uid_sources(paths, *, game_root=None, expected_data=None, progress=None
                 if writer is not None:
                     # Keyed by the batch's own bookends: the inputs these rows
                     # were decoded from, not a later measurement.
+                    code_paths = uid_source_store.loaded_reader_code(audit['inputs'])
                     skipped = writer.commit(
                         uid_source_store.key_inputs(family=_family, pool_root=pool_root,
-                            game_root=selected_root, batch_inputs=audit['inputs']),
-                        uid_source_store.canonical_digest(owner.receipt_before))
+                            game_root=selected_root, batch_inputs=audit['inputs'],
+                            code_paths=code_paths),
+                        uid_source_store.canonical_digest(owner.receipt_before), code_paths)
                     if progress:
                         progress('verified UID source store '
                             + ('updated' if skipped is None else f'not updated ({skipped})'))

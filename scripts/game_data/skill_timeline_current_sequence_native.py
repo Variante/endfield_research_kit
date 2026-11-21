@@ -10,6 +10,7 @@ from pathlib import Path
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import native_validation_failure,open_native_image
+from scripts.export_run import proof_key,run_proof
 from scripts.game_data.il2cpp.rgctx_symbols import validate_claims
 from scripts.game_data.levelscript_reader_inputs import (
     snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes)
@@ -1248,10 +1249,16 @@ def validate_current_native_contract(*,game_root=None,gameassembly=None,metadata
         if gate.status!='validated':return dict(status=gate.status,programs=[],capabilities={},detail=gate.detail,failedCheck='installed-native-inputs')
         if failed:=pooled_source_helper.check_unity_input(gate.gameassembly,inputs):return dict(programs=[],capabilities={},failedCheck='UnityPlayer.dll',**failed)
         from scripts.game_data.memorypack.generated_action_sources import _source_preparation_scope
-        image=open_native_image(gate.gameassembly,gate.metadata)
-        with _source_preparation_scope(image,inputs):
-            result=validate_on_image(image,inputs,contract=fact,
-                retain_source_provenance=retain_source_provenance)
+        def derive_proof():
+            image=open_native_image(gate.gameassembly,gate.metadata)
+            with _source_preparation_scope(image,inputs):
+                return validate_on_image(image,inputs,contract=fact,
+                    retain_source_provenance=retain_source_provenance)
+        # The derivation reads the selected image and reviewed reader inputs
+        # only, so one export run derives it once for every process.
+        result=run_proof('skill_timeline_sequence_native',proof_key('skill_timeline_sequence',sources,raw,
+            pooled_source_helper.CONTRACT_PATH.read_bytes(),str(gate.gameassembly),str(gate.metadata),
+            retain_source_provenance),derive_proof)
         after=_gate(inputs,gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return dict(status=after.status,programs=[],capabilities={},detail=after.detail,failedCheck='installed-native-inputs-bookend')
         if failed:=pooled_source_helper.check_unity_input(gate.gameassembly,inputs):return dict(programs=[],capabilities={},failedCheck='UnityPlayer.dll-bookend',**failed)
