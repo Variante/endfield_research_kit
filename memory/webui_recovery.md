@@ -427,6 +427,9 @@ workers. `--asset-jobs N` limits AnimeStudio workers. Use
 
 Updates compares saved complete exports with `build_updates.bat OLD NEW`;
 export runs do not manage comparison snapshots or publish Updates.
+`python -m scripts.webui.client_update` is the one place that does: after a
+client update it archives the export, extracts in place, and refuses page
+builds while an extracted change was not predicted from the VFS diff.
 
 ## Shared contracts
 

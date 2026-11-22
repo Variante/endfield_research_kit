@@ -681,6 +681,9 @@ def files_match_for_prune(previous_path: Path, current_path: Path) -> bool:
         current_stat = current_path.stat()
     except OSError:
         return False
+    # Hard links to one file (client_update.py's archive) are equal by identity.
+    if os.path.samestat(previous_stat, current_stat):
+        return True
     if previous_stat.st_size != current_stat.st_size:
         return False
     try:

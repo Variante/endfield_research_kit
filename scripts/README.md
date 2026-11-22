@@ -79,6 +79,7 @@ depth-computed repo root; run directly as a file it exits with the
 | Extract every structured block and Unity class | `.\export.bat debug --from-game` |
 | Story recovery loop | `python -m scripts.webui.story.build --languages CN --default-language CN` |
 | Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue` |
+| Refresh after a game update (archive, extract, verify, pages, Updates) | `python -m scripts.webui.client_update` (`--plan-only` first; `--resume` after a stop) |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
 | Regenerate the export workflow SVG from the page registry | `python -m scripts.webui.export_diagram` |
 | Rebuild the Recovery progress page | `python -m scripts.webui.recovery.build_recovery` |
@@ -867,9 +868,20 @@ live emitter/listener identities or current control values.
 
 ## Updates
 
-Page export and Updates publication are separate commands. Keep a complete
-previous export before refreshing the current export with `export.bat
---from-game`, then compare the saved pair.
+Page export and Updates publication are separate commands. After a client
+update, `python -m scripts.webui.client_update` runs the whole refresh and
+keeps the previous export: `package_diff.py` compares the installed VFS with
+the export's audit ledger and predicts the outputs it replaces (`--plan-only`
+stops there; an up-to-date export stops unless `--force`); the export is
+renamed to `<export>_<label>` and snapshotted back in place (Unity media
+hard-linked, the rest copied, so recorded absolute paths stay valid);
+`export.py PAGES --from-game --extract-only` extracts; every changed file and
+store row is checked against the prediction, and an unpredicted change stops
+before pages unless `--accept-unexpected`; then pages build (`--decode-audio`
+for Audio), Updates compares the pair and prunes the archive's identical game
+files, and the archive's `meta/` is removed, so it keeps only game data. Phases resume with
+`--resume`; `--rollback` restores the old export until pages are built.
+Reports go to `reports/updates/client_update/<label>/`.
 
 Updates compare two complete layout-v4 export folders. Pass `OLD NEW`, or
 configure `ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT` in

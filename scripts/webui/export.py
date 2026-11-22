@@ -51,7 +51,7 @@ TARGETS = (*PAGES, *PAGE_ALIASES, ALL, DEBUG)
 HELP_TOKENS = {"-h", "--help", "/?", "/h", "help"}
 #: The Story MonoBehaviour name filter the first-time setup passes through.
 STORY_NAME_FILTER = "--animestudio-story-monobehaviour-names"
-OWN_FLAGS = {"--from-game", "--skip-freshness", "--full-source-graph", "--show-plan"}
+OWN_FLAGS = {"--from-game", "--skip-freshness", "--full-source-graph", "--show-plan", "--extract-only", "--decode-audio"}
 OWN_VALUE_OPTIONS = {"--game-root", "--export-root", "--output", "--animestudio", "--webui-jobs"}
 
 USAGE = """\
@@ -105,6 +105,11 @@ Options:
                     Index every AssetMap row and emit follow-up reports.
   --show-plan       Print the pages, build tasks, extraction scope and
                     freshness requirements, then exit.
+  --extract-only    With --from-game: extract and check freshness, then stop
+                    before evidence and pages (client_update.py verifies the
+                    extraction in between).
+  --decode-audio    Decode CN audio from the installed client as --from-game
+                    does, without re-extracting anything else.
   --help            This text.
 
 With --from-game, any other option goes to
@@ -177,6 +182,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--webui-jobs", type=int, default=4)
     parser.add_argument("--full-source-graph", action="store_true")
     parser.add_argument("--show-plan", action="store_true")
+    parser.add_argument("--extract-only", action="store_true")
+    parser.add_argument("--decode-audio", action="store_true")
     # Pages may come before or after options.
     args = parser.parse_intermixed_args(own)
     args.exporter_args = exporter
@@ -200,6 +207,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         fail("debug already builds every page; name no other page with it")
     if args.webui_jobs < 1:
         fail("--webui-jobs must be at least 1")
+    if args.extract_only and not args.from_game:
+        fail("--extract-only needs --from-game")
     if args.exporter_args and not args.from_game:
         fail(
             f'"{args.exporter_args[0]}" only applies while re-extracting from the installed game; '
@@ -228,7 +237,7 @@ def build_options(args: argparse.Namespace, game_root: Path, export_root: Path) 
         jobs=args.webui_jobs,
         game_root=game_root,
         export_root=export_root,
-        decode_audio=args.from_game,
+        decode_audio=args.from_game or args.decode_audio,
         asset_mode="debug" if args.debug else "default",
         full_source_graph=args.full_source_graph,
         animestudio=args.animestudio or configured_animestudio_cli(),
@@ -371,6 +380,9 @@ def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, e
         if code:
             return code
     require_export_layout(export_root)
+    if args.extract_only:
+        stage("Extraction complete (--extract-only)")
+        return 0
 
     started = time.perf_counter()
     evidence_phases = []

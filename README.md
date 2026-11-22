@@ -112,6 +112,7 @@ not named keep their previously generated data.
 | `.\export.bat story audio --from-game` | **Story**, **Text**, **Audio** | Text-only Story plus the Audio page, which also gives Story its voice lines |
 | `.\export.bat map --from-game` | **Map** | Extracts only Map's inputs |
 | `.\export.bat debug --from-game` | Every page except **Updates** | Extracts every supported structured block and Unity class, then builds every page |
+| `python -m scripts.webui.client_update` | Every page, then **Updates** | After a game update: archives the old export, extracts the update, rebuilds, compares |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
 Page names for commands are `story`, `story-media`, `map`, `characters`,
@@ -120,9 +121,29 @@ Page names for commands are `story`, `story-media`, `map`, `characters`,
 it rebuilds from the existing export and refuses stale or missing inputs,
 naming the pages to re-extract. Use `--from-game` to refresh client data.
 
-For Updates, keep a complete previous export before refreshing the current
-export, then run `.\build_updates.bat OLD NEW` separately. Both folders must
-have a complete `layout.json` marker.
+### After a game update
+
+Close the game, then run one command:
+
+```bat
+python -m scripts.webui.client_update --plan-only
+python -m scripts.webui.client_update
+```
+
+`--plan-only` lists which game files changed and stops without writing
+anything. The full run keeps the old export as `export_full_<label>` (default
+label: the old export's date; pass `--label NAME` to choose one), extracts the update,
+checks every changed output against the plan, rebuilds every page, then
+builds **Updates** and removes archived files that did not change, keeping only the old game data. It
+takes several hours and a lot of memory, so run it in its own terminal. If it
+stops, `python -m scripts.webui.client_update --resume` continues from the
+unfinished step; it never re-extracts a finished step. Before pages are
+built, `--rollback` restores the old export. Afterwards point
+`ENDFIELD_PREVIOUS_EXPORT_ROOT` at the archive.
+
+To compare two export folders you already have, run
+`.\build_updates.bat OLD NEW`. Both folders must have a complete
+`layout.json` marker.
 
 ### Shared data, serving, and packaging
 
