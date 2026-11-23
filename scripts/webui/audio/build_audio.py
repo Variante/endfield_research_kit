@@ -84,6 +84,7 @@ from scripts.webui.audio.semantics import native_evidence
 from scripts.webui.audio.semantics import conversation_sidecar
 from scripts.webui.audio.semantics.authored_payload_event_names import (
     collect_authored_payload_event_names,
+    collect_string_pool_event_names,
     summarize_authored_payload_event_name_recovery,
 )
 from scripts.webui.audio.semantics.decoded_payload_event_names import (
@@ -669,7 +670,8 @@ def refresh_lua_audio_reference_cache(args: argparse.Namespace) -> dict[str, Any
         "references": references,
         "evidenceBoundary": (
             "Exact decrypted Lua string literals and callsite lines; they do not prove that the Lua branch ran. "
-            "Only luaPostEvent rows are promoted to Wwise Event-name candidates."
+            "luaPostEvent rows carry a direct call context; luaAudioLiteral rows offer name "
+            "candidates only, promoted when their FNV-1 hash equals a current HIRC Event object."
         ),
     }
     cache_path = LUA_AUDIO_REFERENCE_CACHE_PATH
@@ -3996,6 +3998,16 @@ def build_audio(args: argparse.Namespace) -> int:
         for row in lua_audio_references
         if row.get("kind") == "luaPostEvent" and str(row.get("name") or "").strip()
     }
+    # UI controllers keep their Event names in constants and tables
+    # (`local AUDIO_QTE_PROMPT = "Au_UI_Toast_QTE"`) and post the variable, so
+    # the literal line carries no call. The decrypted literal is still an exact
+    # spelling; like the pooled and payload literals it offers identity only,
+    # and only a current HIRC Event-object hash promotes it.
+    lua_literal_event_names = {
+        str(row.get("name") or "").strip().lower()
+        for row in lua_audio_references
+        if row.get("kind") == "luaAudioLiteral" and str(row.get("name") or "").strip()
+    }
     stage.mark("luaAudioReferenceCache")
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.is_dir():
@@ -4020,6 +4032,11 @@ def build_audio(args: argparse.Namespace) -> int:
         authored_payload_event_names,
         authored_payload_event_name_audit,
     ) = collect_authored_payload_event_names(args.export_root)
+    # Pooled builds replace those inline literals with StringPool indices, so
+    # the pool itself is the shipped spelling source for the moved members.
+    string_pool_event_names, string_pool_event_name_audit = collect_string_pool_event_names(
+        args.export_root
+    )
     decoded_payload_candidates, decoded_payload_grammar_reachable, decoded_payload_actions, decoded_payload_audit = collect_decoded_event_names(
         args.export_root,
         gameassembly=args.game_root.parent / "GameAssembly.dll",
@@ -4032,7 +4049,9 @@ def build_audio(args: argparse.Namespace) -> int:
         "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
         "typedAudioTableOrConfig": table_event_names,
         "luaPostEvent": set(lua_post_event_names),
+        "luaAudioLiteral": set(lua_literal_event_names),
         "authoredPayloadLiteral": set(authored_payload_event_names),
+        "authoredStringPoolEntry": set(string_pool_event_names),
         "decodedPayloadMember": decoded_payload_event_names,
     }
     stage.mark("collectAudioEventNames")
@@ -4385,6 +4404,21 @@ def build_audio(args: argparse.Namespace) -> int:
         wwise_event_inventory,
         fnv1_32=fnv1_32,
     )
+    string_pool_event_name_recovery = summarize_authored_payload_event_name_recovery(
+        string_pool_event_names,
+        string_pool_event_name_audit,
+        wwise_event_inventory,
+        fnv1_32=fnv1_32,
+    )
+    lua_literal_event_name_recovery = summarize_authored_payload_event_name_recovery(
+        lua_literal_event_names,
+        {
+            "source": "luaAudioLiteralWithoutDirectCallProof",
+            "candidateCount": len(lua_literal_event_names),
+        },
+        wwise_event_inventory,
+        fnv1_32=fnv1_32,
+    )
     stage.mark("authoredPayloadEventNameRecovery")
     event_entries = [
         entry
@@ -4509,6 +4543,16 @@ def build_audio(args: argparse.Namespace) -> int:
             "authoredPayloadRecoveredWwiseEventNames": int(
                 authored_payload_event_name_recovery.get("promotedCount") or 0
             ),
+            "stringPoolEventNameCandidates": int(
+                string_pool_event_name_recovery.get("candidateCount") or 0
+            ),
+            "stringPoolRecoveredWwiseEventNames": int(
+                string_pool_event_name_recovery.get("promotedCount") or 0
+            ),
+            "luaAudioLiteralEventNameCandidates": len(lua_literal_event_names),
+            "luaAudioLiteralRecoveredWwiseEventNames": int(
+                lua_literal_event_name_recovery.get("promotedCount") or 0
+            ),
             "decodedPayloadEventNameCandidates": int(
                 decoded_payload_event_name_recovery.get("candidateCount") or 0
             ),
@@ -4559,6 +4603,8 @@ def build_audio(args: argparse.Namespace) -> int:
             if key != "entries"
         },
         "authoredPayloadEventNameRecovery": authored_payload_event_name_recovery,
+        "stringPoolEventNameRecovery": string_pool_event_name_recovery,
+        "luaAudioLiteralEventNameRecovery": lua_literal_event_name_recovery,
         "decodedPayloadEventNameRecovery": decoded_payload_event_name_recovery,
         "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
         "luaAudioReferences": lua_audio_references,

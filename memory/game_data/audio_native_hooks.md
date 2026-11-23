@@ -118,8 +118,9 @@ previous build, and do not restore module-global default game paths.
   selection and opened-handle identity are not.
 - **PlaySound strings hash as written.** The checked default object and position
   branches of `PlaySoundAction._DoPlaySound` pass the serialized `_soundEvent`
-  untrimmed to `AudioHashGenerator.Compute(string)`, which folds ASCII case and
-  keeps whitespace; the installed `IFixPatchOut` set declares no replacement for
+  untrimmed to one anonymous string hash (on earlier builds
+  `AudioHashGenerator.Compute(string)`, with the same semantics), which folds
+  ASCII case and keeps whitespace; the installed `IFixPatchOut` set declares no replacement for
   those methods. Validator: `native_play_sound_string.py` against
   `audio_play_sound_string_native.json`, whose docstring holds the route detail
   and the trailing-space counterexample. Other PlaySound routes, live execution,

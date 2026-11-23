@@ -1,9 +1,9 @@
 {
-  "schema": "endfield.audio-play-sound-string-native.v1",
+  "schema": "endfield.audio-play-sound-string-native.v2",
   "status": "exact-pinned-build",
   "nativeInputs": {
-    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
   },
   "fieldContract": {
     "actionDataPointerOffset": 32,
@@ -14,54 +14,54 @@
     "doPlaySound": {
       "type": "Beyond.Gameplay.Core.PlaySoundAction",
       "method": "_DoPlaySound",
-      "token": "0x0600e76b",
-      "rva": 52766528,
-      "bodyLength": 549,
-      "bodySha256": "b5937aff64325d236c16fbe052b063429a2daba377ec77800d335721440ad43d"
+      "token": "0x0600f334",
+      "rva": 83381008,
+      "bodyLength": 495,
+      "bodySha256": "99ed02fa3e56f2ffa50c520c15e49a726f008806011f1ec14d4cde52063b5705"
     },
     "doPostEvent": {
       "type": "Beyond.Gameplay.Core.PlaySoundAction",
       "method": "_DoPostEvent",
-      "token": "0x0600e76d",
-      "rva": 52765888,
-      "bodyLength": 406,
-      "bodySha256": "8d2211ea8416b9010fc78810b70513af735db73656b7a3e0ffc3f0c004728a07"
+      "token": "0x0600f336",
+      "rva": 83381504,
+      "bodyLength": 404,
+      "bodySha256": "4ba54fe245309f5ddd6e90a742c1d371f418695d7bda2045f7a4fbba62f89a0c"
     },
     "doPostEventAtPosition": {
       "type": "Beyond.Gameplay.Core.PlaySoundAction",
       "method": "_DoPostEventAtPosition",
-      "token": "0x0600e76e",
-      "rva": 74741280,
+      "token": "0x0600f337",
+      "rva": 107011936,
       "bodyLength": 135,
-      "bodySha256": "dcc59aa16fc6f0c546cd2568a4d9ab90239ac5da9c7843959fd35e03fa3b2258"
-    },
-    "computeString": {
-      "type": "Beyond.Audio.AudioHashGenerator",
-      "method": "Compute",
-      "parameters": ["System.String"],
-      "token": "0x06000139",
-      "rva": 57750720,
-      "bodyLength": 249,
-      "bodySha256": "9e761ac27310c9ebe87741c2f6c1c58cf65f4c006c983b9ebcc2016688e5e647"
+      "bodySha256": "2329b3cb87e7bf5d688e2735c28d5e1b9a382cb8c8d827fee3dbb2aefe95130d"
     },
     "postAtPositionString": {
       "type": "Beyond.Gameplay.Audio.AudioBattleUtil",
       "method": "PostEventAtPositionWithMixingType",
-      "parameters": ["System.String", "System.Boolean", "UnityEngine.Vector3"],
-      "token": "0x0600a327",
-      "rva": 49244640,
-      "bodyLength": 144,
-      "bodySha256": "083bdff905da676ca0a3db66531aa03bd92ad93b3f9a6df453314298c0f4ed81"
+      "parameters": [
+        "System.String",
+        "System.Boolean",
+        "UnityEngine.Vector3"
+      ],
+      "token": "0x0600aba4",
+      "rva": 99776144,
+      "bodyLength": 127,
+      "bodySha256": "1c8812303a946225d76b6046e0c3fd55901d3e31d6ab8d5410808b1f023d0a44"
     }
   },
   "anonymousPostHelper": {
-    "rva": 52766304,
-    "bodyLength": 142,
-    "bodySha256": "3bdd0720b2ef7f0bda0bd3912f58460ccc63c4cc99aebd0501a19d7848fe0b99"
+    "rva": 83381920,
+    "bodyLength": 116,
+    "bodySha256": "6de518b168cdec260b8b19c4f5f90d518db1ad99a11af9fdf5af024e552e50df"
   },
   "evidenceBoundary": {
-    "exact": "The selected method identities, field offset, code bytes, and direct calls prove that the checked unpatched object and position branches consume the serialized sound string without trimming before AudioHashGenerator.Compute(string). The selected Compute(string) body folds ASCII uppercase and hashes the full UTF-16 string length, including spaces.",
+    "exact": "The selected method identities, field offset, code bytes, and direct calls prove that the checked unpatched object and position branches pass the serialized sound string, untrimmed, to one anonymous string-hash body. That body returns 0 for a null or empty string and otherwise hashes the full UTF-16 length with FNV-1 (offset basis 0x811c9dc5, prime 0x01000193), folding ASCII A-Z to lowercase; the object branch posts the result through AudioAdapter._PostEvent and the position branch through the UInt32 PostEventAtPositionWithMixingType overload. AudioHashGenerator.Compute(string) is no longer on either route.",
     "conditional": "The native method prologues test iFix patches; the default-body route applies only when those methods are not replaced at runtime. An authored PlaySoundAction also must execute and select the checked branch.",
-    "unresolved": "The iFix replacement branch, other PlaySound routing branches, live action execution, bank loading, Wwise posting outcome, and audible media are not established here."
+    "unresolved": "The iFix replacement branch, the AudioGlobalConfig pre-post branch in _DoPostEvent, other PlaySound routing branches, live action execution, bank loading, Wwise posting outcome, and audible media are not established here."
+  },
+  "anonymousStringHash": {
+    "rva": 91729808,
+    "bodyLength": 166,
+    "bodySha256": "ba667c132753308a209ff2dffe870412b3e490ab3fd8569a1a4aaaa1d3106d8e"
   }
 }

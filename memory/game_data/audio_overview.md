@@ -471,6 +471,20 @@ selected-leaf probability gate, so siblings need not sum to 100). Open inside
 them: plug-in-specific value tables, leaves with no same-bank declaration,
 runtime bus and leaf selection.
 
+0. **Re-derive the drifted native contracts before citing them.** The latest
+   client update changed both `GameAssembly.dll` and `AkSoundEngine.dll`. The
+   PlaySound string contract is re-derived by name (its route now calls an
+   anonymous string hash, not `Compute(string)`). The other Wwise contracts
+   that pin the earlier `AkSoundEngine.dll` (the Mastering family, Convolution
+   consumer, effect controls/scalar/small fill, package read/result/transform,
+   standard stream, provider retention, external package, builtin parameters)
+   and the `audio_native.json` catalog still gate `mismatched`, so their
+   consumers publish nothing. No copy of the earlier binaries survives, and
+   most rows pin only an RVA, length and body hash, so each must be re-found
+   from its own callers and constants on the installed DLL; Mastering
+   context/dynamics/shared/startup keep byte fragments that still occur
+   uniquely there and are the cheapest start. The prose below describes what
+   they proved on the pinned build.
 1. **Plug-in meanings and processing.** Anonymous bulk-read partitions and
    numeric update transformations are authenticated for Convolution Reverb and
    Mastering Suite. Convolution also has parameter-copy/media-consumer joins,

@@ -102,7 +102,9 @@ owner's docstring; the row counts belong to the generated Audio evidence.
 | route | rule, in one line | owner |
 | --- | --- | --- |
 | managed `AU_*` fields | `AudioHashGenerator` hash equals a current Event id: symbol-to-ID only, no setter/caller/trigger | `mono_behaviour.py` |
-| authored payload literals (`LevelScriptData`, `LevelScriptTemplateData`, `SpawnerConfig`, `Interactive`, `LevelData`) | length-prefixed `au_`/`bark_`/`radio_` literal whose FNV-1 equals an Event id: `exact` spelling; the holding field is unidentified, so the payload-to-Event relation is `structuralOnly` | `authored_payload_event_names.py` |
+| authored payload literals (`LevelScriptData`, `LevelScriptTemplateData`, `SpawnerConfig`, `Interactive`, `LevelData`) | length-prefixed `au_`/`bark_`/`radio_` literal whose FNV-1 equals an Event id: `exact` spelling; the holding field is unidentified, so the payload-to-Event relation is `structuralOnly`. Pooled builds ship no inline literal in any payload root | `authored_payload_event_names.py` |
+| JsonData `StringPool` entries | a whole pool entry in the managed `au_`/`bark_`/`radio_`/`vo_` set whose FNV-1 equals a current Event id: `exact` spelling, holder `structuralOnly`; non-grammar entries (`Play_au_*`, `indie_*`, `Stop`) are never promoted | `authored_payload_event_names.py` |
+| Lua literals off a call line | decrypted `au_` constant or table value (UI controllers post the variable): `exact` spelling, promoted only by a current Event id; no call or branch proof | `build_audio.py` (`luaAudioLiteral`) |
 | decoded `_soundEvent` members | member placement offers a candidate; only a selected HIRC Event-object hash promotes it | `decoded_payload_event_names.py` |
 | grammar preimages | head/tail recombination plus single-token substitution; promoted only when head and tail are each corroborated; weaker than a shipped string | `name_recovery.py` |
 | broad categories | final-media or Play-target equivalence gives a category, never a caller/trigger/status | `purpose.py`, `media_rows.py` |
@@ -146,10 +148,16 @@ AudioCueTable selection; neither does the authored name join.
   `au_`/`bark_`/`radio_` pattern find its own end and checked the length prefix
   afterwards; a greedy class runs past a string followed by a word character
   (`Au_Chr_0035_Liino_Skill_Pop` then `d`), so the candidate was dropped.
-  Driving the scan from the length prefix is stricter per candidate and added
-  over a thousand Event names a current Event object claims, a third of them to
-  Events with no other name (`gameplay_audio.length_prefixed_matches`). A source
-  counts as exhausted only once its reader is known to consume it exactly.
+  Driving the scan from the length prefix is stricter per candidate
+  (`gameplay_audio.length_prefixed_matches`). A source counts as exhausted only
+  once its reader is known to consume it exactly.
+- **Pooled builds moved the literals.** The current client stores payload
+  strings in the global JsonData `StringPool` and the records hold i32 indices,
+  so the inline scan finds no `au_`/`bark_`/`radio_` literal in any payload
+  root (SkillData, BuffData, Interactive, LevelData, LevelScript*, SpawnerConfig).
+  The decoded-member route already reads members through the pool; whole-pool
+  entries are the remaining spelling source and name about a thousand Events
+  that member decoding does not reach (`collect_string_pool_event_names`).
 - **The member is a better handle than the spelling, but not proof.** Events
   such as `eny_0125_fdcentur_lance_skill_01_a_hit` never match the byte grammar,
   and the grammar must not be widened on a suffix. The decoded-member source

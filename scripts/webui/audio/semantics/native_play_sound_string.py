@@ -2,36 +2,43 @@
 
 The reviewed contract pins method identities and bytes for one installed
 GameAssembly/metadata pair. The dynamic witnesses below also require the
-serialized ``_soundEvent`` field to reach ``Compute(string)`` through the
-checked object and position branches. iFix replacement and runtime execution
-are outside this static proof.
+serialized ``_soundEvent`` field to reach one anonymous string-hash body
+through the checked object and position branches. iFix replacement and
+runtime execution are outside this static proof.
 
 The audit covers the unpatched PlaySound object and position routes from the
-serialized sound string through ``AudioHashGenerator.Compute(string)``, fails
-closed on a different native pair, and writes
-``reports/audio/play_sound_string_native.json``. The optional
-``--event-literal`` and ``--audio-source-index`` compare the raw and
+serialized sound string to the posted integer, fails closed on a different
+native pair, and writes ``reports/audio/play_sound_string_native.json``. The
+optional ``--event-literal`` and ``--audio-source-index`` compare the raw and
 hypothetically trimmed hashes with one scanned HIRC inventory; that comparison
 does not observe live posting.
 
 The checked routes, both reached from ``PlaySoundAction._DoPlaySound``:
 
 * object branch: reads ``PlaySoundActionData._soundEvent`` and passes that
-  pointer to its post helper, which checks for a nonempty string, calls
-  ``AudioHashGenerator.Compute(string)`` and sends the integer to
-  ``AudioAdapter._PostEvent``;
+  pointer to an anonymous post helper, which calls the string hash and sends
+  the integer to ``AudioAdapter._PostEvent``;
 * position branch: passes the same field to
   ``AudioBattleUtil.PostEventAtPositionWithMixingType(string, ...)``, which
-  checks for a nonempty string, calls the same ``Compute(string)`` and
-  forwards the integer to its position-post overload.
+  calls the same string hash and forwards the integer to its UInt32
+  position-post overload.
 
-The selected ``Compute(string)`` hashes the whole managed UTF-16 string,
-folding ASCII uppercase and trimming nothing, so these default bodies keep a
-trailing space through hashing. The ``SkillData/eny_0080_reaper_skill_left``
-sound string ends in a space: raw and trimmed spellings hash differently and,
-in the scanned CN HIRC set, only the trimmed id is an Event object. That is a
-counterexample to silently trimming authored strings, not proof of which
-branch ran or what Wwise did with a post.
+Since the build that moved strings into the JsonData StringPool, neither
+route calls ``AudioHashGenerator.Compute(string)``; both call one unnamed
+body (``anonymousStringHash``). Its byte witnesses (FNV-1 offset basis and
+prime, ``A``-``Z`` range test, ``+0x20`` fold) and ordered rows prove it
+returns 0 for a null or empty string and otherwise hashes every UTF-16 unit
+with ASCII uppercase folded and nothing trimmed -- the same semantics as
+``Compute``. So these default bodies keep a trailing space through hashing.
+The ``SkillData/eny_0080_reaper_skill_left`` sound string ends in a space:
+raw and trimmed spellings hash differently and, in the scanned CN HIRC set,
+only the trimmed id is an Event object. That is a counterexample to silently
+trimming authored strings, not proof of which branch ran or what Wwise did
+with a post.
+
+``_DoPostEvent`` also has a conditional pre-branch that posts an
+``AudioGlobalConfig`` Event id before the checked call; it is listed as
+unresolved in the contract and not validated here.
 
 Both methods test iFix patch state before their default bodies. A
 MD5-verified dump of the installed ``IFixPatchOut`` set declares no
@@ -59,8 +66,20 @@ from scripts.webui.audio.semantics.identifiers import audio_hash_generator_compu
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "audio_play_sound_string_native.json"
-SCHEMA = "endfield.audio-play-sound-string-native.v1"
+SCHEMA = "endfield.audio-play-sound-string-native.v2"
 DEFAULT_OUTPUT = REPO_ROOT / "reports/audio/play_sound_string_native.json"
+
+
+# Byte witnesses for the hash loop. The FNV prime multiply and the 16-bit
+# A-Z range compare decode as raw bytes in the instruction index, so they are
+# matched on the selected body bytes instead.
+HASH_BYTE_WITNESSES = (
+    ("fnv1-offset-basis", "41b8c59d1c81"),          # mov r8d, 0x811c9dc5
+    ("ascii-upper-range", "418d51bf6683fa19"),      # lea edx,[r9-0x41]; cmp dx,0x19
+    ("fnv1-prime-multiply", "4569c093010001"),      # imul r8d, r8d, 0x01000193
+    ("fnv1-xor-char", "4533c1"),                    # xor r8d, r9d
+    ("ascii-fold-add", "4183c120"),                 # add r9d, 0x20
+)
 
 
 class NativeProofError(ValueError):
@@ -142,6 +161,10 @@ def _prove_routes(
     helper_pointer, helper_rows = _checked_helper(
         index, image, contract["anonymousPostHelper"]
     )
+    hash_pointer, hash_rows = _checked_helper(
+        index, image, contract["anonymousStringHash"]
+    )
+    hash_bytes = image.pe.bytes_at_va(hash_pointer, int(contract["anonymousStringHash"]["bodyLength"]))
     post_pointer = _unique_pointer(index, "Beyond.Audio.AudioAdapter._PostEvent")
     pos_uint = index.body(
         "Beyond.Gameplay.Audio.AudioBattleUtil",
@@ -161,10 +184,10 @@ def _prove_routes(
     _require_ordered(
         bodies["doPostEvent"].rows,
         [
-            f"mov rax, [rbx+0x{data_offset:x}]",
-            f"mov rsi, [rax+0x{sound_offset:x}]",
+            f"mov rax, [rdi+0x{data_offset:x}]",
+            f"mov rbx, [rax+0x{sound_offset:x}]",
             "mov rdx, rbp",
-            "mov rcx, rsi",
+            "mov rcx, rbx",
             f"call 0x{helper_pointer:x}",
         ],
         check="object-post:raw-sound-event-to-helper",
@@ -172,14 +195,13 @@ def _prove_routes(
     _require_ordered(
         helper_rows,
         [
-            "mov rbx, rcx",
-            "cmp [rbx+0x10], esi",
-            "mov rcx, rbx",
-            f"call 0x{bodies['computeString'].pointer:x}",
+            "mov rdi, rcx",
+            "mov rcx, rdi",
+            f"call 0x{hash_pointer:x}",
             "mov ecx, eax",
             f"call 0x{post_pointer:x}",
         ],
-        check="object-post-helper:full-string-compute-and-post",
+        check="object-post-helper:full-string-hash-and-post",
     )
     _require_ordered(
         bodies["doPostEventAtPosition"].rows,
@@ -194,29 +216,36 @@ def _prove_routes(
     _require_ordered(
         bodies["postAtPositionString"].rows,
         [
-            "mov rbx, rcx",
-            "cmp [rbx+0x10], 0x0",
-            "mov rcx, rbx",
-            f"call 0x{bodies['computeString'].pointer:x}",
+            "mov rsi, rcx",
+            "mov rcx, rsi",
+            f"call 0x{hash_pointer:x}",
             "mov ecx, eax",
             f"call 0x{pos_uint.pointer:x}",
         ],
-        check="position-string-overload:full-string-compute-and-post",
+        check="position-string-overload:full-string-hash-and-post",
     )
     _require_ordered(
-        bodies["computeString"].rows,
+        hash_rows,
         [
             "mov rbx, rcx",
+            "test rcx, rcx",
+            "cmp [rcx+0x10], 0x0",
+            "mov r10d, [rbx+0x10]",
             "lea rax, [rbx+0x14]",
-            "mov eax, [rbx+0x10]",
-            "movzx edx, [r8]",
-            "lea rax, [rdx-0x41]",
-            "cmp eax, 0x19",
-            "add r8, 0x2",
-            "cmp ecx, r9d",
+            "mov r8d, 0x811c9dc5",
+            "movzx r9d, [rax]",
+            "lea rdx, [r9-0x41]",
+            "add rax, 0x2",
+            "xor r8d, r9d",
+            "cmp ecx, r10d",
+            "mov eax, r8d",
+            "add r9d, 0x20",
         ],
-        check="compute-string:whole-utf16-loop-and-ascii-fold",
+        check="string-hash:whole-utf16-fnv1-loop-and-ascii-fold",
     )
+    for label, encoded in HASH_BYTE_WITNESSES:
+        if hash_bytes.count(bytes.fromhex(encoded)) != 1:
+            raise NativeProofError(f"string-hash:byte-witness-missing={label}")
     return {
         "methodCount": len(bodies),
         "methods": {
@@ -227,6 +256,7 @@ def _prove_routes(
         "actionDataPointerOffset": data_offset,
         "soundEventFieldOffset": sound_offset,
         "anonymousPostHelperRva": contract["anonymousPostHelper"]["rva"],
+        "anonymousStringHashRva": contract["anonymousStringHash"]["rva"],
         "checkedRoutes": ["objectPostDefaultBody", "positionPostDefaultBody"],
         "patchBoundary": "iFix IsPatched prologues; replacement path not checked",
     }
@@ -271,7 +301,7 @@ def audit(
     contract_path: Path = CONTRACT_PATH,
 ) -> dict[str, Any]:
     result: dict[str, Any] = {
-        "schema": "endfield.audio-play-sound-string-native-audit.v1",
+        "schema": "endfield.audio-play-sound-string-native-audit.v2",
         "status": "validation_failed",
         "contractPath": str(contract_path),
     }

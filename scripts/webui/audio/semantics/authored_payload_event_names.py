@@ -18,6 +18,26 @@ nothing.  No prefix taxonomy, filename similarity, address ordering or
 proximity argument is used, and a recovered spelling supplies only the Event's
 identity: caller, trigger, selected branch, execution and audibility stay
 exactly as unresolved as before.
+
+**Pooled strings.** Builds that ship ``Json/StringPool/`` stop inlining strings
+in compact JsonData payloads: a string member becomes an ``i32`` global pool
+index (``scripts.game_data.string_pool``), so the length-prefixed scan above
+finds nothing for those members, and every Event whose only spelling moved
+into the pool fell back to ``hashed-event:0x...`` (the first pooled build
+left 1,078 such Events, most of them ``au_int_*`` interactive objects).
+``collect_string_pool_event_names`` reads the pool through its exact ``USPC``
+reader and offers each whole entry matching the managed audio grammar
+(``au_``/``bark_``/``radio_``/``vo_``, the same closed prefix set as the
+metadata literals, because a pool entry is a whole decoded string exactly like
+a metadata literal). Promotion is unchanged: an FNV-1 hash equal to a current
+Event object id. Tier: the spelling is ``exact`` (an exactly framed shipped
+string whose hash is the Event id); which payload member holds the pool index
+is not read, so the payload-to-Event relation stays ``structuralOnly``.
+Entries outside the grammar (``Play_au_*``/``Stop_au_*``, ``indie_*``,
+generic words such as ``Stop``) are counted in the audit but never promoted:
+the pool has ~2.8e5 entries, so an unprefixed sweep yields about one
+coincidental Event-id preimage per run and the prefix gate is what keeps the
+promotion exact.
 """
 
 from __future__ import annotations
@@ -26,8 +46,10 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 
+from scripts.game_data.string_pool import StringPoolDecodeError, export_string_pool
 from scripts.source_paths import ExportLayout
 from scripts.webui.audio.semantics.gameplay_audio import length_prefixed_matches
+from scripts.webui.audio.semantics.identifiers import MANAGED_AUDIO_LITERAL_RE
 
 # ``SkillData`` and ``BuffData`` are deliberately absent: ``gameplay_audio``
 # owns them and already contributes their literals, so listing them here would
@@ -118,6 +140,60 @@ def collect_authored_payload_event_names(
         "evidenceBoundary": EVIDENCE_BOUNDARY,
     }
     return candidates, audit
+
+
+STRING_POOL_EVIDENCE_BOUNDARY = (
+    "A whole JsonData StringPool entry matching the au_/bark_/radio_/vo_ "
+    "grammar is an Event-name candidate only. It becomes an Event name exactly "
+    "when its FNV-1 hash equals a current HIRC Event object id; the spelling is "
+    "then exact, but the payload member holding the pool index is not read, so "
+    "the payload-to-Event relation is structuralOnly and no caller, trigger, "
+    "selected branch, posting, execution or audibility follows."
+)
+
+
+def collect_string_pool_event_names(
+    export_root: Path,
+) -> tuple[set[str], dict[str, Any]]:
+    """Return grammar-matching StringPool entries plus a read audit.
+
+    An absent pool is ``absentPool`` (older builds inline their strings and the
+    length-prefixed scan covers them); a pool that fails exact framing is
+    ``decodeFailed`` with the reader's diagnostic and contributes nothing,
+    never a partial page set.
+    """
+
+    json_dir = ExportLayout(export_root).game / "Json"
+    audit: dict[str, Any] = {
+        "schemaVersion": 1,
+        "source": "authoredJsonDataStringPoolEntry",
+        "evidenceBoundary": STRING_POOL_EVIDENCE_BOUNDARY,
+    }
+    try:
+        pool = export_string_pool(json_dir)
+        if pool is None:
+            return set(), {**audit, "status": "absentPool", "entries": 0, "candidateCount": 0}
+        entries = [pool.resolve(index) for index in range(len(pool))]
+    except StringPoolDecodeError as exc:
+        return set(), {
+            **audit,
+            "status": "decodeFailed",
+            "detail": str(exc),
+            "entries": 0,
+            "candidateCount": 0,
+        }
+    candidates = {
+        value.lower()
+        for value in entries
+        if isinstance(value, str) and MANAGED_AUDIO_LITERAL_RE.fullmatch(value)
+    }
+    return candidates, {
+        **audit,
+        "status": "read",
+        "pages": len(pool.counts),
+        "entries": len(entries),
+        "candidateCount": len(candidates),
+    }
 
 
 def summarize_authored_payload_event_name_recovery(

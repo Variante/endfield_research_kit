@@ -321,7 +321,12 @@ Inspect `--help` for non-CN or targeted maintenance options. Focused audits
 - The residual is not the `wwise/unknown` folder (a raw physical category whose
   media mostly carry a named Event) but the media whose only reaching Event is
   still `hashed-event:0x...`, plus External-Source-shaped ids no Event reaches.
-  Quote those two, not the folder size.
+  Quote those two, not the folder size. On the pooled build the JsonData
+  StringPool and Lua constant routes name about 1,170 of the ~11,200 hashed
+  Events and leave roughly 13,200 media reached only by hashed Events (counts
+  live in the published `stringPoolEventNameRecovery` /
+  `luaAudioLiteralEventNameRecovery` blocks). Most of the rest are Events no
+  shipped string spells; they need a new name source, not a wider grammar.
 - Events spelled `Play_au_*` outside the byte grammar are recovered only from
   supported decoded payload roots; other roots need a measured reader, not a
   prefix guess.
