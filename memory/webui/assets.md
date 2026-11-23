@@ -437,6 +437,13 @@ alpha clipping, transparency, mesh selection and skin pose. `Model only`
 temporarily disables the emission control without losing its selection.
 This display correction does not certify other FBXs against their source
 renderers or reconstruct the game's HDR post-processing and bloom.
+`Game shading` (on by default) approximates the retail shader families from
+the name-linked material: character NPR materials (`_DiffRampMap` ramp lit
+band and hue, `_MetallicGlossMap` metal/spec/shadow/smoothness, GGX, rim)
+and HGRP scenery (`_MROMap` metal/roughness/AO). The formulas follow the
+Reconstruction Lab's recovered character lighting, simplified; face SDF,
+shadow LUT, outlines, hair and eye terms are not applied. The material join
+stays a name candidate, so the result is a preview, not renderer parity.
 
 OBJ and FBX initial framing use the normalized bounds' enclosing sphere and the
 viewport's smaller angular dimension. A cube-sized model can exceed the old
@@ -516,7 +523,10 @@ broad investigation; the index then also carries every debug class.
   for this boundary and the bounded scene-object reader.
 
 - Improve object-level dependency and conversion diagnostics.
-- Recover exact renderer/material/texture and animation ownership.
+- Recover exact renderer/material/texture and animation ownership for
+  standalone model previews. Streamed world entities now carry it: Map's
+  InitChunkData draw-ref join (`memory/webui/map.md`) binds each draw to one
+  Mesh and Material; Assets previews still link materials by name.
 - Table rows cover only the sprites a table names directly. Activity
   background sets, achievement icons, AI-bark portraits, attachment widget
   models, and ability-entity models are referenced from prefabs and UI

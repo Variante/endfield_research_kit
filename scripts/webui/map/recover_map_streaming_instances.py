@@ -138,12 +138,11 @@ def iter_entities(data: bytes):
             cursor += id_count * stride
         if cursor != blob_length:
             raise ValueError(f"InitChunkData group {group_index} column size mismatch")
-        # Keep the serialized ECS shape as bounded evidence.  These numeric
-        # component ids are useful for a future decoder, but they are not
-        # prefab identities: the currently validated InitChunkData columns do
-        # not expose a known AssetMap Source+PathID reference for the entity.
-        # Keep this scoped to the observed schema; a future binary revision or
-        # a separate StreamingChunkData relation may add such evidence.
+        # Keep the serialized ECS shape as bounded evidence.  No column names a
+        # prefab, but the draw-ref columns (68-74) carry each renderer draw's
+        # mesh and material StringPathHash; game_data.streaming.init_chunk_draws
+        # decodes them and build_map_scene3d joins them to exported assets.
+        # This projection still grades its Mesh relation by entity name.
         component_type_ids = [type_id for type_id, _stride, _reserved in descriptors]
         component_strides = {
             str(type_id): stride for type_id, stride, _reserved in descriptors

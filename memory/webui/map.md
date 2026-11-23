@@ -27,8 +27,9 @@ state and body scroll across map switches and filter renders within the page.
    identity. `recover_map_streaming_instances` streams installed
    `InitChunkData` and recovers exact matrices. Its level/HLOD/grid/cluster
    hash join gives exact HLOD Mesh identity; its generic entity-name to Mesh
-   family join is a preview candidate until prefab or renderer ownership is
-   proved.
+   family join is a preview candidate. The 3D scene task
+   (`build_map_scene3d`) does not use names: it reads each entity's
+   InitChunkData draw-ref columns (see Evidence boundary).
 4. `scripts.webui.map.build_map_recovery_data` publishes the index and
    per-level payloads; its preview phase
    ([`build_map_recovery_preview`](../../scripts/webui/map/build_map_recovery_preview.py))
@@ -58,13 +59,29 @@ scene at all, stops the streaming-instance step with the failing map named.
 `webui/data/map_recovery/{index.json,maps/<levelId>.json,render/**}`; the
 payload contract is in [`../../webui/README.md`](../../webui/README.md) and the
 panel, layer, and inspector behavior in the header comment of
-`webui/src/features/map_recovery/index.js`. Generated audits and changing
-coverage live under `reports/assets/map_recovery/`.
+`webui/src/features/map_recovery/index.js`. The 3D scene viewer
+(`scene3d.js`, `?scene3d=<level>#map`) reads
+`webui/data/map_recovery/scene3d/{index.json,<level>/index.json,<level>/chunks/<x_z|global>.json}`
+and streams 128 m chunks; its shading is an approximate HGRP lit preview, not
+retail lighting. Generated audits and changing coverage live under
+`reports/assets/map_recovery/`.
 
 ## Evidence boundary
 
 - Coordinates and matrices prove placement, not activation, visibility,
-  interactivity, prefab identity, or renderer ownership.
+  interactivity, or prefab identity.
+- InitChunkData draw-ref columns (components 68-74, beside draw infos 8-14)
+  carry, per renderer draw, a material and a mesh StringPathHash plus submesh,
+  flags and LOD bounds
+  ([`init_chunk_draws`](../../scripts/game_data/streaming/init_chunk_draws.py)).
+  The framing is exact and every hash resolves through the installed
+  StringPathHash catalog to one asset path (exact); the column role is
+  `structuralOnly` until a native consumer is authenticated. Asset path ->
+  exported Mesh/Material is exact through the asset map Container+Name/PathID
+  and `conditional` through a unique exported name. This supersedes the earlier
+  conclusion that streamed entities carry no prefab/asset column: renderer
+  mesh and material identity no longer needs a runtime capture, while prefab
+  hierarchy and component state beyond the draws remain unrecovered.
 - Story-to-point links require an exact trigger/action/slot, NPC attachment, or
   authored pin join. Mission context, sibling actions, filename similarity,
   and proximity are diagnostics only.
@@ -135,52 +152,14 @@ closed.
 
 ### Render layers, one grade at a time
 
-- Static OBJ projection carries an exact matrix and a separately graded Mesh
-  relation. Generic Mesh family matches remain preview candidates even with a
-  unique name and exported PathID; a matching name does not prove prefab
-  ownership. Equal-ranked distinct source/offset/PathID candidates are omitted
+- The 2D static OBJ projection still uses its name-graded Mesh relation;
+  generic Mesh family matches there remain preview candidates even with a
+  unique name and exported PathID. Moving it onto the draw-ref join is queued. Equal-ranked distinct source/offset/PathID candidates are omitted
   instead of chosen alphabetically. Material color requires one unambiguous
   Mesh -> Material -> base texture path plus UVs.
-  A focused dialog actor prefab probe proves an AssetBundle root -> child
-  renderer -> exact Mesh PPtr chain for one candidate, but the streamed entity
-  has no known pointer to that prefab. The WebUI therefore retains the
-  candidate grade. The smallest useful capture is the streamed entity id with
-  its selected prefab resource path or root source CAB+PathID at creation time.
-  No retained graphics, audio, gameplay-semantic, SkillData or ECS-list
-  observation binds a streamed entity to prefab selection. The native Streaming contract proves selected
-  anonymous row/path reads but no concrete Create instance or prefab-selection
-  callback ABI. A new capture must first prove and gate a callback that observes
-  scene/chunk context, entity id, and selected prefab root/path in one call;
-  launching an existing profile or recording a screen image cannot fill this
-  identity gap.
-  The installed asset-conversion internal call was tested as a scoped hook
-  lead and does not expose an Init entity ID with a prefab source at one
-  boundary. Its separate entity-name getter does not make an arbitrary Unity
-  object result into a prefab selection. The Map candidate grade remains in
-  force, and no user capture is ready for this entity yet. The Init ID-keyed
-  runtime carrier's eight-byte value reaches a new-record branch, but its
-  first callback setup forwards the value and appends it as anonymous child
-  state. That setup places the selected Init row's nested table and name in
-  a context. The selected group loader builds the value as a descriptor-slot
-  index plus a counter; the default callback uses its low 32 bits to index
-  an anonymous context table, without a proved prefab source. The producer
-  and callback reach their tables through two manager fields. The selected
-  manager constructor copies the group-table pointer into one field and saves
-  the address of its owner pointer in the other, so they alias at construction;
-  a later mutation and live equality have not been checked. The immediate
-  callback reads bit-masked fields in a 576-byte row, interns nonzero
-  eight-byte values into local indices, and appends external-asset request
-  records. A checked consumer of the matching context field deduplicates
-  opaque keys into another local table without reading a resource path or
-  source object; its execution for the target scene is unproved.
-  The installed target pair has the same entity ID at the corresponding
-  ordinal in both roots, but no live root receipt or callback-to-prefab
-  source relation is known. The remaining edge is a selected downstream
-  operation that resolves one of those opaque keys or child records to a
-  prefab resource identity while retaining the entity ID or a stable keyed
-  context. The ID-map insertion, field-intern call, external-asset request
-  deduplication, and context name alone cannot name a prefab or support a
-  capture profile.
+  The earlier prefab-selection capture plan (streamed entity id plus selected
+  prefab root at creation) is no longer needed for renderer Mesh/Material
+  identity, which the draw-ref columns carry statically.
 - HLOD exports without an exact instance matrix remain diagnostic only (the
   inferred grid fit publishes its coverage, and an under-determined fit
   publishes no background). Map01/Map02 clusters join their `InitChunkData`
@@ -325,6 +304,8 @@ python -m scripts.webui.map.build_map_recovery_data --with-preview
 python -m scripts.webui.map.build_map_recovery_preview --level LEVEL
 python -m scripts.webui.map.build_map_recovery_preview --refresh-exact-fallbacks-only
 python -m scripts.webui.map.build_map_encounters
+python -m scripts.webui.map.build_map_scene3d --level LEVEL [--level ...]
+python -m scripts.webui.map.build_map_scene3d --published-levels
 ```
 
 Previews checkpoint after each completed scene and reuse matching outputs;
@@ -369,9 +350,11 @@ activation, current condition results, visible NPCs nor traversable paths.
 
 ## Highest-value remaining gaps
 
-- Recover exact scene hierarchy and renderer ownership.
-- Close streaming prefab/renderer to Mesh ownership and unresolved material
-  joins through serialized references or a runtime capture.
+- Authenticate the InitChunkData draw-ref column role against its native
+  consumer (moves it from `structuralOnly`), and move the 2D streaming
+  projection onto the draw-ref join.
+- 3D scene: LOD selection, sky/FX/decal/water shader families, terrain
+  surfaces, and the remaining name-only (`conditional`) asset-map misses.
 - Recover water geometry where authored map art is insufficient.
 - Add maintained behavior-level browser coverage for map navigation and layers.
 

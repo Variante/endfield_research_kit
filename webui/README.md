@@ -51,7 +51,7 @@ Data navigation is 解码 / Decoded, with the English heading Data Decoding.
 | --- | --- | --- | --- |
 | Story | `story` | Reconstructed dialog, SNS, radio, cutscenes, media, and evidence-typed order | `app.js` |
 | Gameplay | `gameplay` | Characters, equipment, enemies, combat stages, activities, items and their effects, recipes, machines, progression, skills, projectiles, and assets | `src/features/gameplay/{tabs,index,battle_stages,items}.js`, `src/features/gameplay/activities/index.js` |
-| Map | `map` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
+| Map | `map` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers; a chunk-streamed 3D scene viewer (`?scene3d=<level>#map`) | `src/features/map_recovery/{index,scene3d}.js` |
 | Characters | `characters` | Identity groups, complete source appearances, verified Story links, related assets, and live overrides | `src/features/characters/index.js` |
 | Text | `reference` | Searchable localized table/reference rows and configured achievement/activity targets and rewards | `src/features/reference/index.js` |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state | `src/features/audio/index.js` |
@@ -132,6 +132,7 @@ Load order, as `index.html` declares it:
 | `src/features/gameplay/{labels.js,loadout.js,skill_refs.js,mechanics.js,index.js}` | Gameplay entity details, loadout, semantic summaries, authored skill references and item effects |
 | `src/features/audio/{index.js,style.css}` | Audio evidence browser |
 | `src/features/map_recovery/{index.js,encounters.js,style.css}` | Map view and selection-only authored encounter overlays |
+| `src/features/map_recovery/scene3d.js` | WebGL2 3D scene viewer: instanced draws from InitChunkData draw refs, approximate HGRP lit shading (not retail lighting), evidence-tier colouring, fly camera, 128 m chunk streaming; credits the 0BSD endfield-noclip reader |
 | `src/features/next_views.js` | shared page-bootstrap wiring |
 | `src/features/reference/{files,index}.js` | bounded file reads/cache and localized Text Tables browser |
 | `src/features/gameplay/{battle_stages.js,battle_stages.css}` | Combat stage catalog |
@@ -412,6 +413,7 @@ webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
 webui/data/map_recovery/encounters/{index,<levelId>,unplaced}.json
 webui/data/map_recovery/render/*.{json,png}
+webui/data/map_recovery/scene3d/{index.json,<levelId>/index.json,<levelId>/chunks/<x_z|global>.json}
 webui/data/assets/{index,relations,gameplay_refs,story_media,table_owners,activity_media,videos}.json
 webui/data/data_inspector/index.json
 webui/data/data_inspector/datasets/<datasetId>/{index,records.*}.json
@@ -1342,6 +1344,10 @@ restore the default view. This view state lasts until the page is reloaded.
   nonzero extent; FBX fitting excludes initially hidden LODs and proxies.
   Model only switches WebGL to opaque geometry in the chosen model color,
   disabling material textures, tint, emission, blending and alpha clipping.
+  `Game shading` (default on) swaps the generic key/fill/rim lighting for an
+  NPR ramp/mask approximation on character materials and an MRO-based HGRP
+  approximation on scenery, using the same name-linked material candidate;
+  untextured, effect, Model only and channel-inspection draws are unchanged.
   The software preview already uses untextured geometry. The switch stays
   selected when changing models within the page; it does not deform VAT meshes.
   Non-additive transparent surfaces without depth writes sort their triangles

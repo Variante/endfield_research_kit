@@ -110,7 +110,7 @@ PAGES: dict[str, Page] = {
         # The same pages with Story's images and videos (story_media.json).
         # Voice lines come from the Audio page's own publication.
         Page("story-media", "Story and Text Tables with images and video", ("story", "story_media")),
-        Page("map", "Map", ("map_recovery_preview",)),
+        Page("map", "Map", ("map_recovery_preview", "map_scene3d")),
         Page("characters", "Characters", ("characters",)),
         Page("gameplay", "Gameplay", (
             "gameplay", "projectiles", "gameplay_skill_refs", "gameplay_asset_refs_after_graph", "combat_relationships",
@@ -224,6 +224,18 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
         needs=("map_streaming_instances",),
         after=("assets",),
         optional=of(("json-data",), ("Material",), ("Texture2D", "Mesh")),
+    ))
+
+    # Joins InitChunkData draw refs through the StringPathHash catalog to the
+    # exported Mesh/Material/Texture2D for the 3D scene viewer; rebuilds the
+    # levels it already published (one default dungeon on a first run).
+    scene3d_args = ["--published-levels"]
+    if options.export_root:
+        scene3d_args += ["--export-root", str(options.export_root)]
+    tasks.append(TaskSpec(
+        "map_scene3d",
+        (module("scripts.webui.map.build_map_scene3d", *scene3d_args),),
+        reads=of(("streaming", "extend-data"), ("Material",), ("Texture2D", "Mesh")),
     ))
 
     # ---- Story media --------------------------------------------------------

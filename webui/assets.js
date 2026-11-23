@@ -139,6 +139,8 @@
       modelRecovery: "导出完整性",
       modelRecoveryGap: "已导出 {exported}/{expected} 个源网格实例。部分引用的网格数据尚未找到。",
       modelEmission: "显示发光",
+      modelGameShading: "游戏着色",
+      modelGameShadingHelp: "按材质的渐变贴图 (_DiffRampMap) 和遮罩/MRO 贴图近似游戏的角色 NPR 与场景 HGRP 着色；材质按名称关联，是候选绑定，不是零售版渲染。关闭则使用通用预览光照。",
       modelEmissionHelp: "开启材质发光；强光可能遮住表面细节。关闭可查看原有贴图和形状。",
       previewBackgroundCustom: "\u81ea\u5b9a\u4e49\u80cc\u666f\u8272",
       previewBackgroundPreset: "\u80cc\u666f\u8272 {color}",
@@ -366,6 +368,8 @@
       modelRecovery: "Export completeness",
       modelRecoveryGap: "{exported}/{expected} source mesh instances exported. Some referenced mesh data has not been located.",
       modelEmission: "Show emission",
+      modelGameShading: "Game shading",
+      modelGameShadingHelp: "Approximate the game's character NPR and scenery HGRP shading from each material's ramp (_DiffRampMap) and mask/MRO maps. Materials are name-linked candidates and this is not the retail renderer; turn it off for the generic preview lighting.",
       modelEmissionHelp: "Enable material emission. Bright glow can obscure surface details; turn it off to inspect the base texture and shape.",
       previewBackgroundCustom: "Custom background color",
       previewBackgroundPreset: "Background {color}",
@@ -593,6 +597,7 @@
     // saturate the LDR canvas and look like missing horns or other details.
     // Keep the authored values available through a separate display control.
     modelEmission: false,
+    modelGameShading: true,
     qTimer: null,
     detailToken: 0,
     imageObjectUrl: "",
@@ -809,6 +814,11 @@
     $("#asset-model-emission-label").title = assetUiText("modelEmissionHelp");
     $("#asset-model-emission").checked = ASSET_STATE.modelEmission;
     $("#asset-model-emission").disabled = ASSET_STATE.modelOnly;
+    $("#asset-model-shading-label").hidden = !isModel;
+    $("#asset-model-shading-text").textContent = assetUiText("modelGameShading");
+    $("#asset-model-shading-label").title = assetUiText("modelGameShadingHelp");
+    $("#asset-model-shading").checked = ASSET_STATE.modelGameShading;
+    $("#asset-model-shading").disabled = ASSET_STATE.modelOnly;
     stage.classList.toggle("has-preview-bg", enabled);
     stage.style.setProperty("--asset-preview-bg-color", color);
     if (input.value.toLowerCase() !== color) input.value = color;
@@ -1101,6 +1111,10 @@
     });
     $("#asset-model-emission").addEventListener("change", (ev) => {
       ASSET_STATE.modelEmission = ev.target.checked;
+      queueModelRender();
+    });
+    $("#asset-model-shading").addEventListener("change", (ev) => {
+      ASSET_STATE.modelGameShading = ev.target.checked;
       queueModelRender();
     });
     $("#asset-image-rgb").addEventListener("change", (ev) => {
@@ -4039,6 +4053,55 @@
     uniform float uChannel;
     uniform vec4 uUvTransform;
     uniform vec2 uMirrorOnce;
+    // Game shading: 0 generic preview, 1 character NPR ramp, 2 HGRP scenery.
+    uniform float uShading;
+    uniform sampler2D uRampTexture;
+    uniform float uHasRamp;
+    uniform sampler2D uMaskTexture;
+    uniform float uHasMask;
+    float luma(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
+    // GGX lobe with the Endfield cloth/HGRP shape (a = roughness squared).
+    float ggx(float nh, float nv, float rough) {
+      float a = max(rough * rough, 1.0 / 128.0);
+      float a2 = a * a;
+      float d = nh * nh * (a2 - 1.0) + 1.0;
+      return clamp(a2 / (d * d) * 0.5 / (nv * 2.0 + a + 1e-4), 0.0, 20.0);
+    }
+    vec3 gameShade(vec3 albedo, vec3 n, vec3 v, vec2 uv) {
+      vec3 l = normalize(vec3(0.45, 0.6, 0.65));
+      vec3 h = normalize(l + v);
+      float nl = dot(n, l);
+      float nv = max(dot(n, v), 1e-3);
+      float nh = max(dot(n, h), 0.0);
+      vec4 mask = uHasMask > 0.5 ? texture2D(uMaskTexture, uv) : vec4(0.0, 0.25, 1.0, 0.4);
+      if (uShading < 1.5) {
+        // Character NPR (lab-recovered spine): _DiffRampMap sampled at
+        // u = NdotL*0.5+0.5 gives the lit band (A) and its hue (RGB);
+        // _MetallicGlossMap R metal, G spec mask, B shadow mask, A smoothness.
+        vec4 ramp = uHasRamp > 0.5
+          ? texture2D(uRampTexture, vec2(clamp(nl * 0.5 + 0.5, 0.02, 0.98), 0.5))
+          : vec4(1.0, 1.0, 1.0, smoothstep(-0.05, 0.05, nl));
+        float lit = min(ramp.a, mask.b);
+        float metal = mask.r;
+        float y = luma(albedo);
+        vec3 shadow = clamp(mix(vec3(y), albedo, 1.25), 0.0, 1.0) * 0.55;
+        vec3 diffuse = mix(shadow, albedo * (1.0 - metal * 0.96), lit);
+        float ry = max(luma(ramp.rgb), 1e-3);
+        diffuse *= mix(vec3(1.0), clamp(ramp.rgb / ry, 0.0, 1.5), 1.0 - lit);
+        vec3 f0 = mix(vec3(0.04 * mask.g), albedo, metal);
+        vec3 spec = f0 * ggx(nh, nv, 1.0 - mask.a) * lit * mask.g;
+        float rim = smoothstep(0.75, 1.0, 1.0 - nv) * 0.12;
+        return diffuse + spec * 0.25 + albedo * rim;
+      }
+      // HGRP scenery: _MROMap R metallic, G roughness, B occlusion.
+      float metal = uHasMask > 0.5 ? mask.r : 0.0;
+      float rough = uHasMask > 0.5 ? mask.g : 0.6;
+      float ao = uHasMask > 0.5 ? mask.b : 1.0;
+      vec3 f0 = mix(vec3(0.04), albedo, metal);
+      vec3 sun = (albedo * (1.0 - metal) * 0.75 + f0 * ggx(nh, nv, rough)) * max(nl, 0.0);
+      vec3 ambient = mix(vec3(0.30, 0.29, 0.28), vec3(0.50, 0.53, 0.58), n.y * 0.5 + 0.5) * albedo * ao;
+      return sun * vec3(1.0, 0.97, 0.92) + ambient;
+    }
     void main() {
       vec3 n = normalize(vNormal);
       if (!gl_FrontFacing) n = -n;
@@ -4072,6 +4135,7 @@
         // Transparent effects (glows, beams) are unlit: texture times tint.
         color = uEffect > 0.5
           ? texel.rgb
+          : uShading > 0.5 ? gameShade(texel.rgb, n, v, uv)
           : texel.rgb * (0.55 + key * 0.4 + fill * 0.12) + vec3(0.08) * rim;
       } else {
         color = uEffect > 0.5
@@ -4138,6 +4202,11 @@
         uChannel: gl.getUniformLocation(program, "uChannel"),
         uUvTransform: gl.getUniformLocation(program, "uUvTransform"),
         uMirrorOnce: gl.getUniformLocation(program, "uMirrorOnce"),
+        uShading: gl.getUniformLocation(program, "uShading"),
+        uRampTexture: gl.getUniformLocation(program, "uRampTexture"),
+        uHasRamp: gl.getUniformLocation(program, "uHasRamp"),
+        uMaskTexture: gl.getUniformLocation(program, "uMaskTexture"),
+        uHasMask: gl.getUniformLocation(program, "uHasMask"),
         textures: new Map(),
         uploaded: null,
         buffers: null,
@@ -4199,6 +4268,34 @@
       if (!byName.has(name) || (base?.rel || "") === chosen.get(name)) byName.set(name, relation.blend);
     }
     ASSET_STATE.materialBlends = { source: ASSET_STATE.relations, byName };
+    return byName;
+  }
+
+  // Game-shading inputs per material name: the NPR ramp (_DiffRampMap) and
+  // mask (_MetallicGlossMap), or the HGRP MRO map (_MROMap). They come from
+  // the same name-linked Material as the base texture, so they share its
+  // candidate grade; same-name materials take the one whose base was chosen.
+  function materialShadingIndex() {
+    if (ASSET_STATE.materialShading?.source === ASSET_STATE.relations) return ASSET_STATE.materialShading.byName;
+    const chosen = materialBaseTextureIndex();
+    const byName = new Map();
+    for (const [rel, relation] of Object.entries(ASSET_STATE.relations || {})) {
+      const match = rel.match(/^Unity\/Material\/(.+)_p[0-9A-F]{16}\.json$/i);
+      if (!match) continue;
+      const textures = relation?.textures || [];
+      const slot = (key) => textures.find((texture) => texture.slot === key && texture.rel)?.rel || "";
+      const ramp = slot("_DiffRampMap");
+      const npr = Boolean(ramp || slot("_SDFLightmap") || slot("_ShadowLutTex") || relation?.blend?.avatar);
+      const mro = slot("_MROMap");
+      const entry = npr
+        ? { mode: 1, ramp, mask: slot("_MetallicGlossMap") }
+        : mro || slot("_BaseColorMap") ? { mode: 2, ramp: "", mask: mro } : null;
+      if (!entry) continue;
+      const name = match[1].toLowerCase();
+      const base = MODEL_BASE_TEXTURE_SLOTS.map((key) => slot(key)).find(Boolean) || "";
+      if (!byName.has(name) || base === chosen.get(name)) byName.set(name, entry);
+    }
+    ASSET_STATE.materialShading = { source: ASSET_STATE.relations, byName };
     return byName;
   }
 
@@ -4335,6 +4432,9 @@
     gl.uniform3f(state.uColor, ...[1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16) / 255));
     gl.uniform1i(state.uTexture, 0);
     gl.uniform1i(state.uEmissionTexture, 1);
+    gl.uniform1i(state.uRampTexture, 2);
+    gl.uniform1i(state.uMaskTexture, 3);
+    const shadingIndex = ASSET_STATE.modelGameShading ? materialShadingIndex() : null;
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.enableVertexAttribArray(state.aPosition);
@@ -4388,6 +4488,20 @@
       // Keep mapped emission off until its map loads, including UV-less groups.
       gl.uniform3f(state.uEmission, ...(emission && (!emission.textureRel || emissionTexture) ? emission.color : [0, 0, 0]));
       gl.uniform1f(state.uAlphaClip, blend?.clip ?? -1);
+      const shading = !modelOnly && !inspection && texture && shadingIndex
+        ? shadingIndex.get(String(group.material || "").toLowerCase()) : null;
+      const rampTexture = shading?.ramp ? modelGroupTexture(state, "", shading.ramp) : null;
+      const maskTexture = shading?.mask ? modelGroupTexture(state, "", shading.mask) : null;
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, rampTexture);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, maskTexture);
+      // Wait for every named map before switching, so a loading ramp does
+      // not flash the fallback band.
+      const ready = shading && (!shading.ramp || rampTexture) && (!shading.mask || maskTexture);
+      gl.uniform1f(state.uShading, ready ? shading.mode : 0);
+      gl.uniform1f(state.uHasRamp, rampTexture ? 1 : 0);
+      gl.uniform1f(state.uHasMask, maskTexture ? 1 : 0);
       const additive = transparent({ blend }) && blend.dst === 1;
       gl.uniform1f(state.uEffect, additive ? 1 : 0);
       gl.uniform1f(state.uPremultiply, transparent({ blend }) && blend.src === 1 && !additive ? 1 : 0);

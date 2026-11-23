@@ -1249,3 +1249,36 @@
 
 .mr-inspector-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .mr-inspector-title-row h2 { margin: 0; }
+
+/* 3D scene viewer (scene3d.js) */
+#map-view { position: relative; }
+/* #map-view clips overflow, so the open viewer reserves its own height. */
+#map-view:has(> .ms3d-overlay:not([hidden])) { min-height: calc(100vh - 120px); }
+.ms3d-launch {
+  position: absolute; top: 8px; right: 8px; z-index: 20;
+  padding: 4px 12px; border: 1px solid var(--border); border-radius: var(--radius-control);
+  background: var(--panel); color: var(--text); cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.ms3d-launch:hover { background: var(--hover); }
+.ms3d-overlay { position: absolute; inset: 0; z-index: 30; background: #758ca3; min-height: 70vh; }
+.ms3d-overlay[hidden] { display: none; }
+.ms3d-canvas { display: block; width: 100%; height: 100%; min-height: 70vh; outline: none; cursor: grab; }
+.ms3d-bar {
+  position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  padding: 6px 10px; border-radius: var(--radius-md); background: rgba(var(--bg-rgb), 0.85); color: var(--text);
+  box-shadow: var(--shadow-sm); font-size: 13px;
+}
+.ms3d-stats { color: var(--muted); font-variant-numeric: tabular-nums; flex: 1; min-width: 200px; }
+.ms3d-close { margin-left: auto; }
+.ms3d-help, .ms3d-legend {
+  position: absolute; left: 8px; padding: 4px 8px; border-radius: var(--radius-sm);
+  background: rgba(var(--bg-rgb), 0.8); color: var(--muted); font-size: 12px;
+}
+.ms3d-help { bottom: 8px; }
+.ms3d-legend { bottom: 36px; display: flex; gap: 10px; }
+.ms3d-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 4px; background: var(--tier); border-radius: 2px; }
+.ms3d-evidence {
+  position: absolute; right: 8px; bottom: 8px; max-width: min(420px, 45%); max-height: 40%; overflow: auto; margin: 0;
+  padding: 6px 8px; border-radius: var(--radius-sm); background: rgba(var(--bg-rgb), 0.8); color: var(--muted);
+  font-size: 11px; white-space: pre-wrap;
+}
